@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In-Plan: Конструктор БП</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1f2937; }
+        .flex { display: flex; }
+        .flex-1 { flex: 1; }
+        .flex-col { flex-direction: column; }
+        .h-screen { height: 100vh; }
+        .w-16 { width: 64px; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-4 { gap: 1rem; }
+        .gap-2 { gap: 0.5rem; }
+        .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+        .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+        .p-6 { padding: 1.5rem; }
+        .p-4 { padding: 1rem; }
+        .p-3 { padding: 0.75rem; }
+        .p-10 { padding: 2.5rem; }
+        .bg-purple-700 { background-color: #6d28d9; }
+        .bg-white { background-color: #fff; }
+        .bg-gray-50 { background-color: #f9fafb; }
+        .bg-gray-200 { background-color: #e5e7eb; }
+        .bg-green-100 { background-color: #dcfce7; }
+        .bg-green-700 { color: #15803d; }
+        .bg-orange-100 { background-color: #fed7aa; }
+        .bg-orange-700 { color: #b45309; }
+        .bg-blue-100 { background-color: #dbeafe; }
+        .bg-blue-700 { color: #1d4ed8; }
+        .bg-red-100 { background-color: #fee2e2; }
+        .bg-red-700 { color: #b91c1c; }
+        .bg-purple-200 { background-color: #e9d5ff; }
+        .text-white { color: #fff; }
+        .text-gray-400 { color: #9ca3af; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-600 { color: #4b5563; }
+        .text-gray-700 { color: #374151; }
+        .text-purple-600 { color: #9333ea; }
+        .text-purple-700 { color: #6d28d9; }
+        .text-red-600 { color: #dc2626; }
+        .text-xl { font-size: 1.25rem; }
+        .text-lg { font-size: 1.125rem; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+        .font-bold { font-weight: 700; }
+        .font-semibold { font-weight: 600; }
+        .font-medium { font-weight: 500; }
+        .font-mono { font-family: 'Courier New', monospace; }
+        .border { border: 1px solid #e5e7eb; }
+        .border-b { border-bottom: 1px solid #e5e7eb; }
+        .border-l { border-left: 4px solid #fff; }
+        .rounded { border-radius: 0.375rem; }
+        .rounded-full { border-radius: 9999px; }
+        .cursor-pointer { cursor: pointer; }
+        .overflow-hidden { overflow: hidden; }
+        .overflow-y-auto { overflow-y: auto; }
+        .space-y-6 > * + * { margin-top: 1.5rem; }
+        .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
+        .mb-8 { margin-bottom: 2rem; }
+        .h-14 { height: 56px; }
+        .h-1\.5 { height: 6px; }
+        .h-8 { height: 32px; }
+        .w-full { width: 100%; }
+        .w-8 { width: 32px; }
+        .w-8 { width: 32px; }
+        
+        .sidebar-item { padding: 1rem; cursor: pointer; display: flex; justify-content: center; }
+        .sidebar-item:hover { background-color: #4c1d95; }
+        .active-menu { background-color: #6d28d9; border-left: 4px solid #fff; }
+        tr.selected { background-color: #f3f4f6; border-left: 4px solid #6d28d9; }
+        tr { border-bottom: 1px solid #e5e7eb; }
+        tr:hover { background-color: #f3f4f6; }
+        table { width: 100%; text-align: left; font-size: 0.875rem; }
+        thead { background-color: #f9fafb; color: #6b7280; text-transform: uppercase; font-size: 10px; border-bottom: 1px solid #e5e7eb; }
+        th { padding: 0.75rem; }
+        td { padding: 0.75rem; }
+        .status-badge { 
+            display: inline-block; 
+            padding: 2px 8px; 
+            border-radius: 12px; 
+            font-size: 12px;
+        }
+        button { border: 1px solid #e5e7eb; background: #fff; padding: 0.25rem 0.75rem; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; }
+        button:hover { background: #f3f4f6; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        button:disabled:hover { background: #fff; }
+        .progress-bar { width: 100%; background-color: #e5e7eb; border-radius: 9999px; height: 6px; }
+        .progress-fill { background-color: #9333ea; height: 6px; border-radius: 9999px; }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: #fff; border-radius: 0.5rem; padding: 1.5rem; width: 400px; max-width: 90vw; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .modal-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.75rem; color: #111827; }
+        .modal-text { font-size: 0.875rem; color: #4b5563; margin-bottom: 1.5rem; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+        .btn-cancel { border: 1px solid #e5e7eb; background: #fff; padding: 0.4rem 1rem; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; }
+        .btn-cancel:hover { background: #f3f4f6; }
+        .btn-confirm-delete { border: none; background: #dc2626; color: #fff; padding: 0.4rem 1rem; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; }
+        .btn-confirm-delete:hover { background: #b91c1c; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+<div class="flex h-screen">
+    <aside class="w-16 flex flex-col items-center py-4 bg-[#6d28d9] text-white">
+        <div class="mb-8 font-bold text-xl">In.</div>
+        <nav class="flex flex-col gap-4 w-full">
+            <div title="Главная" class="sidebar-item p-4 cursor-pointer flex justify-center">🏠</div>
+            <div title="Конструктор БП" class="sidebar-item active-menu p-4 cursor-pointer flex justify-center">🔄</div>
+            <div title="Задачи" class="sidebar-item p-4 cursor-pointer flex justify-center">✓</div>
+            <div title="Аналитика" class="sidebar-item p-4 cursor-pointer flex justify-center">📊</div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col overflow-hidden">
+        <header class="h-14 bg-white border-b flex items-center justify-between px-6">
+            <h1 class="text-lg font-semibold">Конструктор бизнес процессов</h1>
+            <div class="flex items-center gap-4 text-gray-500">
+                <span title="Загрузить" style="cursor: pointer; font-size: 18px;">⬆</span>
+                <span title="История" style="cursor: pointer; font-size: 18px;">⏱</span>
+                <div class="w-8 h-8 bg-purple-200 text-purple-700 rounded-full flex items-center justify-center font-bold text-sm">KD</div>
+            </div>
+        </header>
+
+        <div class="p-6 overflow-y-auto space-y-6">
+            
+            <section class="bg-white rounded-lg shadow-sm border">
+                <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                    <h2 class="font-bold text-gray-700">Шаблоны бизнес процессов</h2>
+                    <div class="flex gap-2">
+                        <button id="btn-copy" onclick="copyTemplate()" disabled class="px-3 py-1 border rounded hover:bg-white flex items-center gap-2 text-sm">
+                            📋 Копировать
+                        </button>
+                        <button onclick="deleteTemplate()" class="px-3 py-1 border rounded hover:bg-white text-red-500 flex items-center gap-2 text-sm">
+                            🗑 Удалить
+                        </button>
+                        <button onclick="openConstructor()" class="px-3 py-1 bg-purple-700 text-white border-0 rounded shadow-sm hover:bg-purple-800 text-xl leading-none" title="Создать новый шаблон">+</button>
+                    </div>
+                </div>
+                
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] border-b">
+                        <tr>
+                            <th class="p-3">ID</th>
+                            <th class="p-3">Имя процесса</th>
+                            <th class="p-3">Владелец</th>
+                            <th class="p-3">Экземпляры</th>
+                            <th class="p-3">Дата обн.</th>
+                            <th class="p-3">Статус</th>
+                            <th class="p-3">Автозапуск</th>
+                            <th class="p-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="template-body">
+                        </tbody>
+                </table>
+            </section>
+
+            <section class="bg-white rounded-lg shadow-sm border">
+                <div class="p-4 border-b bg-gray-50">
+                    <h2 class="font-bold text-gray-700">Экземпляры: <span id="selected-process-name" class="text-purple-600 font-normal">Выберите шаблон</span></h2>
+                </div>
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] border-b">
+                        <tr>
+                            <th class="p-3">ID</th>
+                            <th class="p-3">Дата запуска</th>
+                            <th class="p-3">Ответственный</th>
+                            <th class="p-3">Статус</th>
+                            <th class="p-3">Прогресс</th>
+                            <th class="p-3">Крайний срок</th>
+                            <th class="p-3">Просрочено</th>
+                            <th class="p-3">Дата заверш.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="instance-body">
+                        <tr><td colspan="8" class="p-10 text-center text-gray-400">Выберите шаблон процесса в таблице выше для просмотра экземпляров</td></tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </main>
+</div>
+
+<!-- Modal подтверждения удаления -->
+<div id="delete-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">Удаление шаблона</div>
+        <div class="modal-text" id="modal-text">Данный шаблон будет удален, подтвердите удаление.</div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal()">Отмена</button>
+            <button class="btn-confirm-delete" onclick="confirmDelete()">Удалить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let nextId = 5;
+
+    const instancesData = {
+        1: [
+            { id: 'E-101', start: '01.06.25', user: 'Иванов И.',    status: 'Активен',   progress: 70,  deadline: '05.06.25', overdue: 0,  end: '-' },
+            { id: 'E-102', start: '28.05.25', user: 'Петров А.',    status: 'Просрочен', progress: 40,  deadline: '30.05.25', overdue: 3,  end: '-' },
+            { id: 'E-103', start: '20.05.25', user: 'Сидоров К.',   status: 'Завершен',  progress: 100, deadline: '22.05.25', overdue: 0,  end: '22.05.25' },
+            { id: 'E-104', start: '15.05.25', user: 'Иванов И.',    status: 'Завершен',  progress: 100, deadline: '18.05.25', overdue: 0,  end: '17.05.25' },
+            { id: 'E-105', start: '10.05.25', user: 'Козлов В.',    status: 'Активен',   progress: 55,  deadline: '15.06.25', overdue: 0,  end: '-' },
+        ],
+        2: [
+            { id: 'Z-001', start: '12.05.25', user: 'Петров А.',    status: 'Активен',   progress: 20,  deadline: '20.06.25', overdue: 0,  end: '-' },
+            { id: 'Z-002', start: '05.04.25', user: 'Смирнов Д.',   status: 'Просрочен', progress: 60,  deadline: '01.05.25', overdue: 11, end: '-' },
+            { id: 'Z-003', start: '01.03.25', user: 'Петров А.',    status: 'Завершен',  progress: 100, deadline: '15.03.25', overdue: 0,  end: '14.03.25' },
+        ],
+        3: [
+            { id: 'O-201', start: '03.06.25', user: 'Новиков Р.',   status: 'Активен',   progress: 30,  deadline: '17.06.25', overdue: 0,  end: '-' },
+            { id: 'O-202', start: '01.06.25', user: 'Фёдорова Т.',  status: 'Активен',   progress: 50,  deadline: '15.06.25', overdue: 0,  end: '-' },
+            { id: 'O-203', start: '25.05.25', user: 'Алексеев М.',  status: 'Завершен',  progress: 100, deadline: '08.06.25', overdue: 0,  end: '07.06.25' },
+            { id: 'O-204', start: '20.05.25', user: 'Захаров П.',   status: 'Просрочен', progress: 65,  deadline: '27.05.25', overdue: 4,  end: '-' },
+            { id: 'O-205', start: '15.05.25', user: 'Кузнецова А.', status: 'Завершен',  progress: 100, deadline: '29.05.25', overdue: 0,  end: '28.05.25' },
+        ],
+        4: [
+            { id: 'A-001', start: '10.12.24', user: 'Сидоров К.',   status: 'Завершен',  progress: 100, deadline: '20.12.24', overdue: 0,  end: '19.12.24' },
+        ],
+    };
+
+    let templates = [
+        { id: 1, name: 'Согласование договора', owner: 'Иванов И.',  count: 12, date: '10.05.2025', status: 'Активен',  auto: 'Включен',  type: 'БП' },
+        { id: 2, name: 'Закупка оборудования',  owner: 'Петров А.',  count: 3,  date: '12.05.2025', status: 'Черновик', auto: 'Выключен', type: 'Алгоритм' },
+        { id: 3, name: 'Онбординг сотрудника',  owner: 'Иванов И.',  count: 45, date: '01.06.2025', status: 'Активен',  auto: 'Включен',  type: 'БП' },
+        { id: 4, name: 'Архивный процесс Тест', owner: 'Сидоров К.', count: 1,  date: '01.01.2025', status: 'Архив',    auto: 'Выключен', type: 'БП' },
+    ];
+
+    let selectedId = null;
+
+    function updateButtons() {
+        const t = templates.find(item => item.id === selectedId);
+        document.getElementById('btn-copy').disabled = !t;
+        document.getElementById('btn-delete').disabled = !(t && t.status === 'Черновик');
+    }
+
+    function renderTemplates() {
+        const body = document.getElementById('template-body');
+        body.innerHTML = templates.map(t => `
+            <tr onclick="selectTemplate(${t.id})" class="border-b cursor-pointer hover:bg-blue-50 transition-colors ${selectedId === t.id ? 'selected' : ''}">
+                <td class="p-3 text-gray-400">${t.id}</td>
+                <td class="p-3 font-medium">${t.name}</td>
+                <td class="p-3">${t.owner}</td>
+                <td class="p-3 text-center">${t.count}</td>
+                <td class="p-3">${t.date}</td>
+                <td class="p-3">
+                    <span class="status-badge ${t.status === 'Активен' ? 'bg-green-100 text-green-700' : t.status === 'Черновик' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'}">
+                        ${t.status}
+                    </span>
+                </td>
+                <td class="p-3 text-xs">${t.auto}</td>
+                <td class="p-3 text-gray-400">🔍</td>
+            </tr>
+        `).join('');
+    }
+
+    function selectTemplate(id) {
+        selectedId = id;
+        const t = templates.find(item => item.id === id);
+        document.getElementById('selected-process-name').innerText = t.name;
+        renderTemplates();
+        renderInstances(id);
+        updateButtons();
+    }
+
+    function renderInstances(templateId) {
+        const body = document.getElementById('instance-body');
+        const instances = instancesData[templateId];
+        if (!instances || instances.length === 0) {
+            body.innerHTML = '<tr><td colspan="8" class="p-10 text-center text-gray-400">Нет экземпляров для данного шаблона</td></tr>';
+            return;
+        }
+        body.innerHTML = instances.map(i => `
+            <tr class="border-b hover:bg-gray-50">
+                <td class="p-3 font-mono text-xs">${i.id}</td>
+                <td class="p-3">${i.start}</td>
+                <td class="p-3">${i.user}</td>
+                <td class="p-3">
+                    <span class="status-badge ${i.status === 'Активен' ? 'bg-blue-100 text-blue-700' : i.status === 'Просрочен' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">
+                        ${i.status}
+                    </span>
+                </td>
+                <td class="p-3">
+                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-purple-600 h-1.5 rounded-full" style="width: ${i.progress}%"></div>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1">${i.progress}%</div>
+                </td>
+                <td class="p-3 text-xs text-red-600">${i.deadline}</td>
+                <td class="p-3 text-center text-red-600 font-bold">${i.overdue > 0 ? i.overdue : ''}</td>
+                <td class="p-3 text-gray-400">${i.end}</td>
+            </tr>
+        `).join('');
+    }
+
+    function copyTemplate() {
+        if (!selectedId) return;
+        const original = templates.find(item => item.id === selectedId);
+        const baseName = original.name.replace(/_\d+$/, '');
+        let suffix = 2;
+        while (templates.some(t => t.name === baseName + '_' + suffix)) suffix++;
+        const newName = baseName + '_' + suffix;
+        const newId = nextId++;
+        const today = new Date().toLocaleDateString('ru-RU').split('.').map(p => p.padStart(2, '0')).join('.');
+        const copy = { ...original, id: newId, name: newName, status: 'Черновик', auto: 'Выключен', count: 0, date: today };
+        instancesData[newId] = [];
+        templates.push(copy);
+        renderTemplates();
+        selectTemplate(newId);
+    }
+
+    function deleteTemplate() {
+        if (!selectedId) return;
+        const t = templates.find(item => item.id === selectedId);
+        if (!t || t.status !== 'Черновик') return;
+        document.getElementById('modal-text').innerText = `Шаблон «${t.name}» будет удален. Подтвердите удаление.`;
+        document.getElementById('delete-modal').classList.add('open');
+    }
+
+    function closeModal() {
+        document.getElementById('delete-modal').classList.remove('open');
+    }
+
+    function confirmDelete() {
+        templates = templates.filter(t => t.id !== selectedId);
+        delete instancesData[selectedId];
+        selectedId = null;
+        closeModal();
+        document.getElementById('selected-process-name').innerText = 'Выберите шаблон';
+        document.getElementById('instance-body').innerHTML =
+            '<tr><td colspan="8" class="p-10 text-center text-gray-400">Выберите шаблон процесса в таблице выше для просмотра экземпляров</td></tr>';
+        renderTemplates();
+        updateButtons();
+    }
+
+    document.getElementById('delete-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    renderTemplates();
+    updateButtons();
+</script>
+
+<!-- ==================== CONSTRUCTOR SCREEN ==================== -->
+<style>
+    #constructor-screen { position:fixed; inset:0; background:#f1f5f9; z-index:500; display:none; flex-direction:column; }
+    #constructor-screen.visible { display:flex; }
+    .ctor-header { height:56px; background:#fff; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; padding:0 1.5rem; gap:0.75rem; flex-shrink:0; }
+    .ctor-body { flex:1; display:flex; overflow:hidden; }
+    .btn-back { display:flex; align-items:center; gap:0.4rem; background:none; border:1px solid #e5e7eb; border-radius:0.375rem; padding:0.25rem 0.75rem; cursor:pointer; font-size:0.875rem; color:#374151; }
+    .btn-back:hover { background:#f3f4f6; }
+    .ctor-title-input { border:none; font-size:1rem; font-weight:600; color:#1f2937; padding:0.25rem 0.5rem; border-radius:0.375rem; flex:1; max-width:380px; }
+    .ctor-title-input:focus { outline:none; background:#f9fafb; box-shadow:0 0 0 2px #ede9fe; }
+    .ctor-status-badge { font-size:0.7rem; padding:0.2rem 0.6rem; border-radius:9999px; background:#fed7aa; color:#b45309; font-weight:600; flex-shrink:0; }
+
+    /* LEFT HIERARCHY */
+    .hierarchy-panel { width:220px; background:#fff; border-right:1px solid #e5e7eb; display:flex; flex-direction:column; overflow:hidden; flex-shrink:0; }
+    .panel-title { padding:0.6rem 1rem; font-size:0.7rem; font-weight:700; text-transform:uppercase; color:#6b7280; border-bottom:1px solid #e5e7eb; flex-shrink:0; }
+    #hierarchy-list { flex:1; overflow-y:auto; padding:0.5rem; }
+    .hier-process-row { padding:0.4rem 0.5rem; font-size:0.8rem; font-weight:600; color:#374151; display:flex; align-items:center; gap:0.4rem; }
+    .hier-node-row { padding:0.35rem 0.5rem 0.35rem 1.5rem; font-size:0.78rem; cursor:pointer; display:flex; align-items:center; gap:0.4rem; color:#4b5563; border-radius:0.375rem; }
+    .hier-node-row:hover { background:#f3f4f6; }
+    .hier-node-row.selected { background:#ede9fe; color:#6d28d9; font-weight:600; }
+
+    /* CENTER CANVAS PANEL */
+    .canvas-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+    .palette { background:#fff; border-bottom:1px solid #e5e7eb; padding:0.5rem 1rem; display:flex; align-items:center; gap:1.25rem; flex-wrap:wrap; flex-shrink:0; }
+    .palette-group { display:flex; align-items:center; gap:0.5rem; }
+    .palette-group-label { font-size:0.62rem; text-transform:uppercase; color:#9ca3af; font-weight:700; white-space:nowrap; }
+    .palette-item { display:flex; flex-direction:column; align-items:center; gap:0.25rem; cursor:grab; padding:0.35rem 0.5rem; border-radius:0.375rem; border:1px solid #e5e7eb; background:#fafafa; user-select:none; transition:border-color 0.15s, box-shadow 0.15s; }
+    .palette-item:hover { border-color:#6d28d9; box-shadow:0 0 0 2px #ede9fe; }
+    .palette-item:active { cursor:grabbing; }
+    .palette-item-label { font-size:0.6rem; color:#6b7280; text-align:center; line-height:1.2; white-space:nowrap; }
+    .canvas-hint { background:#fef9c3; border-bottom:1px solid #fde68a; padding:0.3rem 1rem; font-size:0.72rem; color:#92400e; flex-shrink:0; }
+
+    .canvas-container { flex:1; position:relative; overflow:auto; background-color:#f8fafc;
+        background-image:linear-gradient(to right,#e2e8f0 1px,transparent 1px), linear-gradient(to bottom,#e2e8f0 1px,transparent 1px);
+        background-size:24px 24px; }
+    .canvas-inner { position:relative; width:2400px; height:1400px; }
+    #conn-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+    #conn-svg.connecting { pointer-events:all; cursor:crosshair; }
+
+    /* NODES */
+    .canvas-node { position:absolute; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; z-index:10; }
+    .canvas-node.selected > .node-shape-circle { outline:2.5px solid #6d28d9; outline-offset:3px; }
+    .canvas-node.selected > .node-shape-rect   { outline:2.5px solid #6d28d9; outline-offset:2px; }
+    .canvas-node.selected > .node-diamond-wrap > .node-shape-diamond { box-shadow:0 0 0 3px #6d28d9; }
+    .node-shape-circle { border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .node-shape-rect   { border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:4px; }
+    .node-diamond-wrap { position:relative; display:flex; align-items:center; justify-content:center; }
+    .node-shape-diamond { transform:rotate(45deg); }
+    .node-diamond-label { position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+    .node-label { font-size:0.62rem; font-weight:600; text-align:center; line-height:1.2; pointer-events:none; max-width:100px; }
+    .node-connect-dot { position:absolute; right:-7px; top:50%; transform:translateY(-50%); width:13px; height:13px; background:#6d28d9; border-radius:50%; border:2px solid #fff; cursor:crosshair; z-index:20; opacity:0; transition:opacity 0.15s; flex-shrink:0; }
+    .canvas-node:hover .node-connect-dot { opacity:1; }
+
+    /* RIGHT PROPS PANEL */
+    .props-panel { width:272px; background:#fff; border-left:1px solid #e5e7eb; display:flex; flex-direction:column; overflow:hidden; flex-shrink:0; }
+    #props-content { flex:1; overflow-y:auto; padding:1rem; }
+    .prop-group { margin-bottom:0.875rem; }
+    .prop-label { display:block; font-size:0.72rem; font-weight:600; color:#374151; margin-bottom:0.25rem; }
+    .prop-input, .prop-select, .prop-textarea { width:100%; border:1px solid #e5e7eb; border-radius:0.375rem; padding:0.35rem 0.5rem; font-size:0.8rem; color:#1f2937; background:#fff; box-sizing:border-box; }
+    .prop-textarea { resize:vertical; min-height:56px; }
+    .prop-input:focus, .prop-select:focus, .prop-textarea:focus { outline:none; border-color:#6d28d9; box-shadow:0 0 0 2px #ede9fe; }
+    .props-footer { padding:0.875rem; border-top:1px solid #e5e7eb; display:flex; flex-direction:column; gap:0.5rem; flex-shrink:0; }
+    .btn-save-draft { width:100%; padding:0.45rem; background:#fff; border:1px solid #6d28d9; color:#6d28d9; border-radius:0.375rem; cursor:pointer; font-size:0.8rem; font-weight:500; }
+    .btn-save-draft:hover { background:#faf5ff; }
+    .btn-publish-ctor { width:100%; padding:0.45rem; background:#6d28d9; border:none; color:#fff; border-radius:0.375rem; cursor:pointer; font-size:0.8rem; font-weight:500; }
+    .btn-publish-ctor:hover:not(:disabled) { background:#5b21b6; }
+    .btn-publish-ctor:disabled { opacity:0.4; cursor:not-allowed; }
+    .publish-hint { font-size:0.68rem; color:#9ca3af; text-align:center; }
+    .props-node-header { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.875rem; padding-bottom:0.75rem; border-bottom:1px solid #f3f4f6; }
+    .btn-delete-node { width:100%; border:1px solid #fca5a5; color:#dc2626; background:#fff; padding:0.3rem; border-radius:0.375rem; cursor:pointer; font-size:0.75rem; margin-top:0.5rem; }
+    .btn-delete-node:hover { background:#fef2f2; }
+    .conn-info { font-size:0.7rem; color:#6b7280; margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid #f3f4f6; }
+</style>
+
+<div id="constructor-screen">
+    <header class="ctor-header">
+        <button class="btn-back" onclick="closeConstructor()">← Назад</button>
+        <input id="ctor-title" class="ctor-title-input" value="Новый бизнес процесс" oninput="onCtorTitleChange()" />
+        <span class="ctor-status-badge" id="ctor-status-badge">Черновик</span>
+        <div style="flex:1"></div>
+        <span style="font-size:0.72rem;color:#9ca3af;">Del — удалить узел &nbsp;|&nbsp; Esc — отмена связи</span>
+    </header>
+    <div class="ctor-body">
+        <!-- LEFT -->
+        <aside class="hierarchy-panel">
+            <div class="panel-title">Иерархия</div>
+            <div id="hierarchy-list"></div>
+        </aside>
+        <!-- CENTER -->
+        <div class="canvas-panel">
+            <div class="palette">
+                <div class="palette-group">
+                    <span class="palette-group-label">События</span>
+                    <div class="palette-item" draggable="true" ondragstart="paletteDragStart(event,'start')">
+                        <div style="width:30px;height:30px;border-radius:50%;background:#dcfce7;border:2px solid #16a34a;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:11px;">▶</div>
+                        <span class="palette-item-label">Старт</span>
+                    </div>
+                    <div class="palette-item" draggable="true" ondragstart="paletteDragStart(event,'end')">
+                        <div style="width:30px;height:30px;border-radius:50%;background:#fee2e2;border:3px double #dc2626;display:flex;align-items:center;justify-content:center;color:#dc2626;font-size:10px;">■</div>
+                        <span class="palette-item-label">Конец</span>
+                    </div>
+                </div>
+                <div style="width:1px;height:36px;background:#e5e7eb;"></div>
+                <div class="palette-group">
+                    <span class="palette-group-label">Действия</span>
+                    <div class="palette-item" draggable="true" ondragstart="paletteDragStart(event,'task-script')">
+                        <div style="width:52px;height:28px;background:#eef2ff;border:1.5px solid #6366f1;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#6366f1;font-size:9px;font-weight:700;">&lt;/&gt;</div>
+                        <span class="palette-item-label">Алгоритм</span>
+                    </div>
+                    <div class="palette-item" draggable="true" ondragstart="paletteDragStart(event,'task-approval')">
+                        <div style="width:52px;height:28px;background:#e0f2fe;border:1.5px solid #0369a1;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#0369a1;font-size:9px;">👤 Ок</div>
+                        <span class="palette-item-label">Согласование</span>
+                    </div>
+                </div>
+                <div style="width:1px;height:36px;background:#e5e7eb;"></div>
+                <div class="palette-group">
+                    <span class="palette-group-label">Логика</span>
+                    <div class="palette-item" draggable="true" ondragstart="paletteDragStart(event,'gw-xor')">
+                        <div style="width:28px;height:28px;background:#fef3c7;border:1.5px solid #d97706;transform:rotate(45deg);display:flex;align-items:center;justify-content:center;color:#b45309;font-size:9px;font-weight:800;"><span style="transform:rotate(-45deg)">X</span></div>
+                        <span class="palette-item-label">XOR</span>
+                    </div>
+                    <div class="palette-item" draggable="true" ondragstart="paletteDragStart(event,'gw-and')">
+                        <div style="width:28px;height:28px;background:#fef3c7;border:1.5px solid #d97706;transform:rotate(45deg);display:flex;align-items:center;justify-content:center;color:#b45309;font-size:12px;font-weight:800;"><span style="transform:rotate(-45deg)">+</span></div>
+                        <span class="palette-item-label">AND</span>
+                    </div>
+                </div>
+            </div>
+            <div class="canvas-hint">💡 Перетащите элемент из палитры на холст. Наведите на узел и потяните за фиолетовую точку, чтобы соединить.</div>
+            <div class="canvas-container" id="canvas-container" ondragover="event.preventDefault()" ondrop="canvasDrop(event)">
+                <div class="canvas-inner" id="canvas-inner">
+                    <svg id="conn-svg">
+                        <defs>
+                            <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker>
+                            <marker id="arr-tmp" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6d28d9"/></marker>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <!-- RIGHT -->
+        <aside class="props-panel">
+            <div class="panel-title">Свойства</div>
+            <div id="props-content"></div>
+            <div class="props-footer">
+                <button class="btn-save-draft" id="btn-save-draft" onclick="ctorSaveDraft()">💾 Сохранить черновик</button>
+                <button class="btn-publish-ctor" id="btn-publish-ctor" onclick="ctorPublish()" disabled>🚀 Опубликовать</button>
+                <div class="publish-hint" id="publish-hint">Добавьте узел «Конец» и свяжите все элементы</div>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+// ==================== CONSTRUCTOR LOGIC ====================
+const NODE_CFG = {
+    'start':        { label:'Старт',         color:'#16a34a', bg:'#dcfce7', border:'#16a34a', shape:'circle',  w:72,  h:72,  icon:'▶' },
+    'end':          { label:'Конец',          color:'#dc2626', bg:'#fee2e2', border:'#dc2626', shape:'circle',  w:72,  h:72,  icon:'■', dbl:true },
+    'task-script':  { label:'Алгоритм',       color:'#6366f1', bg:'#eef2ff', border:'#6366f1', shape:'rect',    w:130, h:56,  icon:'</>' },
+    'task-approval':{ label:'Согласование',   color:'#0369a1', bg:'#e0f2fe', border:'#0369a1', shape:'rect',    w:130, h:56,  icon:'👤' },
+    'gw-xor':       { label:'XOR',            color:'#b45309', bg:'#fef3c7', border:'#d97706', shape:'diamond', w:72,  h:72,  icon:'X' },
+    'gw-and':       { label:'AND',            color:'#b45309', bg:'#fef3c7', border:'#d97706', shape:'diamond', w:72,  h:72,  icon:'+' },
+};
+
+let ctorNodes = [], ctorConns = [], ctorNodeCnt = 0, ctorConnCnt = 0;
+let ctorSelId = null, connectingFrom = null, tempLine = null, dragging = null;
+
+function openConstructor() {
+    ctorNodes = []; ctorConns = []; ctorNodeCnt = 0; ctorConnCnt = 0;
+    ctorSelId = null; connectingFrom = null; tempLine = null; dragging = null;
+    document.getElementById('constructor-screen').classList.add('visible');
+    document.getElementById('ctor-title').value = 'Новый бизнес процесс';
+    document.getElementById('ctor-status-badge').textContent = 'Черновик';
+    document.getElementById('ctor-status-badge').style.background = '#fed7aa';
+    document.getElementById('ctor-status-badge').style.color = '#b45309';
+    const startNode = ctorAddNode('start', 120, 200);
+    ctorSelId = startNode.id;
+    ctorRenderAll();
+}
+
+function closeConstructor() {
+    document.getElementById('constructor-screen').classList.remove('visible');
+}
+
+function ctorAddNode(type, x, y) {
+    const cfg = NODE_CFG[type];
+    const node = { id: ++ctorNodeCnt, type, label: cfg.label, x, y, props: { description:'', assignee:'', deadline:'', condition:'' } };
+    ctorNodes.push(node);
+    return node;
+}
+
+function ctorGetPorts(node) {
+    const cfg = NODE_CFG[node.type];
+    if (cfg.shape === 'diamond') {
+        return { out: { x: node.x + cfg.w, y: node.y + cfg.h / 2 }, in: { x: node.x, y: node.y + cfg.h / 2 } };
+    }
+    return { out: { x: node.x + cfg.w, y: node.y + cfg.h / 2 }, in: { x: node.x, y: node.y + cfg.h / 2 } };
+}
+
+function ctorTopoOrder() {
+    const start = ctorNodes.find(n => n.type === 'start');
+    if (!start) return [...ctorNodes];
+    const visited = new Set(), order = [], queue = [start.id];
+    while (queue.length) {
+        const id = queue.shift();
+        if (visited.has(id)) continue;
+        visited.add(id);
+        const n = ctorNodes.find(n => n.id === id);
+        if (n) order.push(n);
+        ctorConns.filter(c => c.from === id).forEach(c => queue.push(c.to));
+    }
+    ctorNodes.forEach(n => { if (!visited.has(n.id)) order.push(n); });
+    return order;
+}
+
+function ctorIsValid() {
+    if (!ctorNodes.some(n => n.type === 'end')) return false;
+    if (!ctorNodes.some(n => n.type === 'start')) return false;
+    for (const n of ctorNodes) {
+        if (n.type !== 'end'   && !ctorConns.some(c => c.from === n.id)) return false;
+        if (n.type !== 'start' && !ctorConns.some(c => c.to   === n.id)) return false;
+    }
+    return true;
+}
+
+function ctorRenderAll() {
+    ctorRenderNodes();
+    ctorRenderConns();
+    ctorRenderHierarchy();
+    ctorRenderProps();
+    ctorUpdatePublish();
+}
+
+function ctorRenderNodes() {
+    const inner = document.getElementById('canvas-inner');
+    inner.querySelectorAll('.canvas-node').forEach(el => el.remove());
+    ctorNodes.forEach(node => {
+        const cfg = NODE_CFG[node.type];
+        const el = document.createElement('div');
+        el.className = 'canvas-node' + (ctorSelId === node.id ? ' selected' : '');
+        el.dataset.nid = node.id;
+        el.style.cssText = `left:${node.x}px;top:${node.y}px;width:${cfg.w}px;height:${cfg.h}px;`;
+
+        let inner_html = '';
+        if (cfg.shape === 'circle') {
+            const dbl = cfg.dbl ? `box-shadow:0 0 0 4px ${cfg.bg},0 0 0 7px ${cfg.border};` : '';
+            inner_html = `<div class="node-shape-circle" style="width:${cfg.w-8}px;height:${cfg.h-8}px;background:${cfg.bg};border:2.5px solid ${cfg.border};${dbl}">
+                <span style="font-size:15px;color:${cfg.color};">${cfg.icon}</span>
+                <span class="node-label" style="color:${cfg.color};font-size:0.58rem;margin-top:1px;">${node.label}</span>
+            </div>`;
+        } else if (cfg.shape === 'rect') {
+            inner_html = `<div class="node-shape-rect" style="width:${cfg.w}px;height:${cfg.h}px;background:${cfg.bg};border:1.5px solid ${cfg.border};">
+                <span style="font-size:11px;color:${cfg.color};font-weight:700;">${cfg.icon}</span>
+                <span class="node-label" style="color:${cfg.color};">${node.label}</span>
+            </div>`;
+        } else {
+            inner_html = `<div class="node-diamond-wrap" style="width:${cfg.w}px;height:${cfg.h}px;">
+                <div class="node-shape-diamond" style="width:${cfg.w-10}px;height:${cfg.h-10}px;background:${cfg.bg};border:1.5px solid ${cfg.border};border-radius:3px;"></div>
+                <div class="node-diamond-label">
+                    <span style="font-size:13px;color:${cfg.color};font-weight:800;">${cfg.icon}</span>
+                    <span style="font-size:0.55rem;color:${cfg.color};font-weight:600;">${node.label}</span>
+                </div>
+            </div>`;
+        }
+        el.innerHTML = inner_html + `<div class="node-connect-dot" data-nid="${node.id}"></div>`;
+        el.addEventListener('mousedown', e => ctorNodeMD(e, node.id));
+        el.querySelector('.node-connect-dot').addEventListener('mousedown', e => { e.stopPropagation(); ctorStartConnect(e, node.id); });
+        inner.appendChild(el);
+    });
+}
+
+function ctorRenderConns() {
+    const svg = document.getElementById('conn-svg');
+    svg.querySelectorAll('path,text.cl').forEach(el => el.remove());
+    ctorConns.forEach(conn => {
+        const fn = ctorNodes.find(n => n.id === conn.from);
+        const tn = ctorNodes.find(n => n.id === conn.to);
+        if (!fn || !tn) return;
+        const fp = ctorGetPorts(fn).out, tp = ctorGetPorts(tn).in;
+        const dx = Math.max(40, Math.abs(tp.x - fp.x) * 0.5);
+        const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+        p.setAttribute('d', `M${fp.x},${fp.y} C${fp.x+dx},${fp.y} ${tp.x-dx},${tp.y} ${tp.x},${tp.y}`);
+        p.setAttribute('stroke','#6b7280'); p.setAttribute('stroke-width','1.5'); p.setAttribute('fill','none');
+        p.setAttribute('marker-end','url(#arr)');
+        svg.appendChild(p);
+        if (conn.label) {
+            const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+            t.setAttribute('x',(fp.x+tp.x)/2); t.setAttribute('y',(fp.y+tp.y)/2-8);
+            t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','10'); t.setAttribute('fill','#6b7280');
+            t.classList.add('cl'); t.textContent = conn.label;
+            svg.appendChild(t);
+        }
+    });
+    if (tempLine) {
+        const { x1,y1,x2,y2 } = tempLine;
+        const dx = Math.max(40, Math.abs(x2-x1)*0.5);
+        const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+        p.setAttribute('d',`M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`);
+        p.setAttribute('stroke','#6d28d9'); p.setAttribute('stroke-width','1.5');
+        p.setAttribute('stroke-dasharray','5,4'); p.setAttribute('fill','none');
+        p.setAttribute('marker-end','url(#arr-tmp)');
+        svg.appendChild(p);
+    }
+}
+
+function ctorRenderHierarchy() {
+    const title = document.getElementById('ctor-title').value || 'Новый бизнес процесс';
+    const ordered = ctorTopoOrder();
+    const iconOf = n => ({ circle: n.type==='start' ? '🟢' : '🔴', rect: '🔷', diamond: '🔶' })[NODE_CFG[n.type].shape];
+    document.getElementById('hierarchy-list').innerHTML =
+        `<div class="hier-process-row">📄 ${title}</div>` +
+        ordered.map(n => `<div class="hier-node-row${ctorSelId===n.id?' selected':''}" onclick="ctorSelectNode(${n.id})">${iconOf(n)} ${n.label}</div>`).join('');
+}
+
+function ctorRenderProps() {
+    const content = document.getElementById('props-content');
+    if (!ctorSelId) {
+        content.innerHTML = `
+            <div class="prop-group"><label class="prop-label">Название процесса</label>
+                <input class="prop-input" value="${document.getElementById('ctor-title').value}" oninput="document.getElementById('ctor-title').value=this.value;ctorRenderHierarchy();" /></div>
+            <div class="prop-group"><label class="prop-label">Тип</label>
+                <select class="prop-select"><option>Бизнес процесс (БП)</option><option>Алгоритм</option></select></div>
+            <div class="prop-group"><label class="prop-label">Владелец</label>
+                <input class="prop-input" placeholder="Ответственный" /></div>
+            <div class="prop-group"><label class="prop-label">Описание</label>
+                <textarea class="prop-textarea" placeholder="Описание процесса..."></textarea></div>
+            <div class="prop-group"><label class="prop-label">Автозапуск</label>
+                <select class="prop-select"><option>Выключен</option><option>Включен</option></select></div>`;
+        return;
+    }
+    const node = ctorNodes.find(n => n.id === ctorSelId);
+    if (!node) return;
+    const cfg = NODE_CFG[node.type];
+    const iconOf = { circle: node.type==='start'?'🟢':'🔴', rect:'🔷', diamond:'🔶' }[cfg.shape];
+    const inCnt  = ctorConns.filter(c => c.to   === node.id).length;
+    const outCnt = ctorConns.filter(c => c.from === node.id).length;
+
+    let extra = '';
+    if (cfg.shape === 'rect') {
+        extra += `<div class="prop-group"><label class="prop-label">Описание</label>
+            <textarea class="prop-textarea" placeholder="Описание задачи..." oninput="ctorUpdProp(${node.id},'description',this.value)">${node.props.description}</textarea></div>`;
+        if (node.type === 'task-approval') extra += `
+            <div class="prop-group"><label class="prop-label">Исполнитель</label>
+                <input class="prop-input" placeholder="Кому назначена задача" value="${node.props.assignee}" oninput="ctorUpdProp(${node.id},'assignee',this.value)" /></div>
+            <div class="prop-group"><label class="prop-label">Срок (дней)</label>
+                <input class="prop-input" type="number" min="1" value="${node.props.deadline}" oninput="ctorUpdProp(${node.id},'deadline',this.value)" /></div>`;
+        if (node.type === 'task-script') extra += `
+            <div class="prop-group"><label class="prop-label">Условие / Скрипт</label>
+                <textarea class="prop-textarea" placeholder="Код или условие..." oninput="ctorUpdProp(${node.id},'condition',this.value)">${node.props.condition}</textarea></div>`;
+    } else if (cfg.shape === 'diamond') {
+        extra += `<div class="prop-group"><label class="prop-label">${node.type==='gw-xor'?'Условие ветвления':'Описание разделения'}</label>
+            <input class="prop-input" placeholder="${node.type==='gw-xor'?'Если условие выполнено...':'Параллельные ветки'}" value="${node.props.condition}" oninput="ctorUpdProp(${node.id},'condition',this.value)" /></div>`;
+    }
+
+    content.innerHTML = `
+        <div class="props-node-header">
+            <span style="font-size:1.3rem;">${iconOf}</span>
+            <div><div style="font-size:0.8rem;font-weight:700;color:#374151;">${cfg.label}</div>
+                 <div style="font-size:0.68rem;color:#9ca3af;">ID: N-${node.id}</div></div>
+        </div>
+        <div class="prop-group"><label class="prop-label">Название узла</label>
+            <input class="prop-input" value="${node.label}" oninput="ctorUpdLabel(${node.id},this.value)" /></div>
+        ${extra}
+        <div class="conn-info">
+            <div>Входящих связей: <b>${inCnt}</b></div>
+            <div>Исходящих связей: <b>${outCnt}</b></div>
+            ${node.type !== 'start' ? `<button class="btn-delete-node" onclick="ctorDeleteNode()">🗑 Удалить узел</button>` : ''}
+        </div>`;
+}
+
+function ctorUpdatePublish() {
+    const valid = ctorIsValid();
+    document.getElementById('btn-publish-ctor').disabled = !valid;
+    const hint = document.getElementById('publish-hint');
+    if (valid) { hint.textContent = '✅ Процесс готов к публикации'; hint.style.color = '#16a34a'; }
+    else if (!ctorNodes.some(n => n.type === 'end')) { hint.textContent = 'Добавьте узел «Конец»'; hint.style.color = '#9ca3af'; }
+    else { hint.textContent = 'Все узлы должны быть связаны'; hint.style.color = '#9ca3af'; }
+}
+
+function ctorSelectNode(id) {
+    ctorSelId = id;
+    const node = ctorNodes.find(n => n.id === id);
+    if (node) {
+        const cont = document.getElementById('canvas-container');
+        const cfg = NODE_CFG[node.type];
+        cont.scrollTo({ left: node.x - 100, top: node.y - 80, behavior: 'smooth' });
+    }
+    ctorRenderAll();
+}
+
+function ctorUpdLabel(id, val) { const n = ctorNodes.find(n=>n.id===id); if(n){n.label=val;ctorRenderNodes();ctorRenderHierarchy();} }
+function ctorUpdProp(id, key, val) { const n = ctorNodes.find(n=>n.id===id); if(n) n.props[key]=val; }
+
+function ctorDeleteNode() {
+    if (!ctorSelId) return;
+    const n = ctorNodes.find(n=>n.id===ctorSelId);
+    if (!n || n.type==='start') return;
+    ctorNodes = ctorNodes.filter(n=>n.id!==ctorSelId);
+    ctorConns = ctorConns.filter(c=>c.from!==ctorSelId&&c.to!==ctorSelId);
+    ctorSelId = null;
+    ctorRenderAll();
+}
+
+function ctorNodeMD(e, nodeId) {
+    if (e.button !== 0 || connectingFrom !== null) return;
+    e.stopPropagation();
+    ctorSelId = nodeId;
+    const node = ctorNodes.find(n=>n.id===nodeId);
+    const inner = document.getElementById('canvas-inner');
+    const rect = inner.getBoundingClientRect();
+    dragging = { id: nodeId, mx: e.clientX, my: e.clientY, nx: node.x, ny: node.y };
+    ctorRenderProps(); ctorRenderHierarchy();
+    document.querySelectorAll('.canvas-node').forEach(el => el.classList.toggle('selected', parseInt(el.dataset.nid)===nodeId));
+}
+
+function ctorStartConnect(e, nodeId) {
+    e.preventDefault();
+    connectingFrom = nodeId;
+    const fromNode = ctorNodes.find(n=>n.id===nodeId);
+    const p = ctorGetPorts(fromNode).out;
+    tempLine = { x1:p.x, y1:p.y, x2:p.x, y2:p.y };
+    const svg = document.getElementById('conn-svg');
+    svg.classList.add('connecting');
+    ctorRenderConns();
+}
+
+function paletteDragStart(e, type) { e.dataTransfer.setData('nodeType', type); }
+
+function canvasDrop(e) {
+    e.preventDefault();
+    const type = e.dataTransfer.getData('nodeType');
+    if (!type || !NODE_CFG[type]) return;
+    if (type === 'start' && ctorNodes.some(n=>n.type==='start')) return;
+    const inner = document.getElementById('canvas-inner');
+    const rect = inner.getBoundingClientRect();
+    const cfg = NODE_CFG[type];
+    const x = Math.max(0, e.clientX - rect.left - cfg.w/2);
+    const y = Math.max(0, e.clientY - rect.top  - cfg.h/2);
+    const node = ctorAddNode(type, x, y);
+    ctorSelId = node.id;
+    ctorRenderAll();
+}
+
+function ctorSaveDraft() {
+    const title = document.getElementById('ctor-title').value || 'Новый бизнес процесс';
+    const newId = nextId++;
+    const today = new Date().toLocaleDateString('ru-RU').split('.').map(p=>p.padStart(2,'0')).join('.');
+    templates.push({ id:newId, name:title, owner:'KD', count:0, date:today, status:'Черновик', auto:'Выключен', type:'БП' });
+    instancesData[newId] = [];
+    const btn = document.getElementById('btn-save-draft');
+    const orig = btn.textContent; btn.textContent = '✅ Сохранено!';
+    setTimeout(() => { btn.textContent = orig; }, 1800);
+}
+
+function ctorPublish() {
+    if (!ctorIsValid()) return;
+    const title = document.getElementById('ctor-title').value || 'Новый бизнес процесс';
+    const newId = nextId++;
+    const today = new Date().toLocaleDateString('ru-RU').split('.').map(p=>p.padStart(2,'0')).join('.');
+    templates.push({ id:newId, name:title, owner:'KD', count:0, date:today, status:'Активен', auto:'Выключен', type:'БП' });
+    instancesData[newId] = [];
+    closeConstructor();
+    renderTemplates(); updateButtons();
+}
+
+function onCtorTitleChange() { ctorRenderHierarchy(); }
+
+// Global mouse events for drag/connect
+document.addEventListener('mousemove', e => {
+    if (!document.getElementById('constructor-screen').classList.contains('visible')) return;
+    const inner = document.getElementById('canvas-inner');
+    if (!inner) return;
+    const rect = inner.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+
+    if (dragging) {
+        const node = ctorNodes.find(n=>n.id===dragging.id);
+        if (!node) return;
+        node.x = Math.max(0, dragging.nx + (e.clientX - dragging.mx));
+        node.y = Math.max(0, dragging.ny + (e.clientY - dragging.my));
+        const el = inner.querySelector(`[data-nid="${dragging.id}"]`);
+        if (el) { el.style.left = node.x+'px'; el.style.top = node.y+'px'; }
+        ctorRenderConns();
+    }
+    if (connectingFrom !== null && tempLine) {
+        tempLine.x2 = mx; tempLine.y2 = my;
+        ctorRenderConns();
+    }
+});
+
+document.addEventListener('mouseup', e => {
+    if (!document.getElementById('constructor-screen').classList.contains('visible')) return;
+    if (dragging) { dragging = null; ctorRenderAll(); return; }
+    if (connectingFrom !== null) {
+        const inner = document.getElementById('canvas-inner');
+        const rect = inner.getBoundingClientRect();
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        const target = ctorNodes.find(n => {
+            const cfg = NODE_CFG[n.type];
+            return mx>=n.x && mx<=n.x+cfg.w && my>=n.y && my<=n.y+cfg.h;
+        });
+        if (target && target.id !== connectingFrom && !ctorConns.some(c=>c.from===connectingFrom&&c.to===target.id)) {
+            ctorConns.push({ id: ++ctorConnCnt, from: connectingFrom, to: target.id, label:'' });
+        }
+        connectingFrom = null; tempLine = null;
+        document.getElementById('conn-svg').classList.remove('connecting');
+        ctorRenderAll();
+    }
+});
+
+document.addEventListener('keydown', e => {
+    if (!document.getElementById('constructor-screen').classList.contains('visible')) return;
+    if (e.key === 'Delete' && ctorSelId) ctorDeleteNode();
+    if (e.key === 'Escape' && connectingFrom !== null) {
+        connectingFrom = null; tempLine = null;
+        document.getElementById('conn-svg').classList.remove('connecting');
+        ctorRenderConns();
+    }
+});
+</script>
+
+</body>
+</html>
