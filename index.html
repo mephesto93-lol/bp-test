@@ -106,6 +106,70 @@
         .btn-cancel:hover { background: #f3f4f6; }
         .btn-confirm-delete { border: none; background: #dc2626; color: #fff; padding: 0.4rem 1rem; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem; }
         .btn-confirm-delete:hover { background: #b91c1c; }
+
+        /* ===== TASKS SCREEN ===== */
+        #tasks-view { flex:1; display:flex; flex-direction:column; overflow:hidden; background:#f9fafb; }
+        .tasks-header { height:56px; background:#fff; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; padding:0 1.5rem; gap:0.75rem; flex-shrink:0; }
+        .tasks-header h1 { font-size:1.125rem; font-weight:600; color:#1f2937; }
+        .tasks-cnt { font-weight:400; color:#6d28d9; }
+        .kpi-bar { padding:0.625rem 1.5rem; background:#fff; border-bottom:1px solid #e5e7eb; display:flex; gap:0.625rem; flex-shrink:0; flex-wrap:wrap; }
+        .kpi-chip { display:inline-flex; align-items:center; gap:0.3rem; padding:0.25rem 0.7rem; border-radius:9999px; font-size:0.78rem; font-weight:500; }
+        .kpi-overdue { background:#fee2e2; color:#dc2626; }
+        .kpi-inwork  { background:#dbeafe; color:#1d4ed8; }
+        .kpi-done    { background:#dcfce7; color:#15803d; }
+        .tasks-tabs  { display:flex; padding:0 1.5rem; background:#fff; border-bottom:1px solid #e5e7eb; flex-shrink:0; }
+        .tasks-tab   { padding:0.6rem 1.1rem; font-size:0.875rem; font-weight:500; color:#6b7280; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
+        .tasks-tab.active { color:#6d28d9; border-bottom-color:#6d28d9; }
+        .tasks-tab:hover:not(.active) { color:#374151; }
+        .tasks-body  { flex:1; overflow-y:auto; padding:1.25rem 1.5rem; }
+        .task-card   { background:#fff; border:1px solid #e5e7eb; border-left:3px solid #e5e7eb; border-radius:0.5rem; padding:0.75rem 1rem; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.875rem; cursor:pointer; transition:border-color 0.15s,box-shadow 0.15s; }
+        .task-card:hover { border-color:#6d28d9; box-shadow:0 2px 8px rgba(109,40,217,0.08); }
+        .task-card.overdue { border-left-color:#dc2626; background:#fffafa; }
+        .task-card.active-task { border-left-color:#6b7280; }
+        .task-dot    { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+        .task-dot.gray { background:#9ca3af; }
+        .task-dot.red  { background:#dc2626; }
+        .task-main   { flex:1; min-width:0; }
+        .task-name   { font-size:0.875rem; font-weight:600; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .task-proc   { font-size:0.72rem; color:#9ca3af; margin-top:0.1rem; }
+        .task-dl     { font-size:0.72rem; color:#374151; text-align:right; white-space:nowrap; flex-shrink:0; }
+        .task-dl.red { color:#dc2626; font-weight:600; }
+        .task-dl-lbl { font-size:0.62rem; color:#9ca3af; text-align:right; }
+        .task-arr    { color:#d1d5db; font-size:1.1rem; flex-shrink:0; line-height:1; }
+        .show-all-btn { width:100%; margin-top:0.375rem; padding:0.55rem; border:1px dashed #d1d5db; background:transparent; border-radius:0.375rem; color:#6b7280; cursor:pointer; font-size:0.8rem; }
+        .show-all-btn:hover { background:#f9fafb; color:#374151; }
+        .task-empty  { text-align:center; padding:3.5rem 1rem; }
+        .task-empty-icon { font-size:2.75rem; margin-bottom:0.75rem; }
+        .task-empty-title { font-size:1rem; font-weight:600; color:#374151; margin-bottom:0.3rem; }
+        .task-empty-sub   { font-size:0.875rem; color:#9ca3af; }
+        .hist-table  { width:100%; border-collapse:collapse; }
+        .hist-table th { padding:0.55rem 0.75rem; text-align:left; font-size:0.65rem; font-weight:700; text-transform:uppercase; color:#9ca3af; background:#f9fafb; border-bottom:1px solid #e5e7eb; }
+        .hist-table td { padding:0.6rem 0.75rem; font-size:0.82rem; color:#374151; border-bottom:1px solid #f3f4f6; }
+        .hist-table tr:hover td { background:#f9fafb; }
+        .result-badge { display:inline-block; padding:0.12rem 0.5rem; border-radius:9999px; font-size:0.7rem; font-weight:500; }
+        /* Task Drawer */
+        #task-modal  { display:none; position:fixed; inset:0; z-index:800; }
+        #task-modal.open { display:flex; }
+        .task-backdrop { flex:1; background:rgba(0,0,0,0.3); }
+        .task-drawer { width:460px; max-width:95vw; background:#fff; display:flex; flex-direction:column; box-shadow:-8px 0 32px rgba(0,0,0,0.14); animation:slideIn 0.2s ease; }
+        @keyframes slideIn { from { transform:translateX(100%); } to { transform:translateX(0); } }
+        .td-header  { padding:1.25rem 1.5rem; border-bottom:1px solid #e5e7eb; display:flex; align-items:flex-start; justify-content:space-between; gap:0.75rem; }
+        .td-tag     { font-size:0.65rem; text-transform:uppercase; color:#9ca3af; font-weight:700; margin-bottom:0.2rem; }
+        .td-title   { font-size:1rem; font-weight:700; color:#111827; line-height:1.35; }
+        .td-close   { font-size:1.1rem; color:#9ca3af; cursor:pointer; padding:0.2rem 0.35rem; border-radius:0.25rem; flex-shrink:0; }
+        .td-close:hover { background:#f3f4f6; color:#374151; }
+        .td-meta    { padding:0.625rem 1.5rem; background:#f9fafb; border-bottom:1px solid #e5e7eb; display:flex; flex-wrap:wrap; gap:0.5rem 1.5rem; }
+        .td-meta-item { font-size:0.75rem; color:#6b7280; }
+        .td-meta-item b { color:#374151; font-weight:600; }
+        .td-body    { flex:1; overflow-y:auto; padding:1.25rem 1.5rem; }
+        .td-section-lbl { font-size:0.65rem; font-weight:700; text-transform:uppercase; color:#9ca3af; margin-bottom:0.5rem; letter-spacing:0.04em; }
+        .td-instruction { font-size:0.875rem; color:#374151; line-height:1.65; }
+        .td-footer  { padding:1rem 1.5rem; border-top:1px solid #e5e7eb; }
+        .td-outcomes { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.5rem; }
+        .td-outcome-btn { padding:0.45rem 1.1rem; border-radius:0.375rem; border:1px solid #6d28d9; background:#fff; color:#6d28d9; font-size:0.875rem; font-weight:500; cursor:pointer; }
+        .td-outcome-btn:hover { background:#ede9fe; }
+        .td-outcome-btn.primary { background:#6d28d9; color:#fff; }
+        .td-outcome-btn.primary:hover { background:#5b21b6; }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800">
@@ -114,14 +178,17 @@
     <aside class="w-16 flex flex-col items-center py-4 bg-[#6d28d9] text-white">
         <div class="mb-8 font-bold text-xl">In.</div>
         <nav class="flex flex-col gap-4 w-full">
-            <div title="Главная" class="sidebar-item p-4 cursor-pointer flex justify-center">🏠</div>
-            <div title="Конструктор БП" class="sidebar-item active-menu p-4 cursor-pointer flex justify-center">🔄</div>
-            <div title="Задачи" class="sidebar-item p-4 cursor-pointer flex justify-center">✓</div>
+            <div title="Главная" id="nav-bp" class="sidebar-item active-menu p-4 cursor-pointer flex justify-center" onclick="showView('bp')">🔄</div>
+            <div title="Мои задачи" id="nav-tasks" class="sidebar-item p-4 cursor-pointer flex justify-center" onclick="showView('tasks')" style="position:relative;">
+                ✓
+                <span id="nav-tasks-badge" style="display:none;position:absolute;top:6px;right:6px;background:#dc2626;color:#fff;border-radius:9999px;font-size:9px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center;"></span>
+            </div>
             <div title="Аналитика" class="sidebar-item p-4 cursor-pointer flex justify-center">📊</div>
         </nav>
     </aside>
 
     <main class="flex-1 flex flex-col overflow-hidden">
+        <div id="bp-view" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
         <header class="h-14 bg-white border-b flex items-center justify-between px-6">
             <h1 class="text-lg font-semibold">Конструктор бизнес процессов</h1>
             <div class="flex items-center gap-4 text-gray-500">
@@ -140,7 +207,7 @@
                         <button id="btn-copy" onclick="copyTemplate()" disabled class="px-3 py-1 border rounded hover:bg-white flex items-center gap-2 text-sm">
                             📋 Копировать
                         </button>
-                        <button onclick="deleteTemplate()" class="px-3 py-1 border rounded hover:bg-white text-red-500 flex items-center gap-2 text-sm">
+                        <button id="btn-delete" onclick="deleteTemplate()" disabled class="px-3 py-1 border rounded hover:bg-white text-red-500 flex items-center gap-2 text-sm">
                             🗑 Удалить
                         </button>
                         <button onclick="openConstructor()" class="px-3 py-1 bg-purple-700 text-white border-0 rounded shadow-sm hover:bg-purple-800 text-xl leading-none" title="Создать новый шаблон">+</button>
@@ -180,14 +247,31 @@
                             <th class="p-3">Крайний срок</th>
                             <th class="p-3">Просрочено</th>
                             <th class="p-3">Дата заверш.</th>
+                            <th class="p-3"></th>
                         </tr>
                     </thead>
                     <tbody id="instance-body">
-                        <tr><td colspan="8" class="p-10 text-center text-gray-400">Выберите шаблон процесса в таблице выше для просмотра экземпляров</td></tr>
+                        <tr><td colspan="9" class="p-10 text-center text-gray-400">Выберите шаблон процесса в таблице выше для просмотра экземпляров</td></tr>
                     </tbody>
                 </table>
             </section>
         </div>
+        </div><!-- /bp-view -->
+
+        <!-- ==================== TASKS VIEW ==================== -->
+        <div id="tasks-view" style="display:none;">
+            <div class="tasks-header">
+                <h1>Мои задачи</h1>
+                <span class="tasks-cnt" id="tasks-active-cnt"></span>
+            </div>
+            <div class="kpi-bar" id="tasks-kpi-bar"></div>
+            <div class="tasks-tabs">
+                <div class="tasks-tab active" id="tab-active" onclick="switchTaskTab('active')">Активные</div>
+                <div class="tasks-tab" id="tab-done" onclick="switchTaskTab('done')">Завершённые</div>
+            </div>
+            <div class="tasks-body" id="tasks-body"></div>
+        </div>
+
     </main>
 </div>
 
@@ -203,8 +287,43 @@
     </div>
 </div>
 
+<!-- ==================== TASK DRAWER ==================== -->
+<div id="task-modal">
+    <div class="task-backdrop" onclick="closeTaskDrawer()"></div>
+    <div class="task-drawer">
+        <div class="td-header">
+            <div style="flex:1;min-width:0;">
+                <div class="td-tag" id="td-proc-tag"></div>
+                <div class="td-title" id="td-title"></div>
+            </div>
+            <div class="td-close" onclick="closeTaskDrawer()">✕</div>
+        </div>
+        <div class="td-meta" id="td-meta"></div>
+        <div class="td-body">
+            <div class="td-section-lbl">Инструкция</div>
+            <div class="td-instruction" id="td-instruction"></div>
+        </div>
+        <div class="td-footer">
+            <div class="td-section-lbl">Действия</div>
+            <div class="td-outcomes" id="td-outcomes"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Action Modal -->
+<div id="action-confirm-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title" id="action-confirm-title">Подтвердите действие</div>
+        <div class="modal-text" id="action-confirm-text"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeActionConfirm()">Отмена</button>
+            <button style="border:none;background:#6d28d9;color:#fff;padding:0.4rem 1rem;border-radius:0.375rem;cursor:pointer;font-size:0.875rem;" onclick="executeTaskAction()">Подтвердить</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    let nextId = 5;
+    let nextId = 7;
 
     const instancesData = {
         1: [
@@ -229,6 +348,16 @@
         4: [
             { id: 'A-001', start: '10.12.24', user: 'Сидоров К.',   status: 'Завершен',  progress: 100, deadline: '20.12.24', overdue: 0,  end: '19.12.24' },
         ],
+        5: [
+            { id: 'S-001', start: '01.05.25', user: 'Громов А.',    status: 'Активен',   progress: 60,  deadline: '30.06.25', overdue: 0,  end: '-' },
+            { id: 'S-002', start: '01.04.25', user: 'Громов А.',    status: 'Завершен',  progress: 100, deadline: '30.04.25', overdue: 0,  end: '29.04.25' },
+            { id: 'S-003', start: '01.03.25', user: 'Петрова Л.',   status: 'Завершен',  progress: 100, deadline: '31.03.25', overdue: 0,  end: '30.03.25' },
+        ],
+        6: [
+            { id: 'AL-001', start: '05.06.25', user: 'Система',     status: 'Активен',   progress: 75,  deadline: '06.06.25', overdue: 0,  end: '-' },
+            { id: 'AL-002', start: '04.06.25', user: 'Система',     status: 'Просрочен', progress: 50,  deadline: '04.06.25', overdue: 1,  end: '-' },
+            { id: 'AL-003', start: '01.06.25', user: 'Система',     status: 'Завершен',  progress: 100, deadline: '02.06.25', overdue: 0,  end: '02.06.25' },
+        ],
     };
 
     let templates = [
@@ -236,6 +365,8 @@
         { id: 2, name: 'Закупка оборудования',  owner: 'Петров А.',  count: 3,  date: '12.05.2025', status: 'Черновик', auto: 'Выключен', type: 'Алгоритм' },
         { id: 3, name: 'Онбординг сотрудника',  owner: 'Иванов И.',  count: 45, date: '01.06.2025', status: 'Активен',  auto: 'Включен',  type: 'БП' },
         { id: 4, name: 'Архивный процесс Тест', owner: 'Сидоров К.', count: 1,  date: '01.01.2025', status: 'Архив',    auto: 'Выключен', type: 'БП' },
+        { id: 5, name: 'S&OP Классический',     owner: 'Громов А.',  count: 3,  date: '01.03.2025', status: 'Активен',  auto: 'Включен',  type: 'БП' },
+        { id: 6, name: 'Авто-пайплайн данных',  owner: 'Иванов И.',  count: 3,  date: '20.05.2025', status: 'Активен',  auto: 'Включен',  type: 'Алгоритм' },
     ];
 
     let selectedId = null;
@@ -261,7 +392,7 @@
                     </span>
                 </td>
                 <td class="p-3 text-xs">${t.auto}</td>
-                <td class="p-3 text-gray-400">🔍</td>
+                <td class="p-3"><span style="cursor:pointer;color:#9ca3af;font-size:1rem;" onmouseover="this.style.color='#6d28d9'" onmouseout="this.style.color='#9ca3af'" onclick="event.stopPropagation();openTemplateView(${t.id})" title="Просмотреть схему">🔍</span></td>
             </tr>
         `).join('');
     }
@@ -279,7 +410,7 @@
         const body = document.getElementById('instance-body');
         const instances = instancesData[templateId];
         if (!instances || instances.length === 0) {
-            body.innerHTML = '<tr><td colspan="8" class="p-10 text-center text-gray-400">Нет экземпляров для данного шаблона</td></tr>';
+            body.innerHTML = '<tr><td colspan="9" class="p-10 text-center text-gray-400">Нет экземпляров для данного шаблона</td></tr>';
             return;
         }
         body.innerHTML = instances.map(i => `
@@ -301,6 +432,7 @@
                 <td class="p-3 text-xs text-red-600">${i.deadline}</td>
                 <td class="p-3 text-center text-red-600 font-bold">${i.overdue > 0 ? i.overdue : ''}</td>
                 <td class="p-3 text-gray-400">${i.end}</td>
+                <td class="p-3"><span style="cursor:pointer;color:#9ca3af;font-size:1rem;" onmouseover="this.style.color='#6d28d9'" onmouseout="this.style.color='#9ca3af'" onclick="openInstanceView(${templateId})" title="Просмотреть схему">🔍</span></td>
             </tr>
         `).join('');
     }
@@ -370,6 +502,8 @@
     .panel-title { padding:0.6rem 1rem; font-size:0.7rem; font-weight:700; text-transform:uppercase; color:#6b7280; border-bottom:1px solid #e5e7eb; flex-shrink:0; }
     #hierarchy-list { flex:1; overflow-y:auto; padding:0.5rem; }
     .hier-process-row { padding:0.4rem 0.5rem; font-size:0.8rem; font-weight:600; color:#374151; display:flex; align-items:center; gap:0.4rem; }
+    .hier-process-row:hover { background:#f3f4f6; }
+    .hier-process-row.selected { background:#ede9fe; color:#6d28d9; }
     .hier-node-row { padding:0.35rem 0.5rem 0.35rem 1.5rem; font-size:0.78rem; cursor:pointer; display:flex; align-items:center; gap:0.4rem; color:#4b5563; border-radius:0.375rem; }
     .hier-node-row:hover { background:#f3f4f6; }
     .hier-node-row.selected { background:#ede9fe; color:#6d28d9; font-weight:600; }
@@ -385,12 +519,26 @@
     .palette-item-label { font-size:0.6rem; color:#6b7280; text-align:center; line-height:1.2; white-space:nowrap; }
     .canvas-hint { background:#fef9c3; border-bottom:1px solid #fde68a; padding:0.3rem 1rem; font-size:0.72rem; color:#92400e; flex-shrink:0; }
 
-    .canvas-container { flex:1; position:relative; overflow:auto; background-color:#f8fafc;
+    .canvas-container { flex:1; position:relative; overflow:hidden; cursor:grab; background-color:#f8fafc;
         background-image:linear-gradient(to right,#e2e8f0 1px,transparent 1px), linear-gradient(to bottom,#e2e8f0 1px,transparent 1px);
-        background-size:24px 24px; }
-    .canvas-inner { position:relative; width:2400px; height:1400px; }
+        background-size:24px 24px; user-select:none; }
+    .canvas-container.panning { cursor:grabbing; }
+    .canvas-inner { position:absolute; top:0; left:0; width:4000px; height:3000px; transform-origin:0 0; }
     #conn-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
     #conn-svg.connecting { pointer-events:all; cursor:crosshair; }
+
+    /* Canvas Toolbar */
+    .canvas-toolbar { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); z-index:50;
+        display:flex; align-items:center; gap:3px;
+        background:rgba(255,255,255,0.97); border:1px solid #e5e7eb; border-radius:8px;
+        padding:4px 6px; box-shadow:0 2px 10px rgba(0,0,0,0.1); white-space:nowrap; }
+    .ctbar-btn { width:28px; height:28px; border:1px solid #e5e7eb; background:#fff; border-radius:6px;
+        cursor:pointer; display:flex; align-items:center; justify-content:center;
+        font-size:12px; color:#374151; padding:0; transition:background 0.1s,border-color 0.1s; }
+    .ctbar-btn:hover { background:#f3f4f6; border-color:#6d28d9; color:#6d28d9; }
+    .ctbar-btn.panel-hidden { background:#ede9fe; border-color:#6d28d9; color:#6d28d9; }
+    .ctbar-zoom-label { font-size:11px; color:#6b7280; min-width:38px; text-align:center; font-weight:600; font-family:monospace; }
+    .ctbar-sep { width:1px; height:18px; background:#e5e7eb; margin:0 2px; }
 
     /* NODES */
     .canvas-node { position:absolute; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; z-index:10; }
@@ -425,6 +573,39 @@
     .btn-delete-node { width:100%; border:1px solid #fca5a5; color:#dc2626; background:#fff; padding:0.3rem; border-radius:0.375rem; cursor:pointer; font-size:0.75rem; margin-top:0.5rem; }
     .btn-delete-node:hover { background:#fef2f2; }
     .conn-info { font-size:0.7rem; color:#6b7280; margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid #f3f4f6; }
+
+    /* Process Settings Form */
+    .props-panel { width:300px !important; }
+    .change-warning { background:#fffbeb; border:1px solid #fde68a; border-radius:0.375rem; padding:0.45rem 0.6rem; font-size:0.68rem; color:#92400e; margin-bottom:0.875rem; line-height:1.45; }
+    .prop-section-title { font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#6b7280; letter-spacing:0.04em; padding-bottom:0.4rem; border-bottom:1px solid #f3f4f6; margin-bottom:0.75rem; }
+    .prop-required { color:#dc2626; }
+    .prop-error-msg { font-size:0.68rem; color:#dc2626; margin-top:0.2rem; }
+    .prop-input-err { border-color:#dc2626 !important; box-shadow:0 0 0 2px #fee2e2 !important; }
+    .prop-note { font-size:0.67rem; color:#9ca3af; margin-top:0.2rem; line-height:1.3; }
+    .prop-readonly { background:#f9fafb !important; color:#9ca3af !important; cursor:not-allowed !important; }
+    .tags-wrap { display:flex; flex-wrap:wrap; gap:0.3rem; margin-bottom:0.3rem; min-height:18px; }
+    .tag-chip { display:inline-flex; align-items:center; gap:0.2rem; background:#ede9fe; color:#6d28d9; border-radius:9999px; padding:0.15rem 0.5rem 0.15rem 0.6rem; font-size:0.67rem; font-weight:500; }
+    .tag-chip-x { cursor:pointer; font-size:0.85rem; color:#7c3aed; opacity:0.7; line-height:1; }
+    .tag-chip-x:hover { opacity:1; }
+    .tag-opts-list { border:1px solid #e5e7eb; border-radius:0.375rem; overflow:hidden; }
+    .tag-opt-item { display:flex; align-items:center; padding:0.28rem 0.5rem; font-size:0.75rem; cursor:pointer; }
+    .tag-opt-item:hover { background:#f9fafb; }
+    .tag-opt-item label { display:flex; align-items:center; gap:0.4rem; cursor:pointer; width:100%; }
+    .tag-opt-item input[type=checkbox] { width:13px; height:13px; accent-color:#6d28d9; cursor:pointer; flex-shrink:0; }
+    .radio-row { display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; color:#374151; cursor:pointer; margin-bottom:0.4rem; }
+    .radio-row input[type=radio] { accent-color:#6d28d9; cursor:pointer; flex-shrink:0; }
+    .checkbox-row { display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; color:#374151; cursor:pointer; }
+    .checkbox-row input[type=checkbox] { accent-color:#6d28d9; cursor:pointer; width:14px; height:14px; flex-shrink:0; }
+    .prop-sub { padding-left:0.875rem; border-left:2px solid #ede9fe; margin-left:0.1rem; margin-bottom:0.5rem; padding-top:0.2rem; padding-bottom:0.2rem; }
+    .days-grid { display:flex; flex-wrap:wrap; gap:0.2rem; }
+    .day-btn { width:30px; height:30px; border-radius:50%; border:1px solid #e5e7eb; background:#fff; font-size:0.6rem; cursor:pointer; display:flex; align-items:center; justify-content:center; font-weight:700; color:#6b7280; transition:all 0.12s; user-select:none; }
+    .day-btn.active { background:#6d28d9; border-color:#6d28d9; color:#fff; }
+    .day-btn:hover:not(.active) { border-color:#6d28d9; color:#6d28d9; }
+    .prop-row { display:flex; gap:0.4rem; }
+    .prop-row > div { flex:1; min-width:0; }
+    .status-display { display:inline-flex; align-items:center; padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.72rem; font-weight:600; }
+    .sep { height:1px; background:#f3f4f6; margin:0.875rem 0; }
+    .cycle-preview { font-size:0.68rem; color:#6d28d9; background:#f5f3ff; border-radius:0.375rem; padding:0.3rem 0.5rem; margin-top:0.3rem; line-height:1.4; }
 </style>
 
 <div id="constructor-screen">
@@ -482,11 +663,21 @@
             </div>
             <div class="canvas-hint">💡 Перетащите элемент из палитры на холст. Наведите на узел и потяните за фиолетовую точку, чтобы соединить.</div>
             <div class="canvas-container" id="canvas-container" ondragover="event.preventDefault()" ondrop="canvasDrop(event)">
+                <div class="canvas-toolbar">
+                    <button class="ctbar-btn" id="ctbar-left-btn" onclick="toggleLeftPanel()" title="Скрыть/показать иерархию">◀</button>
+                    <div class="ctbar-sep"></div>
+                    <button class="ctbar-btn" onclick="ctorZoomOut()" title="Уменьшить масштаб">🔍−</button>
+                    <span class="ctbar-zoom-label" id="ctbar-zoom-lbl">100%</span>
+                    <button class="ctbar-btn" onclick="ctorZoomIn()" title="Увеличить масштаб">🔍+</button>
+                    <div class="ctbar-sep"></div>
+                    <button class="ctbar-btn" id="ctbar-right-btn" onclick="toggleRightPanel()" title="Скрыть/показать свойства">▶</button>
+                </div>
                 <div class="canvas-inner" id="canvas-inner">
                     <svg id="conn-svg">
                         <defs>
                             <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6b7280"/></marker>
                             <marker id="arr-tmp" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#6d28d9"/></marker>
+                            <marker id="arr-dflt" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#d97706"/></marker>
                         </defs>
                     </svg>
                 </div>
@@ -503,6 +694,22 @@
             </div>
         </aside>
     </div>
+
+    <!-- Validation error modal (inside constructor) -->
+    <div id="ctor-error-modal" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.45);z-index:600;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:0.5rem;padding:1.5rem;width:440px;max-width:90%;box-shadow:0 12px 32px rgba(0,0,0,0.22);">
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+                <span style="font-size:1.3rem;">⚠️</span>
+                <span style="font-weight:700;font-size:1rem;color:#dc2626;">Ошибка валидации цикла</span>
+            </div>
+            <p id="ctor-error-text" style="font-size:0.875rem;color:#374151;margin-bottom:0.875rem;line-height:1.5;"></p>
+            <div id="ctor-error-detail" style="background:#fef2f2;border:1px solid #fecaca;border-radius:0.375rem;padding:0.75rem;font-size:0.78rem;color:#dc2626;line-height:1.65;margin-bottom:1.25rem;"></div>
+            <div style="font-size:0.72rem;color:#6b7280;margin-bottom:1rem;">Уменьшите SLA задач, увеличьте частоту цикла или отключите автозапуск.</div>
+            <div style="display:flex;justify-content:flex-end;">
+                <button class="btn-cancel" onclick="closeCtorError()">Понятно</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -516,20 +723,116 @@ const NODE_CFG = {
     'gw-and':       { label:'AND',            color:'#b45309', bg:'#fef3c7', border:'#d97706', shape:'diamond', w:72,  h:72,  icon:'+' },
 };
 
+const ALGO_PARAMS = {
+    'Расчет базового прогноза': [
+        { key:'forecastPeriod',  label:'Горизонт прогноза',           type:'select',   opts:['7 дней','14 дней','30 дней','90 дней','180 дней','365 дней'] },
+        { key:'forecastModel',   label:'Модель расчёта',               type:'select',   opts:['ARIMA','Экспоненциальное сглаживание','Линейная регрессия','Naive'] },
+        { key:'dataSource',      label:'Источник данных',              type:'select',   opts:['Основная БД','Хранилище аналитики','ERP-выгрузка'] },
+        { key:'historyMonths',   label:'Исторический период (мес.)',   type:'number',   placeholder:'12', min:1, max:120 },
+        { key:'excludeOutliers', label:'Исключать выбросы',            type:'checkbox' },
+        { key:'dateFrom',        label:'Фильтр: дата от',              type:'date' },
+        { key:'dateTo',          label:'Фильтр: дата до',              type:'date' },
+    ],
+    'Проверка данных': [
+        { key:'checkScope',   label:'Объект проверки',       type:'select',   opts:['Договор','Счёт','Контрагент','Склад','Сотрудник'] },
+        { key:'ruleSet',      label:'Набор правил',          type:'select',   opts:['Стандартный','Расширенный','Финансовый контроль','HR-политика'] },
+        { key:'failAction',   label:'Действие при ошибке',   type:'select',   opts:['Остановить процесс','Записать в журнал','Уведомить владельца'] },
+        { key:'idFilter',     label:'Фильтр по ID',          type:'text',     placeholder:'Напр.: DOC-*, 2025-*' },
+        { key:'strictMode',   label:'Строгий режим',         type:'checkbox' },
+    ],
+    'Экспорт в ERP': [
+        { key:'erpSystem',    label:'Целевая система',       type:'select',   opts:['1С:ERP','SAP','Microsoft Dynamics','Oracle EBS'] },
+        { key:'exportEntity', label:'Сущность',              type:'select',   opts:['Договор','Счёт','Акт','Спецификация','Платёж'] },
+        { key:'exportMode',   label:'Режим экспорта',        type:'select',   opts:['Создать новый','Обновить существующий','Создать / Обновить'] },
+        { key:'statusFilter', label:'Фильтр по статусу',     type:'select',   opts:['Все','Только активные','Только черновики','Завершённые'] },
+        { key:'dryRun',       label:'Тестовый режим (без записи)', type:'checkbox' },
+    ],
+    'Уведомление Email': [
+        { key:'template',     label:'Шаблон письма',         type:'select',   opts:['Согласование','Отказ','Напоминание','Завершение','Произвольный'] },
+        { key:'recipients',   label:'Получатели',            type:'select',   opts:['Владелец процесса','Исполнитель задачи','Группа уведомлений','Произвольный список'] },
+        { key:'recipientList',label:'Список адресатов',      type:'text',     placeholder:'email1@corp.ru, email2@corp.ru' },
+        { key:'subject',      label:'Тема письма',           type:'text',     placeholder:'Уведомление: {{process_name}}' },
+        { key:'priority',     label:'Приоритет',             type:'select',   opts:['Обычный','Высокий','Срочный'] },
+        { key:'attachReport', label:'Прикрепить отчёт',      type:'checkbox' },
+    ],
+    'SQL Процедура #1': [
+        { key:'schema',       label:'Схема БД',              type:'select',   opts:['public','bp_engine','analytics','archive'] },
+        { key:'procedure',    label:'Хранимая процедура',    type:'select',   opts:['sp_calc_kpi','sp_refresh_mv','sp_archive_old','sp_generate_report'] },
+        { key:'paramMode',    label:'Режим параметров',      type:'select',   opts:['Из контекста процесса','Фиксированные','Смешанный'] },
+        { key:'customParam',  label:'Доп. параметр (JSON)',  type:'text',     placeholder:'{"key": "value"}' },
+        { key:'transact',     label:'Транзакционный режим',  type:'checkbox' },
+    ],
+    'Интеграция 1С': [
+        { key:'endpoint',     label:'Точка подключения',     type:'select',   opts:['Основная база','Тестовая база','УПП','ЗУП','Бухгалтерия'] },
+        { key:'operation',    label:'Операция',              type:'select',   opts:['Получить данные','Записать данные','Провести документ','Отменить проведение'] },
+        { key:'docType',      label:'Тип документа',         type:'select',   opts:['Договор','Счёт на оплату','Акт','Накладная','Платёжное поручение'] },
+        { key:'periodFilter', label:'Фильтр: период (мес.)', type:'number',   placeholder:'3', min:1, max:60 },
+        { key:'orgFilter',    label:'Фильтр: организация',   type:'text',     placeholder:'Напр.: ООО "Альфа"' },
+        { key:'syncMode',     label:'Режим синхронизации',   type:'select',   opts:['Онлайн','Пакетный (очередь)','Отложенный'] },
+    ],
+};
+
 let ctorNodes = [], ctorConns = [], ctorNodeCnt = 0, ctorConnCnt = 0;
 let ctorSelId = null, connectingFrom = null, tempLine = null, dragging = null;
+let ctorViewMode = 'create'; // 'create' | 'edit-meta' | 'view'
+let ctorProcSettings = {};
+let canvasPan = {x:0, y:0}, canvasZoom = 1;
+let isPanning = false, panStart = {};
+let leftPanelVisible = true, rightPanelVisible = true;
+
+function ctorInitProcSettings() {
+    const today = new Date().toISOString().split('T')[0];
+    ctorProcSettings = {
+        id: 'BP-' + (4000 + Math.floor(Math.random() * 1000)),
+        name: 'Новый бизнес процесс',
+        description: '',
+        owners: [],
+        timezone: 'Europe/Moscow (UTC+3)',
+        status: 'Черновик',
+        calendars: ['Производственный календарь РФ'],
+        holidays: true,
+        overlap: 'Блокировать новый старт',
+        isRepeating: false,
+        repeatMode: 'weekly',
+        weeklyN: 1,
+        weeklyDays: ['ПН', 'СР', 'ПТ'],
+        monthlyOpt: 1,
+        monthDay: 1,
+        monthN: 1,
+        monthDayNth: '1',
+        monthDayName: 'ПН',
+        monthN2: 1,
+        startDate: today,
+        endType: 'none',
+        endDate: '',
+        endAfter: 12,
+    };
+}
 
 function openConstructor() {
     ctorNodes = []; ctorConns = []; ctorNodeCnt = 0; ctorConnCnt = 0;
     ctorSelId = null; connectingFrom = null; tempLine = null; dragging = null;
+    ctorViewMode = 'create';
+    ctorInitProcSettings();
+    canvasPan = {x:0, y:0}; canvasZoom = 1; isPanning = false;
+    leftPanelVisible = true; rightPanelVisible = true;
     document.getElementById('constructor-screen').classList.add('visible');
-    document.getElementById('ctor-title').value = 'Новый бизнес процесс';
+    document.getElementById('ctor-title').value = ctorProcSettings.name;
     document.getElementById('ctor-status-badge').textContent = 'Черновик';
     document.getElementById('ctor-status-badge').style.background = '#fed7aa';
     document.getElementById('ctor-status-badge').style.color = '#b45309';
+    const hp = document.querySelector('.hierarchy-panel');
+    const pp = document.querySelector('.props-panel');
+    if (hp) hp.style.display = '';
+    if (pp) pp.style.display = '';
+    const lb = document.getElementById('ctbar-left-btn');
+    const rb = document.getElementById('ctbar-right-btn');
+    if (lb) { lb.textContent = '◀'; lb.classList.remove('panel-hidden'); }
+    if (rb) { rb.textContent = '▶'; rb.classList.remove('panel-hidden'); }
     const startNode = ctorAddNode('start', 120, 200);
     ctorSelId = startNode.id;
     ctorRenderAll();
+    applyCanvasTransform();
 }
 
 function closeConstructor() {
@@ -538,7 +841,25 @@ function closeConstructor() {
 
 function ctorAddNode(type, x, y) {
     const cfg = NODE_CFG[type];
-    const node = { id: ++ctorNodeCnt, type, label: cfg.label, x, y, props: { description:'', assignee:'', deadline:'', condition:'' } };
+    let props;
+    switch(type) {
+        case 'start':
+            props = { description:'', triggerType:'Ручной запуск', schedule:'' };
+            break;
+        case 'end':
+            props = { description:'' };
+            break;
+        case 'task-approval':
+            props = { instruction:'', assigneeType:'Конкретный пользователь', assignee:'',
+                      slaValue:1, slaUnit:'дней', outcomes:['Согласовано','Отклонено'], taskTracker:true };
+            break;
+        case 'task-script':
+            props = { algorithm:'', timeout:30, params:{} };
+            break;
+        default:
+            props = {};
+    }
+    const node = { id: ++ctorNodeCnt, type, label: cfg.label, x, y, props };
     ctorNodes.push(node);
     return node;
 }
@@ -617,8 +938,20 @@ function ctorRenderNodes() {
             </div>`;
         }
         el.innerHTML = inner_html + `<div class="node-connect-dot" data-nid="${node.id}"></div>`;
-        el.addEventListener('mousedown', e => ctorNodeMD(e, node.id));
-        el.querySelector('.node-connect-dot').addEventListener('mousedown', e => { e.stopPropagation(); ctorStartConnect(e, node.id); });
+        if (ctorViewMode === 'create') {
+            el.addEventListener('mousedown', e => ctorNodeMD(e, node.id));
+            el.querySelector('.node-connect-dot').addEventListener('mousedown', e => { e.stopPropagation(); ctorStartConnect(e, node.id); });
+        } else {
+            el.querySelector('.node-connect-dot').style.display = 'none';
+            el.style.cursor = 'default';
+            el.addEventListener('mousedown', e => {
+                if (e.button !== 0) return;
+                e.stopPropagation();
+                ctorSelId = node.id;
+                ctorRenderProps(); ctorRenderHierarchy();
+                document.querySelectorAll('.canvas-node').forEach(n => n.classList.toggle('selected', parseInt(n.dataset.nid) === node.id));
+            });
+        }
         inner.appendChild(el);
     });
 }
@@ -632,16 +965,26 @@ function ctorRenderConns() {
         if (!fn || !tn) return;
         const fp = ctorGetPorts(fn).out, tp = ctorGetPorts(tn).in;
         const dx = Math.max(40, Math.abs(tp.x - fp.x) * 0.5);
+        const isDefault = fn.type === 'gw-xor' && conn.flowType === 'default';
+        const strokeColor = isDefault ? '#d97706' : '#6b7280';
         const p = document.createElementNS('http://www.w3.org/2000/svg','path');
         p.setAttribute('d', `M${fp.x},${fp.y} C${fp.x+dx},${fp.y} ${tp.x-dx},${tp.y} ${tp.x},${tp.y}`);
-        p.setAttribute('stroke','#6b7280'); p.setAttribute('stroke-width','1.5'); p.setAttribute('fill','none');
-        p.setAttribute('marker-end','url(#arr)');
+        p.setAttribute('stroke', strokeColor); p.setAttribute('stroke-width','1.5'); p.setAttribute('fill','none');
+        if (isDefault) p.setAttribute('stroke-dasharray','6,3');
+        p.setAttribute('marker-end', isDefault ? 'url(#arr-dflt)' : 'url(#arr)');
         svg.appendChild(p);
-        if (conn.label) {
+        // Connection label
+        let displayLabel = conn.label;
+        if (!displayLabel && fn.type === 'gw-xor') {
+            if (conn.flowType === 'default') displayLabel = '↙ default';
+            else if (conn.conditionAttr) displayLabel = conn.conditionAttr;
+        }
+        if (displayLabel) {
             const t = document.createElementNS('http://www.w3.org/2000/svg','text');
             t.setAttribute('x',(fp.x+tp.x)/2); t.setAttribute('y',(fp.y+tp.y)/2-8);
-            t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','10'); t.setAttribute('fill','#6b7280');
-            t.classList.add('cl'); t.textContent = conn.label;
+            t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','10');
+            t.setAttribute('fill', isDefault ? '#d97706' : '#6b7280');
+            t.classList.add('cl'); t.textContent = displayLabel;
             svg.appendChild(t);
         }
     });
@@ -662,70 +1005,234 @@ function ctorRenderHierarchy() {
     const ordered = ctorTopoOrder();
     const iconOf = n => ({ circle: n.type==='start' ? '🟢' : '🔴', rect: '🔷', diamond: '🔶' })[NODE_CFG[n.type].shape];
     document.getElementById('hierarchy-list').innerHTML =
-        `<div class="hier-process-row">📄 ${title}</div>` +
+        `<div class="hier-process-row${ctorSelId===null?' selected':''}" onclick="ctorSelectProcess()" style="cursor:pointer;border-radius:0.375rem;">📄 ${title}</div>` +
         ordered.map(n => `<div class="hier-node-row${ctorSelId===n.id?' selected':''}" onclick="ctorSelectNode(${n.id})">${iconOf(n)} ${n.label}</div>`).join('');
 }
 
 function ctorRenderProps() {
     const content = document.getElementById('props-content');
     if (!ctorSelId) {
-        content.innerHTML = `
-            <div class="prop-group"><label class="prop-label">Название процесса</label>
-                <input class="prop-input" value="${document.getElementById('ctor-title').value}" oninput="document.getElementById('ctor-title').value=this.value;ctorRenderHierarchy();" /></div>
-            <div class="prop-group"><label class="prop-label">Тип</label>
-                <select class="prop-select"><option>Бизнес процесс (БП)</option><option>Алгоритм</option></select></div>
-            <div class="prop-group"><label class="prop-label">Владелец</label>
-                <input class="prop-input" placeholder="Ответственный" /></div>
-            <div class="prop-group"><label class="prop-label">Описание</label>
-                <textarea class="prop-textarea" placeholder="Описание процесса..."></textarea></div>
-            <div class="prop-group"><label class="prop-label">Автозапуск</label>
-                <select class="prop-select"><option>Выключен</option><option>Включен</option></select></div>`;
-        return;
+        if (ctorViewMode === 'view') { ctorRenderProcessPropsReadOnly(); return; }
+        if (ctorViewMode === 'edit-meta') { ctorRenderProcessPropsMeta(); return; }
+        ctorRenderProcessProps(); return;
     }
     const node = ctorNodes.find(n => n.id === ctorSelId);
     if (!node) return;
+    const scrollTop = content.scrollTop;
+    if (ctorViewMode === 'view')      content.innerHTML = buildNodePropsHTMLReadOnly(node);
+    else if (ctorViewMode === 'edit-meta') content.innerHTML = buildNodePropsHTMLMeta(node);
+    else                               content.innerHTML = buildNodePropsHTML(node);
+    content.scrollTop = scrollTop;
+}
+
+function buildNodePropsHTML(node) {
     const cfg = NODE_CFG[node.type];
     const iconOf = { circle: node.type==='start'?'🟢':'🔴', rect:'🔷', diamond:'🔶' }[cfg.shape];
     const inCnt  = ctorConns.filter(c => c.to   === node.id).length;
     const outCnt = ctorConns.filter(c => c.from === node.id).length;
 
-    let extra = '';
-    if (cfg.shape === 'rect') {
-        extra += `<div class="prop-group"><label class="prop-label">Описание</label>
-            <textarea class="prop-textarea" placeholder="Описание задачи..." oninput="ctorUpdProp(${node.id},'description',this.value)">${node.props.description}</textarea></div>`;
-        if (node.type === 'task-approval') extra += `
-            <div class="prop-group"><label class="prop-label">Исполнитель</label>
-                <input class="prop-input" placeholder="Кому назначена задача" value="${node.props.assignee}" oninput="ctorUpdProp(${node.id},'assignee',this.value)" /></div>
-            <div class="prop-group"><label class="prop-label">Срок (дней)</label>
-                <input class="prop-input" type="number" min="1" value="${node.props.deadline}" oninput="ctorUpdProp(${node.id},'deadline',this.value)" /></div>`;
-        if (node.type === 'task-script') extra += `
-            <div class="prop-group"><label class="prop-label">Условие / Скрипт</label>
-                <textarea class="prop-textarea" placeholder="Код или условие..." oninput="ctorUpdProp(${node.id},'condition',this.value)">${node.props.condition}</textarea></div>`;
-    } else if (cfg.shape === 'diamond') {
-        extra += `<div class="prop-group"><label class="prop-label">${node.type==='gw-xor'?'Условие ветвления':'Описание разделения'}</label>
-            <input class="prop-input" placeholder="${node.type==='gw-xor'?'Если условие выполнено...':'Параллельные ветки'}" value="${node.props.condition}" oninput="ctorUpdProp(${node.id},'condition',this.value)" /></div>`;
+    const header = `<div class="props-node-header">
+        <span style="font-size:1.3rem;">${iconOf}</span>
+        <div><div style="font-size:0.8rem;font-weight:700;color:#374151;">${cfg.label}</div>
+             <div style="font-size:0.68rem;color:#9ca3af;">ID: N-${node.id}</div></div>
+    </div>`;
+    const nameField = `<div class="prop-group"><label class="prop-label">Название</label>
+        <input class="prop-input" value="${escHtml(node.label)}" oninput="ctorUpdLabel(${node.id},this.value)" /></div>`;
+
+    let body = '';
+    switch(node.type) {
+        case 'start':         body = buildStartProps(node); break;
+        case 'end':           body = buildEndProps(node); break;
+        case 'task-approval': body = buildUserTaskProps(node); break;
+        case 'task-script':   body = buildScriptTaskProps(node); break;
+        case 'gw-xor':        body = buildXorProps(node); break;
+        case 'gw-and':        body = buildAndProps(node, inCnt, outCnt); break;
+    }
+    const footer = `<div class="conn-info">
+        <div>Входящих: <b>${inCnt}</b> &nbsp;|&nbsp; Исходящих: <b>${outCnt}</b></div>
+        ${node.type !== 'start' ? `<button class="btn-delete-node" onclick="ctorDeleteNode()">🗑 Удалить узел</button>` : ''}
+    </div>`;
+    return header + nameField + body + footer;
+}
+
+function buildStartProps(node) {
+    const p = node.props;
+    const triggerOpts = ['Ручной запуск','По расписанию'].map(v =>
+        `<option ${p.triggerType===v?'selected':''}>${escHtml(v)}</option>`).join('');
+    return `
+<div class="prop-group"><label class="prop-label">Описание</label>
+    <textarea class="prop-textarea" placeholder="Зачем нужен этот шаг..." oninput="ctorUpdProp(${node.id},'description',this.value)">${escHtml(p.description)}</textarea></div>
+<div class="prop-group"><label class="prop-label">Тип триггера</label>
+    <select class="prop-select" onchange="ctorUpdPropRender(${node.id},'triggerType',this.value)">${triggerOpts}</select></div>
+${p.triggerType==='По расписанию' ? `<div class="prop-group"><label class="prop-label">Расписание</label>
+    <input class="prop-input" placeholder="Напр.: 09:00 каждый ПН" value="${escHtml(p.schedule)}" oninput="ctorUpdProp(${node.id},'schedule',this.value)" />
+    <div class="prop-note">Формат настраивается в блоке «Цикл повторений» процесса</div></div>` : ''}`;
+}
+
+function buildEndProps(node) {
+    return `<div class="prop-group"><label class="prop-label">Описание</label>
+    <textarea class="prop-textarea" placeholder="Условие завершения..." oninput="ctorUpdProp(${node.id},'description',this.value)">${escHtml(node.props.description)}</textarea></div>`;
+}
+
+function buildUserTaskProps(node) {
+    const p = node.props;
+    const assigneeTypes = ['Конкретный пользователь','Роль','Группа'];
+    const slaUnits = ['минут','часов','дней'];
+    const atypes = assigneeTypes.map(v => `<option ${p.assigneeType===v?'selected':''}>${escHtml(v)}</option>`).join('');
+    const sunits  = slaUnits.map(v => `<option ${p.slaUnit===v?'selected':''}>${escHtml(v)}</option>`).join('');
+    const outcomesHTML = (p.outcomes||[]).map((o,i) => `
+        <div style="display:flex;gap:0.3rem;align-items:center;margin-bottom:0.3rem;">
+            <input class="prop-input" style="flex:1;" value="${escHtml(o)}" oninput="ctorUpdOutcome(${node.id},${i},this.value)" />
+            <button class="ctbar-btn" onclick="ctorRemoveOutcome(${node.id},${i})" title="Удалить" style="flex-shrink:0;color:#dc2626;border-color:#fca5a5;">×</button>
+        </div>`).join('');
+    return `
+<div class="prop-group"><label class="prop-label">Инструкция</label>
+    <textarea class="prop-textarea" placeholder="Текст поручения для сотрудника..." oninput="ctorUpdProp(${node.id},'instruction',this.value)">${escHtml(p.instruction)}</textarea></div>
+<div class="prop-group"><label class="prop-label">Исполнитель</label>
+    <select class="prop-select" style="margin-bottom:0.3rem;" onchange="ctorUpdProp(${node.id},'assigneeType',this.value)">${atypes}</select>
+    <input class="prop-input" placeholder="${p.assigneeType==='Роль'?'Название роли':p.assigneeType==='Группа'?'Название группы':'Имя пользователя'}" value="${escHtml(p.assignee)}" oninput="ctorUpdProp(${node.id},'assignee',this.value)" /></div>
+<div class="prop-group"><label class="prop-label">SLA — Время на выполнение</label>
+    <div style="display:flex;gap:0.3rem;">
+        <input type="number" class="prop-input" min="1" style="max-width:64px;" value="${p.slaValue}" oninput="ctorUpdProp(${node.id},'slaValue',+this.value||1)" />
+        <select class="prop-select" onchange="ctorUpdProp(${node.id},'slaUnit',this.value)">${sunits}</select>
+    </div></div>
+<div class="prop-group">
+    <label class="prop-label">Исходы (кнопки действий)</label>
+    ${outcomesHTML}
+    <button onclick="ctorAddOutcome(${node.id})" style="width:100%;margin-top:0.2rem;padding:0.25rem;font-size:0.75rem;border:1px dashed #9ca3af;border-radius:0.375rem;background:#fafafa;cursor:pointer;color:#6b7280;">+ Добавить исход</button>
+    <div class="prop-note">Каждый исход формирует ветку перехода</div>
+</div>
+<div class="prop-group">
+    <label class="checkbox-row">
+        <input type="checkbox" ${p.taskTracker?'checked':''} onchange="ctorUpdProp(${node.id},'taskTracker',this.checked)" />
+        Создавать карточку в Task Tracker
+    </label>
+    <div class="prop-note">При переходе узла в статус «В работе»</div>
+</div>`;
+}
+
+function buildScriptTaskProps(node) {
+    const p = node.props;
+    if (!p.params) p.params = {};
+    const algorithms = ['','Расчет базового прогноза','Проверка данных','Экспорт в ERP','Уведомление Email','SQL Процедура #1','Интеграция 1С'];
+    const algoOpts = algorithms.map(v => `<option ${p.algorithm===v?'selected':''}>${escHtml(v)||'— выбрать —'}</option>`).join('');
+
+    let paramsHTML = '';
+    const paramDefs = ALGO_PARAMS[p.algorithm];
+    if (paramDefs) {
+        paramsHTML = `<div class="sep"></div><div class="prop-section-title">⚙️ Параметры: ${escHtml(p.algorithm)}</div>`;
+        paramsHTML += paramDefs.map(def => {
+            const val = p.params[def.key] !== undefined ? p.params[def.key] : '';
+            if (def.type === 'select') {
+                const opts = def.opts.map(o => `<option ${val===o?'selected':''}>${escHtml(o)}</option>`).join('');
+                return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
+    <select class="prop-select" onchange="ctorUpdScriptParam(${node.id},'${def.key}',this.value)">${opts}</select></div>`;
+            }
+            if (def.type === 'text') {
+                return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
+    <input class="prop-input" placeholder="${escHtml(def.placeholder||'')}" value="${escHtml(val)}" oninput="ctorUpdScriptParam(${node.id},'${def.key}',this.value)" /></div>`;
+            }
+            if (def.type === 'number') {
+                return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
+    <input type="number" class="prop-input" style="max-width:100px;" min="${def.min||1}" max="${def.max||9999}" placeholder="${escHtml(def.placeholder||'')}" value="${escHtml(val)}" oninput="ctorUpdScriptParam(${node.id},'${def.key}',+this.value||0)" /></div>`;
+            }
+            if (def.type === 'date') {
+                return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
+    <input type="date" class="prop-input" value="${escHtml(val)}" onchange="ctorUpdScriptParam(${node.id},'${def.key}',this.value)" /></div>`;
+            }
+            if (def.type === 'checkbox') {
+                return `<div class="prop-group"><label class="checkbox-row">
+    <input type="checkbox" ${val?'checked':''} onchange="ctorUpdScriptParam(${node.id},'${def.key}',this.checked)" />
+    ${escHtml(def.label)}</label></div>`;
+            }
+            return '';
+        }).join('');
     }
 
-    content.innerHTML = `
-        <div class="props-node-header">
-            <span style="font-size:1.3rem;">${iconOf}</span>
-            <div><div style="font-size:0.8rem;font-weight:700;color:#374151;">${cfg.label}</div>
-                 <div style="font-size:0.68rem;color:#9ca3af;">ID: N-${node.id}</div></div>
+    return `
+<div class="prop-group"><label class="prop-label">Выбор алгоритма</label>
+    <select class="prop-select" onchange="ctorUpdPropRender(${node.id},'algorithm',this.value)">${algoOpts}</select></div>
+<div class="prop-group"><label class="prop-label">Тайм-аут выполнения (мин.)</label>
+    <input type="number" class="prop-input" min="1" max="1440" value="${p.timeout}" oninput="ctorUpdProp(${node.id},'timeout',+this.value||30)" />
+    <div class="prop-note">При превышении узел переходит в статус «Ошибка»</div></div>
+${paramsHTML}`;
+}
+
+function buildXorProps(node) {
+    const outConns = ctorConns.filter(c => c.from === node.id);
+    const prevTasks = ctorNodes.filter(n => (n.type==='task-approval'||n.type==='task-script') && n.id !== node.id);
+    const statusAttrs = ['Просрочена','Завершена','Запланирована','В работе','Отменена'];
+    const hasDefault = outConns.some(c => c.flowType === 'default');
+
+    const connsHTML = outConns.length === 0
+        ? `<div class="prop-note">Нет исходящих связей. Подключите узлы.</div>`
+        : outConns.map(conn => {
+            const toNode = ctorNodes.find(n => n.id === conn.to);
+            const stepOpts = prevTasks.map(n => `<option value="${n.id}" ${String(conn.conditionStep)===String(n.id)?'selected':''}>${escHtml(n.label)}</option>`).join('');
+            const opOpts = [['eq','= равно'],['neq','≠ не равно']].map(([v,l]) => `<option value="${v}" ${conn.conditionOp===v?'selected':''}>${l}</option>`).join('');
+            const attrOpts = statusAttrs.map(v => `<option ${conn.conditionAttr===v?'selected':''}>${escHtml(v)}</option>`).join('');
+            const canSetDefault = !hasDefault || conn.flowType === 'default';
+            return `<div style="border:1px solid #e5e7eb;border-radius:0.375rem;padding:0.5rem;margin-bottom:0.5rem;">
+    <div style="font-size:0.72rem;font-weight:600;color:#374151;margin-bottom:0.4rem;">→ ${escHtml(toNode?toNode.label:'Узел '+conn.to)}</div>
+    <div class="prop-group" style="margin-bottom:0.4rem;">
+        <label class="prop-label">Тип потока</label>
+        <label class="radio-row"><input type="radio" name="ft-${conn.id}" value="conditional" ${conn.flowType==='conditional'?'checked':''} onchange="ctorUpdConnProp(${conn.id},'flowType','conditional')" /> Условный</label>
+        <label class="radio-row"><input type="radio" name="ft-${conn.id}" value="default" ${conn.flowType==='default'?'checked':''} ${!canSetDefault?'disabled':''} onchange="ctorUpdConnProp(${conn.id},'flowType','default')" /> По умолчанию</label>
+    </div>
+    ${conn.flowType==='conditional' ? `
+    <div class="prop-sub">
+        <div class="prop-group" style="margin-bottom:0.3rem;"><label class="prop-label">Шаг (задача)</label>
+            <select class="prop-select" onchange="ctorUpdConnProp(${conn.id},'conditionStep',this.value)"><option value="">— выбрать —</option>${stepOpts}</select></div>
+        <div style="display:flex;gap:0.3rem;">
+            <div style="flex:1;"><label class="prop-label">Оператор</label>
+                <select class="prop-select" onchange="ctorUpdConnProp(${conn.id},'conditionOp',this.value)">${opOpts}</select></div>
+            <div style="flex:1;"><label class="prop-label">Статус</label>
+                <select class="prop-select" onchange="ctorUpdConnProp(${conn.id},'conditionAttr',this.value)"><option value="">—</option>${attrOpts}</select></div>
         </div>
-        <div class="prop-group"><label class="prop-label">Название узла</label>
-            <input class="prop-input" value="${node.label}" oninput="ctorUpdLabel(${node.id},this.value)" /></div>
-        ${extra}
-        <div class="conn-info">
-            <div>Входящих связей: <b>${inCnt}</b></div>
-            <div>Исходящих связей: <b>${outCnt}</b></div>
-            ${node.type !== 'start' ? `<button class="btn-delete-node" onclick="ctorDeleteNode()">🗑 Удалить узел</button>` : ''}
-        </div>`;
+    </div>` : `<div class="prop-note" style="padding-left:0.5rem;">Путь если ни одно условие не выполнено</div>`}
+</div>`;
+        }).join('');
+
+    return `
+<div class="change-warning" style="background:#fffbeb;border-color:#fde68a;color:#92400e;">
+    Логика маршрутизации настраивается на исходящих связях. Обязательно укажите один путь «По умолчанию».
+</div>
+<div class="prop-section-title">Исходящие связи</div>
+${connsHTML}`;
+}
+
+function buildAndProps(node, inCnt, outCnt) {
+    let mode = '', modeDesc = '', modeColor = '#374151';
+    if (inCnt <= 1 && outCnt >= 2)      { mode = 'Fork — Разделение'; modeDesc = 'Токен дублируется по всем исходящим веткам одновременно.'; modeColor='#0369a1'; }
+    else if (inCnt >= 2 && outCnt <= 1) { mode = 'Join — Слияние';    modeDesc = 'Шлюз ждёт завершения ВСЕХ входящих веток перед продолжением.'; modeColor='#15803d'; }
+    else { mode = 'Не определён'; modeDesc = 'Подключите связи для автоопределения режима.'; modeColor='#9ca3af'; }
+    return `
+<div style="font-size:0.68rem;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:0.375rem;padding:0.4rem 0.5rem;margin-bottom:0.875rem;">
+    Поведение определяется движком автоматически по топологии связей.
+</div>
+<div class="prop-group"><label class="prop-label">Режим работы</label>
+    <div style="font-size:0.78rem;font-weight:700;color:${modeColor};">${mode}</div>
+    <div class="prop-note">${modeDesc}</div></div>`;
 }
 
 function ctorUpdatePublish() {
+    const saveBtn    = document.getElementById('btn-save-draft');
+    const publishBtn = document.getElementById('btn-publish-ctor');
+    const hint       = document.getElementById('publish-hint');
+    if (ctorViewMode === 'view') {
+        saveBtn.style.display = 'none'; publishBtn.style.display = 'none';
+        hint.innerHTML = '<span style="font-size:0.78rem;color:#6b7280;font-style:italic;">&#128065; Режим просмотра — редактирование недоступно</span>';
+        return;
+    }
+    if (ctorViewMode === 'edit-meta') {
+        saveBtn.style.display = 'none'; publishBtn.style.display = 'none';
+        hint.innerHTML = '<button style="width:100%;padding:0.45rem;background:#6d28d9;border:none;color:#fff;border-radius:0.375rem;cursor:pointer;font-size:0.8rem;font-weight:500;" onclick="ctorSaveMetaChanges()">&#128190; Сохранить изменения</button>';
+        return;
+    }
+    saveBtn.style.display = ''; publishBtn.style.display = '';
+    hint.style.fontStyle = '';
     const valid = ctorIsValid();
-    document.getElementById('btn-publish-ctor').disabled = !valid;
-    const hint = document.getElementById('publish-hint');
+    publishBtn.disabled = !valid;
     if (valid) { hint.textContent = '✅ Процесс готов к публикации'; hint.style.color = '#16a34a'; }
     else if (!ctorNodes.some(n => n.type === 'end')) { hint.textContent = 'Добавьте узел «Конец»'; hint.style.color = '#9ca3af'; }
     else { hint.textContent = 'Все узлы должны быть связаны'; hint.style.color = '#9ca3af'; }
@@ -735,15 +1242,35 @@ function ctorSelectNode(id) {
     ctorSelId = id;
     const node = ctorNodes.find(n => n.id === id);
     if (node) {
-        const cont = document.getElementById('canvas-container');
         const cfg = NODE_CFG[node.type];
-        cont.scrollTo({ left: node.x - 100, top: node.y - 80, behavior: 'smooth' });
+        const cont = document.getElementById('canvas-container');
+        const cr = cont.getBoundingClientRect();
+        canvasPan.x = cr.width  / 2 - (node.x + cfg.w / 2) * canvasZoom;
+        canvasPan.y = cr.height / 2 - (node.y + cfg.h / 2) * canvasZoom;
+        applyCanvasTransform();
     }
+    ctorRenderAll();
+}
+
+function ctorSelectProcess() {
+    ctorSelId = null;
     ctorRenderAll();
 }
 
 function ctorUpdLabel(id, val) { const n = ctorNodes.find(n=>n.id===id); if(n){n.label=val;ctorRenderNodes();ctorRenderHierarchy();} }
 function ctorUpdProp(id, key, val) { const n = ctorNodes.find(n=>n.id===id); if(n) n.props[key]=val; }
+function ctorUpdPropRender(id, key, val) {
+    const n = ctorNodes.find(n=>n.id===id);
+    if(!n) return;
+    if(key==='algorithm') n.props.params = {}; // сброс параметров при смене алгоритма
+    n.props[key]=val;
+    ctorRenderProps();
+}
+function ctorAddOutcome(nodeId) { const n = ctorNodes.find(n=>n.id===nodeId); if(n&&n.props.outcomes){n.props.outcomes.push('Новый исход');ctorRenderProps();} }
+function ctorRemoveOutcome(nodeId, idx) { const n = ctorNodes.find(n=>n.id===nodeId); if(n&&n.props.outcomes){n.props.outcomes.splice(idx,1);ctorRenderProps();} }
+function ctorUpdOutcome(nodeId, idx, val) { const n = ctorNodes.find(n=>n.id===nodeId); if(n&&n.props.outcomes) n.props.outcomes[idx]=val; }
+function ctorUpdConnProp(connId, key, val) { const c = ctorConns.find(c=>c.id===connId); if(c){c[key]=val;ctorRenderProps();ctorRenderConns();} }
+function ctorUpdScriptParam(nodeId, key, val) { const n = ctorNodes.find(n=>n.id===nodeId); if(n){if(!n.props.params)n.props.params={};n.props.params[key]=val;} }
 
 function ctorDeleteNode() {
     if (!ctorSelId) return;
@@ -782,14 +1309,14 @@ function paletteDragStart(e, type) { e.dataTransfer.setData('nodeType', type); }
 
 function canvasDrop(e) {
     e.preventDefault();
+    if (ctorViewMode !== 'create') return;
     const type = e.dataTransfer.getData('nodeType');
     if (!type || !NODE_CFG[type]) return;
     if (type === 'start' && ctorNodes.some(n=>n.type==='start')) return;
-    const inner = document.getElementById('canvas-inner');
-    const rect = inner.getBoundingClientRect();
     const cfg = NODE_CFG[type];
-    const x = Math.max(0, e.clientX - rect.left - cfg.w/2);
-    const y = Math.max(0, e.clientY - rect.top  - cfg.h/2);
+    const cp = screenToCanvas(e.clientX, e.clientY);
+    const x = Math.max(0, cp.x - cfg.w / 2);
+    const y = Math.max(0, cp.y - cfg.h / 2);
     const node = ctorAddNode(type, x, y);
     ctorSelId = node.id;
     ctorRenderAll();
@@ -806,12 +1333,114 @@ function ctorSaveDraft() {
     setTimeout(() => { btn.textContent = orig; }, 1800);
 }
 
+// ==================== CRITICAL PATH VALIDATION ====================
+function fmtMinutes(min) {
+    if (min >= 1440) {
+        const d = (min / 1440);
+        return (Number.isInteger(d) ? d : d.toFixed(1)) + ' дн.';
+    }
+    if (min >= 60) {
+        const h = (min / 60);
+        return (Number.isInteger(h) ? h : h.toFixed(1)) + ' ч.';
+    }
+    return min + ' мин.';
+}
+
+function ctorNodeSlaMinutes(node) {
+    if (node.type === 'task-approval') {
+        const v = +node.props.slaValue || 0;
+        if (node.props.slaUnit === 'минут') return v;
+        if (node.props.slaUnit === 'часов') return v * 60;
+        return v * 1440;
+    }
+    if (node.type === 'task-script') return +node.props.timeout || 0;
+    return 0;
+}
+
+function ctorCriticalPath() {
+    const startNode = ctorNodes.find(n => n.type === 'start');
+    if (!startNode) return { minutes: 0, path: [] };
+
+    // Kahn's topological sort
+    const inDeg = {};
+    ctorNodes.forEach(n => inDeg[n.id] = 0);
+    ctorConns.forEach(c => { inDeg[c.to] = (inDeg[c.to] || 0) + 1; });
+    const queue = ctorNodes.filter(n => inDeg[n.id] === 0).map(n => n.id);
+    const topo = [];
+    while (queue.length) {
+        const id = queue.shift();
+        topo.push(id);
+        ctorConns.filter(c => c.from === id).forEach(c => {
+            if (--inDeg[c.to] === 0) queue.push(c.to);
+        });
+    }
+
+    // Longest-path DP
+    const dist = {}, prev = {};
+    ctorNodes.forEach(n => { dist[n.id] = -1; prev[n.id] = null; });
+    dist[startNode.id] = 0;
+    for (const id of topo) {
+        if (dist[id] < 0) continue;
+        const w = ctorNodeSlaMinutes(ctorNodes.find(n => n.id === id));
+        ctorConns.filter(c => c.from === id).forEach(c => {
+            const nd = dist[id] + w;
+            if (nd > dist[c.to]) { dist[c.to] = nd; prev[c.to] = id; }
+        });
+    }
+
+    const endNodes = ctorNodes.filter(n => n.type === 'end');
+    if (!endNodes.length) return { minutes: 0, path: [] };
+    const bestEnd = endNodes.reduce((a, b) => dist[a.id] >= dist[b.id] ? a : b);
+
+    // Reconstruct named path (only nodes with SLA > 0)
+    const path = [];
+    let cur = bestEnd.id;
+    while (cur !== null) {
+        const n = ctorNodes.find(n => n.id === cur);
+        if (n && ctorNodeSlaMinutes(n) > 0) path.unshift(n);
+        cur = prev[cur];
+    }
+    return { minutes: Math.max(0, dist[bestEnd.id]), path };
+}
+
+function ctorCycleFreqMinutes() {
+    const s = ctorProcSettings;
+    if (!s.isRepeating) return Infinity;
+    if (s.repeatMode === 'weekly')  return (s.weeklyN  || 1) * 7  * 1440;
+    if (s.repeatMode === 'monthly') return ((s.monthlyOpt === 2 ? s.monthN2 : s.monthN) || 1) * 30 * 1440;
+    return Infinity;
+}
+
+function closeCtorError() {
+    document.getElementById('ctor-error-modal').style.display = 'none';
+}
+
 function ctorPublish() {
     if (!ctorIsValid()) return;
+
+    const cp   = ctorCriticalPath();
+    const freq = ctorCycleFreqMinutes();
+
+    if (cp.minutes > 0 && cp.minutes >= freq) {
+        const pathStr = cp.path.length
+            ? cp.path.map(n => `«${escHtml(n.label)}» (${fmtMinutes(ctorNodeSlaMinutes(n))})`).join(' → ')
+            : 'задачи без SLA';
+        document.getElementById('ctor-error-text').innerHTML =
+            'Суммарный SLA процесса <b>превышает частоту запуска цикла</b>. ' +
+            'Новые экземпляры будут запускаться до завершения предыдущих.';
+        document.getElementById('ctor-error-detail').innerHTML =
+            `<b>Критический путь:</b> ${pathStr}<br>` +
+            `<b>Макс. длительность:</b> ${fmtMinutes(cp.minutes)}<br>` +
+            `<b>Частота запуска:</b> каждые ${fmtMinutes(freq)}`;
+        document.getElementById('ctor-error-modal').style.display = 'flex';
+        return;
+    }
+
     const title = document.getElementById('ctor-title').value || 'Новый бизнес процесс';
     const newId = nextId++;
     const today = new Date().toLocaleDateString('ru-RU').split('.').map(p=>p.padStart(2,'0')).join('.');
-    templates.push({ id:newId, name:title, owner:'KD', count:0, date:today, status:'Активен', auto:'Выключен', type:'БП' });
+    const autoVal = ctorProcSettings.isRepeating ? 'Включен' : 'Выключен';
+    templates.push({ id:newId, name:title, owner:'KD', count:0, date:today, status:'Активен', auto:autoVal, type:'БП' });
     instancesData[newId] = [];
     closeConstructor();
     renderTemplates(); updateButtons();
@@ -819,42 +1448,299 @@ function ctorPublish() {
 
 function onCtorTitleChange() { ctorRenderHierarchy(); }
 
+// ==================== PROCESS SETTINGS ====================
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function ctorRenderProcessProps() {
+    const content = document.getElementById('props-content');
+    if (!content) return;
+    const scrollTop = content.scrollTop;
+    content.innerHTML = buildProcessSettingsHTML();
+    content.scrollTop = scrollTop;
+}
+
+function buildProcessSettingsHTML() {
+    const s = ctorProcSettings;
+    const ownersAll = ['Иванов И.', 'Петров А.', 'Сидоров К.', 'Козлов В.', 'Смирнов Д.', 'Фёдорова Т.', 'Алексеев М.', 'Новиков Р.', 'Кузнецова А.'];
+    const calsAll   = ['Производственный календарь РФ', 'Московский офис', 'Санкт-Петербург', 'Международный (ISO)'];
+    const tzones    = ['Europe/Kaliningrad (UTC+2)','Europe/Moscow (UTC+3)','Europe/Samara (UTC+4)','Asia/Yekaterinburg (UTC+5)','Asia/Omsk (UTC+6)','Asia/Krasnoyarsk (UTC+7)','Asia/Irkutsk (UTC+8)','Asia/Yakutsk (UTC+9)','Asia/Vladivostok (UTC+10)','Asia/Magadan (UTC+11)','Asia/Kamchatka (UTC+12)'];
+
+    const isDuplicate = s.name.trim() && templates.some(t => t.name.toLowerCase().trim() === s.name.toLowerCase().trim());
+
+    const chips = (arr, key) => arr.map(v => `<span class="tag-chip">${escHtml(v)} <span class="tag-chip-x" onclick="ctorRemoveTag('${key}','${escHtml(v)}')">×</span></span>`).join('') || '<span style="font-size:0.68rem;color:#9ca3af;">Не выбрано</span>';
+    const opts  = (all, arr, key) => all.map(v => `<div class="tag-opt-item"><label><input type="checkbox" ${arr.includes(v)?'checked':''} onchange="ctorToggleTag('${key}','${escHtml(v)}',this.checked)" />${escHtml(v)}</label></div>`).join('');
+
+    const tzOpts    = tzones.map(z => `<option ${s.timezone===z?'selected':''}>${z}</option>`).join('');
+    const overlapOpts = ['Блокировать новый старт','Запускать параллельно'].map(v=>`<option ${s.overlap===v?'selected':''}>${v}</option>`).join('');
+    const statusStyle = s.status === 'Активен' ? 'background:#dcfce7;color:#15803d' : s.status === 'Архив' ? 'background:#f3f4f6;color:#4b5563' : 'background:#fed7aa;color:#b45309';
+
+    return `
+<div class="change-warning">ℹ️ Изменения применятся только к <b>новым экземплярам</b>. Активные продолжают работать по старым правилам.</div>
+
+<div class="prop-section-title">⚙️ Настройка процесса</div>
+
+<div class="prop-group">
+    <label class="prop-label">ID Процесса</label>
+    <input class="prop-input prop-readonly" value="${escHtml(s.id)}" readonly />
+    <div class="prop-note">Заполняется системой</div>
+</div>
+<div class="prop-group">
+    <label class="prop-label">Имя процесса <span class="prop-required">*</span></label>
+    <input id="proc-name-inp" class="prop-input${isDuplicate?' prop-input-err':''}" value="${escHtml(s.name)}" oninput="ctorUpdName(this.value)" />
+    <div id="proc-name-err" class="prop-error-msg" style="display:${isDuplicate?'block':'none'}">⚠ Название уже используется. Измените имя.</div>
+</div>
+<div class="prop-group">
+    <label class="prop-label">Описание процесса</label>
+    <textarea class="prop-textarea" placeholder="Описание бизнес процесса..." oninput="ctorProcSettings.description=this.value">${escHtml(s.description)}</textarea>
+</div>
+<div class="prop-group">
+    <label class="prop-label">Владелец процесса <span class="prop-required">*</span></label>
+    <div class="tags-wrap">${chips(s.owners,'owners')}</div>
+    <div class="tag-opts-list">${opts(ownersAll, s.owners, 'owners')}</div>
+</div>
+<div class="prop-group">
+    <label class="prop-label">Часовой пояс <span class="prop-required">*</span></label>
+    <select class="prop-select" onchange="ctorProcSettings.timezone=this.value">${tzOpts}</select>
+</div>
+<div class="prop-group">
+    <label class="prop-label">Текущий статус</label>
+    <div><span class="status-display" style="${statusStyle}">${s.status}</span></div>
+    <div class="prop-note">Заполняется системой</div>
+</div>
+<div class="prop-group">
+    <label class="prop-label">Календарь рабочих дней <span class="prop-required">*</span></label>
+    <div class="tags-wrap">${chips(s.calendars,'calendars')}</div>
+    <div class="tag-opts-list">${opts(calsAll, s.calendars, 'calendars')}</div>
+</div>
+<div class="prop-group">
+    <label class="checkbox-row">
+        <input type="checkbox" ${s.holidays?'checked':''} onchange="ctorProcSettings.holidays=this.checked" />
+        Учитывать праздничные дни
+    </label>
+</div>
+<div class="prop-group">
+    <label class="prop-label">Блокировка нахлёстов</label>
+    <select class="prop-select" onchange="ctorProcSettings.overlap=this.value">${overlapOpts}</select>
+</div>
+
+<div class="sep"></div>
+<div class="prop-section-title">🔄 Цикл повторений</div>
+${buildCycleSectionInner(s)}`;
+}
+
+function buildCycleSectionInner(s) {
+    const days7 = ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
+    const today  = new Date().toISOString().split('T')[0];
+
+    const selOpts = (vals, cur, fn) => vals.map(v => `<option ${String(cur)===String(v)?'selected':''}>${v}</option>`).join('');
+    const nthVals     = ['1','2','3','4','Последний'];
+    const dayNameVals = ['День','Рабочий день','Выходной день','ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
+    const m1_12       = Array.from({length:12},(_,i)=>i+1);
+    const d1_31       = Array.from({length:31},(_,i)=>i+1);
+
+    let html = `<div class="prop-group">
+    <label class="checkbox-row">
+        <input type="checkbox" ${s.isRepeating?'checked':''} onchange="ctorUpdRepeating(this.checked)" />
+        <span>Повторяющийся процесс</span>
+    </label>
+</div>`;
+
+    if (s.isRepeating) {
+        html += `<div class="prop-group">
+    <label class="radio-row"><input type="radio" name="rm" value="weekly" ${s.repeatMode==='weekly'?'checked':''} onchange="ctorUpdRepeatMode('weekly')" /> Еженедельно</label>
+    <label class="radio-row"><input type="radio" name="rm" value="monthly" ${s.repeatMode==='monthly'?'checked':''} onchange="ctorUpdRepeatMode('monthly')" /> Ежемесячно</label>
+</div>`;
+
+        if (s.repeatMode === 'weekly') {
+            const dayBtns = days7.map(d=>`<div class="day-btn${s.weeklyDays.includes(d)?' active':''}" onclick="ctorToggleDay('${d}',this)">${d}</div>`).join('');
+            html += `<div class="prop-sub">
+    <div class="prop-group">
+        <label class="prop-label">Каждые N недель</label>
+        <input type="number" class="prop-input" min="1" max="52" value="${s.weeklyN}" style="max-width:80px;" oninput="ctorProcSettings.weeklyN=+this.value||1" />
+    </div>
+    <div class="prop-group">
+        <label class="prop-label">Дни недели</label>
+        <div class="days-grid">${dayBtns}</div>
+    </div>
+    ${s.weeklyDays.length ? `<div class="cycle-preview">Каждые ${s.weeklyN} нед., дни: ${s.weeklyDays.join(', ')}</div>` : ''}
+</div>`;
+        } else {
+            // Monthly
+            html += `<div class="prop-sub">
+    <label class="radio-row"><input type="radio" name="mopt" value="1" ${s.monthlyOpt===1?'checked':''} onchange="ctorUpdMonthlyOpt(1)" /> По числу месяца</label>`;
+            if (s.monthlyOpt === 1) {
+                html += `<div class="prop-sub">
+    <div class="prop-row">
+        <div><label class="prop-label">Число</label>
+            <select class="prop-select" onchange="ctorProcSettings.monthDay=+this.value;ctorRenderProcessProps()">${selOpts(d1_31, s.monthDay)}</select></div>
+        <div><label class="prop-label">Месяц №</label>
+            <select class="prop-select" onchange="ctorProcSettings.monthN=+this.value;ctorRenderProcessProps()">${selOpts(m1_12, s.monthN)}</select></div>
+    </div>
+    <div class="cycle-preview">Повторять ${s.monthDay} числа каждого ${s.monthN} месяца</div>
+</div>`;
+            }
+            html += `<label class="radio-row" style="margin-top:0.3rem;"><input type="radio" name="mopt" value="2" ${s.monthlyOpt===2?'checked':''} onchange="ctorUpdMonthlyOpt(2)" /> По дню недели</label>`;
+            if (s.monthlyOpt === 2) {
+                html += `<div class="prop-sub">
+    <div class="prop-group">
+        <label class="prop-label">Номер дня</label>
+        <select class="prop-select" onchange="ctorProcSettings.monthDayNth=this.value;ctorRenderProcessProps()">${selOpts(nthVals, s.monthDayNth)}</select>
+    </div>
+    <div class="prop-group">
+        <label class="prop-label">День</label>
+        <select class="prop-select" onchange="ctorProcSettings.monthDayName=this.value;ctorRenderProcessProps()">${selOpts(dayNameVals, s.monthDayName)}</select>
+    </div>
+    <div class="prop-group">
+        <label class="prop-label">Каждого N месяца</label>
+        <select class="prop-select" onchange="ctorProcSettings.monthN2=+this.value;ctorRenderProcessProps()">${selOpts(m1_12, s.monthN2)}</select>
+    </div>
+    <div class="cycle-preview">В ${s.monthDayNth} «${s.monthDayName}» каждого ${s.monthN2} месяца</div>
+</div>`;
+            }
+            html += `</div>`;
+        }
+    }
+
+    // Start date
+    html += `<div class="prop-group">
+    <label class="prop-label">Дата начала</label>
+    <input type="date" class="prop-input" min="${today}" value="${s.startDate}" onchange="ctorProcSettings.startDate=this.value" />
+    <div class="prop-note">Не может быть в прошлом</div>
+</div>`;
+
+    // End date section
+    const maxAfter = s.repeatMode === 'weekly' ? 52 : 12;
+    html += `<div class="prop-group"><label class="prop-label">Дата окончания</label>`;
+    if (s.isRepeating) {
+        html += `<label class="radio-row"><input type="radio" name="et" value="date" ${s.endType==='date'?'checked':''} onchange="ctorUpdEndType('date')" /> По дате</label>`;
+        if (s.endType==='date') html += `<input type="date" class="prop-input" style="margin-left:1.1rem;margin-top:0.25rem;" min="${today}" value="${s.endDate}" onchange="ctorProcSettings.endDate=this.value" />`;
+        html += `<label class="radio-row"><input type="radio" name="et" value="after" ${s.endType==='after'?'checked':''} onchange="ctorUpdEndType('after')" /> После N повторений</label>`;
+        if (s.endType==='after') html += `<div style="display:flex;align-items:center;gap:0.4rem;margin-left:1.1rem;margin-top:0.25rem;"><input type="number" class="prop-input" style="max-width:60px;" min="1" max="${maxAfter}" value="${s.endAfter}" oninput="ctorProcSettings.endAfter=+this.value||1" /><span class="prop-note">макс. ${maxAfter}</span></div>`;
+        html += `<label class="radio-row"><input type="radio" name="et" value="none" ${s.endType==='none'?'checked':''} onchange="ctorUpdEndType('none')" /> Нет конечной даты</label>`;
+    } else {
+        html += `<label class="radio-row"><input type="radio" name="et" value="date" ${s.endType==='date'?'checked':''} onchange="ctorUpdEndType('date')" /> По дате</label>`;
+        if (s.endType==='date') html += `<input type="date" class="prop-input" style="margin-left:1.1rem;margin-top:0.25rem;" min="${today}" value="${s.endDate}" onchange="ctorProcSettings.endDate=this.value" />`;
+        html += `<label class="radio-row"><input type="radio" name="et" value="none" ${s.endType==='none'?'checked':''} onchange="ctorUpdEndType('none')" /> Нет конечной даты</label>`;
+        if (!s.isRepeating && s.endType !== 'date') {
+            html += `<div class="prop-note" style="margin-left:1.1rem;">Дата окончания, повторения и другие параметры цикла станут доступны после включения повторяющегося процесса</div>`;
+        }
+    }
+    html += `</div>`;
+
+    return html;
+}
+
+function ctorUpdName(val) {
+    ctorProcSettings.name = val;
+    document.getElementById('ctor-title').value = val;
+    ctorRenderHierarchy();
+    const field = document.getElementById('proc-name-inp');
+    const err   = document.getElementById('proc-name-err');
+    if (field && err) {
+        const dup = val.trim() && templates.some(t => t.name.toLowerCase().trim() === val.toLowerCase().trim());
+        field.classList.toggle('prop-input-err', !!dup);
+        err.style.display = dup ? 'block' : 'none';
+    }
+}
+function ctorRemoveTag(key, val) { ctorProcSettings[key] = ctorProcSettings[key].filter(v=>v!==val); ctorRenderProcessProps(); }
+function ctorToggleTag(key, val, checked) {
+    const arr = ctorProcSettings[key];
+    if (checked && !arr.includes(val)) arr.push(val);
+    else if (!checked) ctorProcSettings[key] = arr.filter(v=>v!==val);
+    ctorRenderProcessProps();
+}
+function ctorToggleDay(day, el) {
+    const days = ctorProcSettings.weeklyDays;
+    const idx = days.indexOf(day);
+    if (idx >= 0) days.splice(idx, 1); else days.push(day);
+    el.classList.toggle('active', days.includes(day));
+}
+function ctorUpdRepeating(val) { ctorProcSettings.isRepeating = val; ctorRenderProcessProps(); }
+function ctorUpdRepeatMode(val) { ctorProcSettings.repeatMode = val; ctorRenderProcessProps(); }
+function ctorUpdMonthlyOpt(val) { ctorProcSettings.monthlyOpt = val; ctorRenderProcessProps(); }
+function ctorUpdEndType(val) { ctorProcSettings.endType = val; ctorRenderProcessProps(); }
+
+// ==================== PAN / ZOOM / PANELS ====================
+function applyCanvasTransform() {
+    const inner = document.getElementById('canvas-inner');
+    if (inner) inner.style.transform = `translate(${canvasPan.x}px,${canvasPan.y}px) scale(${canvasZoom})`;
+    const lbl = document.getElementById('ctbar-zoom-lbl');
+    if (lbl) lbl.textContent = Math.round(canvasZoom * 100) + '%';
+}
+
+function screenToCanvas(clientX, clientY) {
+    const cont = document.getElementById('canvas-container');
+    const rect = cont.getBoundingClientRect();
+    return {
+        x: (clientX - rect.left - canvasPan.x) / canvasZoom,
+        y: (clientY - rect.top  - canvasPan.y) / canvasZoom,
+    };
+}
+
+function ctorZoomIn()  { canvasZoom = Math.min(2,   +(canvasZoom + 0.1).toFixed(1)); applyCanvasTransform(); }
+function ctorZoomOut() { canvasZoom = Math.max(0.3, +(canvasZoom - 0.1).toFixed(1)); applyCanvasTransform(); }
+
+function toggleLeftPanel() {
+    leftPanelVisible = !leftPanelVisible;
+    const panel = document.querySelector('.hierarchy-panel');
+    const btn   = document.getElementById('ctbar-left-btn');
+    if (panel) panel.style.display = leftPanelVisible ? '' : 'none';
+    if (btn) { btn.textContent = leftPanelVisible ? '◀' : '▶'; btn.classList.toggle('panel-hidden', !leftPanelVisible); }
+}
+
+function toggleRightPanel() {
+    rightPanelVisible = !rightPanelVisible;
+    const panel = document.querySelector('.props-panel');
+    const btn   = document.getElementById('ctbar-right-btn');
+    if (panel) panel.style.display = rightPanelVisible ? '' : 'none';
+    if (btn) { btn.textContent = rightPanelVisible ? '▶' : '◀'; btn.classList.toggle('panel-hidden', !rightPanelVisible); }
+}
+
 // Global mouse events for drag/connect
 document.addEventListener('mousemove', e => {
     if (!document.getElementById('constructor-screen').classList.contains('visible')) return;
+    if (isPanning) {
+        canvasPan.x = panStart.px + (e.clientX - panStart.mx);
+        canvasPan.y = panStart.py + (e.clientY - panStart.my);
+        applyCanvasTransform();
+        return;
+    }
     const inner = document.getElementById('canvas-inner');
     if (!inner) return;
-    const rect = inner.getBoundingClientRect();
-    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-
     if (dragging) {
         const node = ctorNodes.find(n=>n.id===dragging.id);
         if (!node) return;
-        node.x = Math.max(0, dragging.nx + (e.clientX - dragging.mx));
-        node.y = Math.max(0, dragging.ny + (e.clientY - dragging.my));
+        node.x = Math.max(0, dragging.nx + (e.clientX - dragging.mx) / canvasZoom);
+        node.y = Math.max(0, dragging.ny + (e.clientY - dragging.my) / canvasZoom);
         const el = inner.querySelector(`[data-nid="${dragging.id}"]`);
         if (el) { el.style.left = node.x+'px'; el.style.top = node.y+'px'; }
         ctorRenderConns();
     }
     if (connectingFrom !== null && tempLine) {
-        tempLine.x2 = mx; tempLine.y2 = my;
+        const cp = screenToCanvas(e.clientX, e.clientY);
+        tempLine.x2 = cp.x; tempLine.y2 = cp.y;
         ctorRenderConns();
     }
 });
 
 document.addEventListener('mouseup', e => {
     if (!document.getElementById('constructor-screen').classList.contains('visible')) return;
+    if (isPanning) {
+        isPanning = false;
+        const cont = document.getElementById('canvas-container');
+        if (cont) cont.classList.remove('panning');
+        return;
+    }
     if (dragging) { dragging = null; ctorRenderAll(); return; }
     if (connectingFrom !== null) {
-        const inner = document.getElementById('canvas-inner');
-        const rect = inner.getBoundingClientRect();
-        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        const cp = screenToCanvas(e.clientX, e.clientY);
         const target = ctorNodes.find(n => {
             const cfg = NODE_CFG[n.type];
-            return mx>=n.x && mx<=n.x+cfg.w && my>=n.y && my<=n.y+cfg.h;
+            return cp.x>=n.x && cp.x<=n.x+cfg.w && cp.y>=n.y && cp.y<=n.y+cfg.h;
         });
         if (target && target.id !== connectingFrom && !ctorConns.some(c=>c.from===connectingFrom&&c.to===target.id)) {
-            ctorConns.push({ id: ++ctorConnCnt, from: connectingFrom, to: target.id, label:'' });
+            ctorConns.push({ id: ++ctorConnCnt, from: connectingFrom, to: target.id, label:'',
+                             flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' });
         }
         connectingFrom = null; tempLine = null;
         document.getElementById('conn-svg').classList.remove('connecting');
@@ -871,6 +1757,606 @@ document.addEventListener('keydown', e => {
         ctorRenderConns();
     }
 });
+
+document.getElementById('canvas-container').addEventListener('mousedown', e => {
+    if (!document.getElementById('constructor-screen').classList.contains('visible')) return;
+    if (connectingFrom !== null || e.button !== 0) return;
+    if (e.target.closest('.canvas-node') || e.target.closest('.canvas-toolbar')) return;
+    ctorSelId = null;
+    isPanning = true;
+    panStart = { mx: e.clientX, my: e.clientY, px: canvasPan.x, py: canvasPan.y };
+    document.getElementById('canvas-container').classList.add('panning');
+    ctorRenderHierarchy();
+    ctorRenderProps();
+});
+</script>
+
+<!-- ==================== CONSTRUCTOR VIEW MODE ==================== -->
+<script>
+// ---- Pre-built process schemas ----
+const TEMPLATE_SCHEMAS = {
+    1: {
+        nodes: [
+            { id:1, type:'start',         label:'Старт',                      x:100,  y:250, props:{ description:'Запускает процесс согласования договора. Инициируется вручную ответственным сотрудником.', triggerType:'Ручной запуск', schedule:'' }},
+            { id:2, type:'task-approval', label:'Проверка условий',            x:280,  y:228, props:{ instruction:'Проверьте условия договора с контрагентом. Обратите особое внимание на финансовые условия, штрафные санкции и сроки исполнения.', assigneeType:'Конкретный пользователь', assignee:'Иванов И.', slaValue:2, slaUnit:'дней', outcomes:['Согласовать','Отклонить'], taskTracker:true }},
+            { id:3, type:'task-approval', label:'Юридическое согласование',    x:490,  y:228, props:{ instruction:'Проверьте договор на соответствие действующему законодательству и корпоративным политикам компании.', assigneeType:'Роль', assignee:'Юридический отдел', slaValue:3, slaUnit:'дней', outcomes:['Согласовано','Отклонено'], taskTracker:true }},
+            { id:4, type:'gw-xor',        label:'Решение',                     x:710,  y:246, props:{}},
+            { id:5, type:'task-script',   label:'Регистрация договора',        x:880,  y:155, props:{ algorithm:'Экспорт в ERP', timeout:30, params:{ erpSystem:'1С:ERP', exportEntity:'Договор', exportMode:'Создать новый', statusFilter:'Все', dryRun:false }}},
+            { id:6, type:'task-script',   label:'Уведомление об отказе',       x:880,  y:345, props:{ algorithm:'Уведомление Email', timeout:5, params:{ template:'Отказ', recipients:'Владелец процесса', priority:'Обычный', attachReport:false }}},
+            { id:7, type:'end',           label:'Конец',                       x:1075, y:250, props:{ description:'Процесс согласования завершён.' }},
+        ],
+        conns: [
+            { id:1, from:1, to:2, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:2, from:2, to:3, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:3, from:3, to:4, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:4, from:4, to:5, label:'Согласовано', flowType:'conditional', conditionStep:'3', conditionOp:'eq', conditionAttr:'Завершена' },
+            { id:5, from:4, to:6, label:'', flowType:'default', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:6, from:5, to:7, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:7, from:6, to:7, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+        ]
+    },
+    2: {
+        nodes: [
+            { id:1, type:'start',         label:'Старт',                    x:100,  y:250, props:{ description:'Инициирует процесс закупки оборудования.', triggerType:'Ручной запуск', schedule:'' }},
+            { id:2, type:'task-approval', label:'Формирование заявки',      x:280,  y:228, props:{ instruction:'Подготовьте список оборудования для закупки согласно поданной заявке. Укажите количество, характеристики и приоритет.', assigneeType:'Конкретный пользователь', assignee:'Петров А.', slaValue:2, slaUnit:'дней', outcomes:['Заявка готова'], taskTracker:true }},
+            { id:3, type:'task-script',   label:'Проверка бюджета',         x:490,  y:228, props:{ algorithm:'Проверка данных', timeout:10, params:{ checkScope:'Склад', ruleSet:'Финансовый контроль', failAction:'Уведомить владельца', strictMode:true }}},
+            { id:4, type:'task-approval', label:'Утверждение закупки',      x:700,  y:228, props:{ instruction:'Утвердите или отклоните заявку на закупку. Проверьте соответствие бюджету и обоснованность потребности.', assigneeType:'Конкретный пользователь', assignee:'Иванов И.', slaValue:3, slaUnit:'дней', outcomes:['Утвердить','Отклонить'], taskTracker:true }},
+            { id:5, type:'gw-xor',        label:'Решение',                  x:920,  y:246, props:{}},
+            { id:6, type:'task-script',   label:'Экспорт в ERP',            x:1090, y:155, props:{ algorithm:'Экспорт в ERP', timeout:30, params:{ erpSystem:'1С:ERP', exportEntity:'Счёт на оплату', exportMode:'Создать новый', statusFilter:'Все', dryRun:false }}},
+            { id:7, type:'task-script',   label:'Уведомление об отказе',    x:1090, y:345, props:{ algorithm:'Уведомление Email', timeout:5, params:{ template:'Отказ', recipients:'Исполнитель задачи', priority:'Обычный', attachReport:false }}},
+            { id:8, type:'end',           label:'Конец',                    x:1285, y:250, props:{ description:'Процесс закупки завершён.' }},
+        ],
+        conns: [
+            { id:1, from:1, to:2, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:2, from:2, to:3, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:3, from:3, to:4, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:4, from:4, to:5, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:5, from:5, to:6, label:'Утверждено', flowType:'conditional', conditionStep:'4', conditionOp:'eq', conditionAttr:'Завершена' },
+            { id:6, from:5, to:7, label:'', flowType:'default', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:7, from:6, to:8, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:8, from:7, to:8, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+        ]
+    },
+    3: {
+        nodes: [
+            { id:1, type:'start',         label:'Старт',                      x:100,  y:270, props:{ description:'Запускает процесс онбординга для нового сотрудника.', triggerType:'Ручной запуск', schedule:'' }},
+            { id:2, type:'task-script',   label:'Создание аккаунтов',         x:280,  y:248, props:{ algorithm:'Интеграция 1С', timeout:20, params:{ endpoint:'Основная база', operation:'Записать данные', docType:'Договор' }}},
+            { id:3, type:'gw-and',        label:'Параллельный старт',         x:490,  y:264, props:{}},
+            { id:4, type:'task-approval', label:'Выдача оборудования',        x:660,  y:150, props:{ instruction:'Подготовьте и выдайте ноутбук, телефон и необходимые аксессуары согласно должностным нормам.', assigneeType:'Роль', assignee:'ИТ-отдел', slaValue:1, slaUnit:'дней', outcomes:['Выдано'], taskTracker:true }},
+            { id:5, type:'task-approval', label:'Вводный инструктаж',         x:660,  y:390, props:{ instruction:'Проведите вводный инструктаж. Ознакомьте с правилами внутреннего распорядка, регламентами и корпоративной культурой.', assigneeType:'Роль', assignee:'HR-менеджер', slaValue:2, slaUnit:'дней', outcomes:['Проведён'], taskTracker:true }},
+            { id:6, type:'gw-and',        label:'Синхронизация',              x:870,  y:264, props:{}},
+            { id:7, type:'task-approval', label:'Анкета обратной связи',      x:1040, y:248, props:{ instruction:'Попросите нового сотрудника заполнить анкету о прохождении онбординга. Зафиксируйте комментарии.', assigneeType:'Роль', assignee:'HR-менеджер', slaValue:3, slaUnit:'дней', outcomes:['Завершено'], taskTracker:true }},
+            { id:8, type:'end',           label:'Конец',                      x:1255, y:270, props:{ description:'Онбординг сотрудника успешно завершён.' }},
+        ],
+        conns: [
+            { id:1, from:1, to:2, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:2, from:2, to:3, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:3, from:3, to:4, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:4, from:3, to:5, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:5, from:4, to:6, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:6, from:5, to:6, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:7, from:6, to:7, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:8, from:7, to:8, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+        ]
+    },
+    4: {
+        nodes: [
+            { id:1, type:'start',         label:'Старт',        x:100, y:250, props:{ description:'Запускает архивный тестовый процесс.', triggerType:'Ручной запуск', schedule:'' }},
+            { id:2, type:'task-approval', label:'Согласование', x:280, y:228, props:{ instruction:'Согласуйте документ согласно установленному регламенту.', assigneeType:'Конкретный пользователь', assignee:'Сидоров К.', slaValue:5, slaUnit:'дней', outcomes:['Согласовано','Отклонено'], taskTracker:true }},
+            { id:3, type:'end',           label:'Конец',        x:480, y:250, props:{ description:'Процесс завершён.' }},
+        ],
+        conns: [
+            { id:1, from:1, to:2, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:2, from:2, to:3, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+        ]
+    },
+
+    // ---- S&OP Классический ----
+    5: {
+        nodes: [
+            { id:1,  type:'start',         label:'Старт',                        x:100,  y:280, props:{ description:'Запускает ежемесячный цикл S&OP. Запускается автоматически 1-го числа каждого месяца.', triggerType:'По расписанию', schedule:'01:00 каждое 1-е число месяца' }},
+            { id:2,  type:'task-script',   label:'Сбор и анализ данных',         x:290,  y:258, props:{ algorithm:'Расчет базового прогноза', timeout:60, params:{ forecastPeriod:'30 дней', forecastModel:'ARIMA', dataSource:'Хранилище аналитики', historyMonths:12, excludeOutliers:true }}},
+            { id:3,  type:'gw-and',        label:'Параллельное планирование',    x:520,  y:274, props:{}},
+            { id:4,  type:'task-approval', label:'Прогноз спроса',               x:700,  y:150, props:{ instruction:'Проанализируйте статистический прогноз спроса, скорректируйте с учётом рыночной ситуации и акций. Зафиксируйте итоговые цифры по категориям.', assigneeType:'Роль', assignee:'Коммерческий директор', slaValue:3, slaUnit:'дней', outcomes:['Прогноз утверждён'], taskTracker:true }},
+            { id:5,  type:'task-approval', label:'Планирование поставок',        x:700,  y:410, props:{ instruction:'Оцените производственные мощности и возможности поставщиков. Подготовьте план поставок с учётом остатков и прогноза спроса.', assigneeType:'Роль', assignee:'Директор по закупкам', slaValue:3, slaUnit:'дней', outcomes:['План поставок готов'], taskTracker:true }},
+            { id:6,  type:'gw-and',        label:'Синхронизация планов',         x:940,  y:274, props:{}},
+            { id:7,  type:'task-approval', label:'Пре-S&OP совещание',           x:1120, y:258, props:{ instruction:'Проведите пре-S&OP совещание: сравните прогноз спроса и план поставок, выявите разрывы, подготовьте варианты решений для исполкома.', assigneeType:'Конкретный пользователь', assignee:'Менеджер S&OP', slaValue:2, slaUnit:'дней', outcomes:['Материалы готовы','Требует доработки'], taskTracker:true }},
+            { id:8,  type:'gw-xor',        label:'Консенсус?',                   x:1360, y:274, props:{}},
+            { id:9,  type:'task-approval', label:'S&OP Исполком',                x:1540, y:150, props:{ instruction:'Проведите финальное совещание с топ-менеджментом. Согласуйте и утвердите операционный план на горизонт планирования.', assigneeType:'Конкретный пользователь', assignee:'Генеральный директор', slaValue:1, slaUnit:'дней', outcomes:['План утверждён'], taskTracker:true }},
+            { id:10, type:'task-approval', label:'Корректировка плана',          x:1540, y:420, props:{ instruction:'Доработайте план по замечаниям. Устраните разрывы между спросом и поставками, пересогласуйте с заинтересованными сторонами.', assigneeType:'Конкретный пользователь', assignee:'Менеджер S&OP', slaValue:2, slaUnit:'дней', outcomes:['Готово к исполкому'], taskTracker:true }},
+            { id:11, type:'task-script',   label:'Публикация и экспорт плана',   x:1780, y:258, props:{ algorithm:'Экспорт в ERP', timeout:30, params:{ erpSystem:'1С:ERP', exportEntity:'Договор', exportMode:'Обновить существующий', statusFilter:'Только активные', dryRun:false }}},
+            { id:12, type:'end',           label:'Конец',                        x:1990, y:278, props:{ description:'Цикл S&OP завершён. Операционный план опубликован.' }},
+        ],
+        conns: [
+            { id:1,  from:1,  to:2,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:2,  from:2,  to:3,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:3,  from:3,  to:4,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:4,  from:3,  to:5,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:5,  from:4,  to:6,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:6,  from:5,  to:6,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:7,  from:6,  to:7,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:8,  from:7,  to:8,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:9,  from:8,  to:9,  label:'Согласовано',   flowType:'conditional', conditionStep:'7', conditionOp:'eq', conditionAttr:'Завершена' },
+            { id:10, from:8,  to:10, label:'',              flowType:'default',     conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:11, from:9,  to:11, label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:12, from:10, to:11, label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:13, from:11, to:12, label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+        ]
+    },
+
+    // ---- Авто-пайплайн данных (только алгоритмы) ----
+    6: {
+        nodes: [
+            { id:1, type:'start',       label:'Старт',                  x:100,  y:250, props:{ description:'Автоматический запуск пайплайна обработки данных. Без участия пользователя.', triggerType:'По расписанию', schedule:'00:00 каждый день' }},
+            { id:2, type:'task-script', label:'Расчёт прогноза',        x:290,  y:228, props:{ algorithm:'Расчет базового прогноза', timeout:60, params:{ forecastPeriod:'7 дней', forecastModel:'ARIMA', dataSource:'Хранилище аналитики', historyMonths:6, excludeOutliers:true }}},
+            { id:3, type:'task-script', label:'Проверка данных',        x:500,  y:228, props:{ algorithm:'Проверка данных', timeout:15, params:{ checkScope:'Склад', ruleSet:'Стандартный', failAction:'Записать в журнал', strictMode:false }}},
+            { id:4, type:'gw-xor',      label:'Данные корректны?',      x:720,  y:246, props:{}},
+            { id:5, type:'task-script', label:'Экспорт в ERP',          x:900,  y:140, props:{ algorithm:'Экспорт в ERP', timeout:30, params:{ erpSystem:'1С:ERP', exportEntity:'Акт', exportMode:'Создать / Обновить', statusFilter:'Только активные', dryRun:false }}},
+            { id:6, type:'task-script', label:'SQL-агрегация',          x:1110, y:140, props:{ algorithm:'SQL Процедура #1', timeout:20, params:{ schema:'analytics', procedure:'sp_refresh_mv', paramMode:'Из контекста процесса', transact:true }}},
+            { id:7, type:'task-script', label:'Синхронизация с 1С',     x:1320, y:140, props:{ algorithm:'Интеграция 1С', timeout:30, params:{ endpoint:'Основная база', operation:'Провести документ', docType:'Акт', syncMode:'Онлайн' }}},
+            { id:8, type:'task-script', label:'Уведомление: успех',     x:1530, y:140, props:{ algorithm:'Уведомление Email', timeout:5, params:{ template:'Завершение', recipients:'Владелец процесса', priority:'Обычный', attachReport:true }}},
+            { id:9, type:'task-script', label:'Уведомление: ошибка',    x:900,  y:370, props:{ algorithm:'Уведомление Email', timeout:5, params:{ template:'Произвольный', recipients:'Владелец процесса', priority:'Срочный', attachReport:false }}},
+            { id:10, type:'end',        label:'Конец',                  x:1750, y:250, props:{ description:'Пайплайн завершён.' }},
+        ],
+        conns: [
+            { id:1, from:1, to:2,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:2, from:2, to:3,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:3, from:3, to:4,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:4, from:4, to:5,  label:'OK',        flowType:'conditional', conditionStep:'3', conditionOp:'eq', conditionAttr:'Завершена' },
+            { id:5, from:4, to:9,  label:'',          flowType:'default',     conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:6, from:5, to:6,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:7, from:6, to:7,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:8, from:7, to:8,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:9, from:8, to:10, label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:10, from:9, to:10, label:'',         flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+        ]
+    },
+};
+
+// ---- Open constructor for a template (view / edit-meta mode) ----
+function openConstructorView(templateId, mode) {
+    const schema = TEMPLATE_SCHEMAS[templateId];
+    if (!schema) { alert('Схема для данного шаблона не найдена.'); return; }
+
+    ctorNodes = schema.nodes.map(n => JSON.parse(JSON.stringify(n)));
+    ctorConns = schema.conns.map(c => JSON.parse(JSON.stringify(c)));
+    ctorNodeCnt = Math.max(...ctorNodes.map(n => n.id));
+    ctorConnCnt = Math.max(...ctorConns.map(c => c.id));
+    ctorSelId = null; connectingFrom = null; tempLine = null; dragging = null;
+    ctorViewMode = mode;
+    canvasPan = {x:0, y:0}; canvasZoom = 1; isPanning = false;
+    leftPanelVisible = true; rightPanelVisible = true;
+
+    const t = templates.find(t => t.id === templateId);
+    ctorInitProcSettings();
+    if (t) { ctorProcSettings.name = t.name; ctorProcSettings.status = t.status; }
+
+    document.getElementById('constructor-screen').classList.add('visible');
+    const titleInput = document.getElementById('ctor-title');
+    titleInput.value = t ? t.name : '';
+    titleInput.readOnly = (mode !== 'create');
+    titleInput.style.color = mode !== 'create' ? '#6b7280' : '';
+
+    const badge = document.getElementById('ctor-status-badge');
+    if (t) {
+        const cfg = { 'Активен': ['Активен','#dcfce7','#15803d'], 'Черновик': ['Черновик','#fed7aa','#b45309'], 'Архив': ['Архив','#f3f4f6','#6b7280'] }[t.status] || [t.status,'#f3f4f6','#6b7280'];
+        badge.textContent = cfg[0]; badge.style.background = cfg[1]; badge.style.color = cfg[2];
+    }
+
+    const palette  = document.querySelector('.palette');
+    const canvHint = document.querySelector('.canvas-hint');
+    if (palette)  palette.style.display  = mode === 'create' ? '' : 'none';
+    if (canvHint) {
+        if (mode === 'edit-meta') {
+            canvHint.style.background = '#fffbeb'; canvHint.style.borderColor = '#fde68a'; canvHint.style.color = '#92400e';
+            canvHint.textContent = '✏️ Режим редактирования метаданных: можно изменить инструкции и исполнителей. Структура схемы заблокирована.';
+        } else if (mode === 'view') {
+            canvHint.style.background = '#eff6ff'; canvHint.style.borderColor = '#bfdbfe'; canvHint.style.color = '#1d4ed8';
+            canvHint.textContent = '👁 Режим просмотра: схема доступна только для чтения.';
+        }
+    }
+
+    const hp = document.querySelector('.hierarchy-panel');
+    const pp = document.querySelector('.props-panel');
+    if (hp) hp.style.display = '';
+    if (pp) pp.style.display = '';
+    const lb = document.getElementById('ctbar-left-btn');
+    const rb = document.getElementById('ctbar-right-btn');
+    if (lb) { lb.textContent = '◀'; lb.classList.remove('panel-hidden'); }
+    if (rb) { rb.textContent = '▶'; rb.classList.remove('panel-hidden'); }
+
+    ctorRenderAll();
+    applyCanvasTransform();
+    // Auto-center schema
+    setTimeout(() => {
+        if (!ctorNodes.length) return;
+        const minX = Math.min(...ctorNodes.map(n => n.x));
+        const minY = Math.min(...ctorNodes.map(n => n.y));
+        canvasPan.x = 60 - minX; canvasPan.y = 80 - minY;
+        applyCanvasTransform();
+    }, 30);
+}
+
+function openTemplateView(templateId) {
+    const t = templates.find(t => t.id === templateId);
+    if (!t) return;
+    openConstructorView(templateId, t.status === 'Архив' ? 'view' : 'edit-meta');
+}
+
+function openInstanceView(templateId) {
+    openConstructorView(templateId, 'view');
+}
+
+function ctorSaveMetaChanges() {
+    const btn = document.querySelector('[onclick="ctorSaveMetaChanges()"]');
+    const orig = btn ? btn.innerHTML : '';
+    if (btn) { btn.textContent = '✅ Сохранено!'; btn.disabled = true; }
+    setTimeout(() => { if (btn) { btn.innerHTML = orig; btn.disabled = false; } }, 1800);
+}
+
+// ---- Read-only props panel (view mode) ----
+function buildNodePropsHTMLReadOnly(node) {
+    const cfg = NODE_CFG[node.type];
+    const iconOf = { circle: node.type==='start'?'🟢':'🔴', rect:'🔷', diamond:'🔶' }[cfg.shape];
+    const ro = (label, val) => (val !== undefined && val !== null && val !== '')
+        ? `<div class="prop-group"><label class="prop-label">${label}</label><div style="font-size:0.8rem;color:#374151;padding:0.35rem 0.5rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:0.375rem;line-height:1.5;">${escHtml(String(val))}</div></div>` : '';
+    let details = '';
+    const p = node.props;
+    switch(node.type) {
+        case 'start': details = ro('Описание', p.description) + ro('Триггер', p.triggerType); break;
+        case 'end':   details = ro('Описание', p.description); break;
+        case 'task-approval':
+            details = ro('Инструкция', p.instruction) +
+                      ro('Исполнитель', (p.assignee ? p.assigneeType + ': ' + p.assignee : p.assigneeType)) +
+                      ro('SLA', p.slaValue + ' ' + p.slaUnit) +
+                      ro('Исходы', (p.outcomes||[]).join(', ')); break;
+        case 'task-script':
+            details = ro('Алгоритм', p.algorithm || '—') + ro('Тайм-аут', p.timeout + ' мин.'); break;
+        case 'gw-xor': details = `<div class="prop-note" style="padding:0.5rem;background:#fffbeb;border-radius:0.375rem;">Маршрутизация по условиям на исходящих связях.</div>`; break;
+        case 'gw-and': details = `<div class="prop-note" style="padding:0.5rem;background:#f0fdf4;border-radius:0.375rem;">Параллельное разделение / слияние потоков.</div>`; break;
+    }
+    const inCnt = ctorConns.filter(c => c.to === node.id).length;
+    const outCnt = ctorConns.filter(c => c.from === node.id).length;
+    return `<div class="props-node-header"><span style="font-size:1.3rem;">${iconOf}</span>
+        <div><div style="font-size:0.8rem;font-weight:700;color:#374151;">${escHtml(cfg.label)}</div>
+        <div style="font-size:0.68rem;color:#9ca3af;">ID: N-${node.id}</div></div></div>
+        ${ro('Название', node.label)}${details}
+        <div class="conn-info"><div>Входящих: <b>${inCnt}</b> &nbsp;|&nbsp; Исходящих: <b>${outCnt}</b></div></div>`;
+}
+
+// ---- Edit-meta props panel (edit-meta mode) ----
+function buildNodePropsHTMLMeta(node) {
+    const cfg = NODE_CFG[node.type];
+    const iconOf = { circle: node.type==='start'?'🟢':'🔴', rect:'🔷', diamond:'🔶' }[cfg.shape];
+    const ro = (label, val) => `<div class="prop-group"><label class="prop-label">${label}</label><div style="font-size:0.8rem;color:#374151;padding:0.35rem 0.5rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:0.375rem;">${escHtml(String(val||'—'))}</div></div>`;
+    const p = node.props;
+    let editable = '';
+    switch(node.type) {
+        case 'start':
+        case 'end':
+            editable = `<div class="prop-group"><label class="prop-label">Описание</label>
+                <textarea class="prop-textarea" oninput="ctorUpdProp(${node.id},'description',this.value)">${escHtml(p.description||'')}</textarea></div>`;
+            break;
+        case 'task-approval':
+            const atypes = ['Конкретный пользователь','Роль','Группа'].map(v =>
+                `<option ${p.assigneeType===v?'selected':''}>${escHtml(v)}</option>`).join('');
+            editable = `<div class="prop-group"><label class="prop-label">Инструкция</label>
+                <textarea class="prop-textarea" oninput="ctorUpdProp(${node.id},'instruction',this.value)">${escHtml(p.instruction||'')}</textarea></div>
+                <div class="prop-group"><label class="prop-label">Исполнитель</label>
+                <select class="prop-select" style="margin-bottom:0.3rem;" onchange="ctorUpdProp(${node.id},'assigneeType',this.value)">${atypes}</select>
+                <input class="prop-input" placeholder="Имя / Роль / Группа" value="${escHtml(p.assignee||'')}" oninput="ctorUpdProp(${node.id},'assignee',this.value)" /></div>
+                ${ro('SLA', p.slaValue + ' ' + p.slaUnit)}${ro('Исходы', (p.outcomes||[]).join(', '))}`;
+            break;
+        case 'task-script':
+            editable = ro('Алгоритм', p.algorithm || '—') + ro('Тайм-аут', p.timeout + ' мин.');
+            break;
+        default:
+            editable = `<div class="prop-note" style="padding:0.5rem;background:#f9fafb;border-radius:0.375rem;border:1px solid #e5e7eb;">Настройка этого элемента недоступна в режиме редактирования метаданных.</div>`;
+    }
+    const inCnt = ctorConns.filter(c => c.to === node.id).length;
+    const outCnt = ctorConns.filter(c => c.from === node.id).length;
+    return `<div class="props-node-header"><span style="font-size:1.3rem;">${iconOf}</span>
+        <div><div style="font-size:0.8rem;font-weight:700;color:#374151;">${escHtml(cfg.label)}</div>
+        <div style="font-size:0.68rem;color:#9ca3af;">ID: N-${node.id}</div></div></div>
+        ${ro('Название', node.label)}${editable}
+        <div class="conn-info"><div>Входящих: <b>${inCnt}</b> &nbsp;|&nbsp; Исходящих: <b>${outCnt}</b></div></div>`;
+}
+
+// ---- Process-level props for view mode ----
+function ctorRenderProcessPropsReadOnly() {
+    const content = document.getElementById('props-content');
+    if (!content) return;
+    const s = ctorProcSettings;
+    const ro = (label, val) => `<div class="prop-group"><label class="prop-label">${label}</label><div style="font-size:0.8rem;color:#374151;padding:0.35rem 0.5rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:0.375rem;">${escHtml(String(val||'—'))}</div></div>`;
+    content.innerHTML = `<div class="prop-section-title" style="margin-bottom:0.75rem;">&#128203; Процесс</div>
+        ${ro('ID процесса', s.id)}${ro('Название', s.name)}${ro('Статус', s.status)}
+        ${ro('Описание', s.description || '—')}${ro('Часовой пояс', s.timezone)}
+        ${ro('Автозапуск', s.isRepeating ? 'Включён' : 'Выключен')}`;
+}
+
+// ---- Process-level props for edit-meta mode ----
+function ctorRenderProcessPropsMeta() {
+    const content = document.getElementById('props-content');
+    if (!content) return;
+    const s = ctorProcSettings;
+    const ro = (label, val) => `<div class="prop-group"><label class="prop-label">${label}</label><div style="font-size:0.8rem;color:#374151;padding:0.35rem 0.5rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:0.375rem;">${escHtml(String(val||'—'))}</div></div>`;
+    content.innerHTML = `<div class="prop-section-title" style="margin-bottom:0.75rem;">&#128203; Процесс</div>
+        ${ro('ID процесса', s.id)}${ro('Название', s.name)}${ro('Статус', s.status)}
+        <div class="prop-group"><label class="prop-label">Описание процесса</label>
+            <textarea class="prop-textarea" placeholder="Описание назначения процесса..." oninput="ctorProcSettings.description=this.value">${escHtml(s.description||'')}</textarea></div>
+        <div class="prop-group"><label class="prop-label">Владелец</label>
+            <input class="prop-input" value="${escHtml((s.owners||[]).join(', '))}" placeholder="ФИО владельца" oninput="ctorProcSettings.owners=this.value.split(',').map(v=>v.trim())" /></div>
+        ${ro('Часовой пояс', s.timezone)}`;
+}
+</script>
+
+<!-- ==================== TASKS SCREEN LOGIC ==================== -->
+<script>
+let currentTaskTab = 'active';
+let pendingAction = null;
+
+const now = Date.now();
+let tasksActive = [
+    {
+        id: 'T-001',
+        name: 'Согласовать договор с ООО "Альфа"',
+        process: 'Согласование договора',
+        instance: 'E-101',
+        instruction: 'Проверьте условия договора с контрагентом ООО "Альфа". Обратите особое внимание на пункты 3.1, 5.2 и 7. При наличии замечаний — отклоните с комментарием.',
+        startedBy: 'Петров А.',
+        arrivedAt: new Date(now - 2*24*60*60*1000).toISOString(),
+        deadline: new Date(now + 2*24*60*60*1000).toISOString(),
+        outcomes: [{ label: 'Согласовать', primary: true }, { label: 'Отклонить', primary: false }]
+    },
+    {
+        id: 'T-002',
+        name: 'Подготовить список оборудования',
+        process: 'Закупка оборудования',
+        instance: 'Z-001',
+        instruction: 'Подготовьте и утвердите список оборудования для закупки согласно заявке. Проверьте наличие бюджета на текущий квартал.',
+        startedBy: 'Иванов И.',
+        arrivedAt: new Date(now - 5*24*60*60*1000).toISOString(),
+        deadline: new Date(now - 1*24*60*60*1000).toISOString(),
+        outcomes: [{ label: 'Утвердить', primary: true }, { label: 'Вернуть на доработку', primary: false }]
+    },
+    {
+        id: 'T-003',
+        name: 'Провести вводный инструктаж',
+        process: 'Онбординг сотрудника',
+        instance: 'O-201',
+        instruction: 'Проведите вводный инструктаж для нового сотрудника. Ознакомьте с правилами внутреннего распорядка и ключевыми регламентами компании.',
+        startedBy: 'Новиков Р.',
+        arrivedAt: new Date(now - 1*24*60*60*1000).toISOString(),
+        deadline: new Date(now + 4*24*60*60*1000).toISOString(),
+        outcomes: [{ label: 'Сделано', primary: true }]
+    },
+    {
+        id: 'T-004',
+        name: 'Проверить финансовые условия договора',
+        process: 'Согласование договора',
+        instance: 'E-105',
+        instruction: 'Проверьте соответствие финансовых условий договора текущей кредитной политике компании. При необходимости согласуйте с финансовым отделом.',
+        startedBy: 'Козлов В.',
+        arrivedAt: new Date(now - 6*24*60*60*1000).toISOString(),
+        deadline: new Date(now - 3*24*60*60*1000).toISOString(),
+        outcomes: [{ label: 'Согласовать', primary: true }, { label: 'Отклонить', primary: false }, { label: 'Запросить уточнение', primary: false }]
+    },
+    {
+        id: 'T-005',
+        name: 'Выдать доступы в корпоративных системах',
+        process: 'Онбординг сотрудника',
+        instance: 'O-202',
+        instruction: 'Создайте учётные записи нового сотрудника в корпоративных системах: CRM, ERP, корпоративная почта. Назначьте роли согласно должностной инструкции.',
+        startedBy: 'Фёдорова Т.',
+        arrivedAt: new Date(now - 1*24*60*60*1000).toISOString(),
+        deadline: new Date(now + 1*24*60*60*1000).toISOString(),
+        outcomes: [{ label: 'Выполнено', primary: true }, { label: 'Требует уточнения', primary: false }]
+    },
+];
+
+let tasksHistory = [
+    { id: 'H-001', name: 'Согласовать договор поставки',       process: 'Согласование договора — E-103', completedAt: new Date(now - 15*24*60*60*1000).toISOString(), result: 'Согласовано',         resultType: 'green' },
+    { id: 'H-002', name: 'Проверить спецификацию оборудования', process: 'Закупка оборудования — Z-003',  completedAt: new Date(now - 85*24*60*60*1000).toISOString(), result: 'Отклонено',            resultType: 'red'   },
+    { id: 'H-003', name: 'Подписать акт приёма-передачи',       process: 'Онбординг сотрудника — O-203',  completedAt: new Date(now - 8*24*60*60*1000).toISOString(),  result: 'Сделано',             resultType: 'green' },
+    { id: 'H-004', name: 'Утвердить бюджет закупки',            process: 'Согласование договора — E-104', completedAt: new Date(now - 20*24*60*60*1000).toISOString(), result: 'Согласовано',         resultType: 'green' },
+    { id: 'H-005', name: 'Согласовать план онбординга',         process: 'Онбординг сотрудника — O-205',  completedAt: new Date(now - 9*24*60*60*1000).toISOString(),  result: 'Согласовано',         resultType: 'green' },
+    { id: 'H-006', name: 'Проверить коммерческое предложение',  process: 'Закупка оборудования — Z-003',  completedAt: new Date(now - 89*24*60*60*1000).toISOString(), result: 'Утверждено',          resultType: 'green' },
+    { id: 'H-007', name: 'Согласование с юридическим отделом',  process: 'Согласование договора — E-103', completedAt: new Date(now - 16*24*60*60*1000).toISOString(), result: 'Согласовано',         resultType: 'green' },
+];
+
+function getTaskStatus(task) {
+    return new Date() > new Date(task.deadline) ? 'overdue' : 'active';
+}
+
+function fmtDatetime(iso) {
+    return new Date(iso).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function showView(view) {
+    const bp    = document.getElementById('bp-view');
+    const tasks = document.getElementById('tasks-view');
+    const navBp    = document.getElementById('nav-bp');
+    const navTasks = document.getElementById('nav-tasks');
+    if (view === 'bp') {
+        if (bp)    { bp.style.display    = 'flex'; }
+        if (tasks) { tasks.style.display = 'none'; }
+        navBp.classList.add('active-menu');
+        navTasks.classList.remove('active-menu');
+    } else if (view === 'tasks') {
+        if (bp)    { bp.style.display    = 'none'; }
+        if (tasks) { tasks.style.display = 'flex'; }
+        navBp.classList.remove('active-menu');
+        navTasks.classList.add('active-menu');
+        renderTasksView();
+    }
+}
+
+function renderTasksView() {
+    updateTasksKPI();
+    if (currentTaskTab === 'active') renderActiveTasks();
+    else renderHistoryTasks();
+}
+
+function updateTasksKPI() {
+    const overdueCount = tasksActive.filter(t => getTaskStatus(t) === 'overdue').length;
+    const activeCount  = tasksActive.filter(t => getTaskStatus(t) === 'active').length;
+    const total = tasksActive.length;
+
+    const cntEl = document.getElementById('tasks-active-cnt');
+    if (cntEl) cntEl.textContent = total > 0 ? '(' + total + ')' : '';
+
+    const badge = document.getElementById('nav-tasks-badge');
+    if (overdueCount > 0) {
+        badge.style.display = 'block'; badge.textContent = overdueCount;
+    } else if (total > 0) {
+        badge.style.display = 'block'; badge.textContent = total;
+    } else {
+        badge.style.display = 'none';
+    }
+
+    const kpi = document.getElementById('tasks-kpi-bar');
+    if (!kpi) return;
+    kpi.innerHTML =
+        (overdueCount > 0 ? '<span class="kpi-chip kpi-overdue">&#128308; Просрочено: ' + overdueCount + '</span>' : '') +
+        (activeCount  > 0 ? '<span class="kpi-chip kpi-inwork">&#128309; В работе: ' + activeCount + '</span>' : '') +
+        '<span class="kpi-chip kpi-done">&#10003; Завершено: ' + tasksHistory.length + '</span>';
+}
+
+function switchTaskTab(tab) {
+    currentTaskTab = tab;
+    document.getElementById('tab-active').classList.toggle('active', tab === 'active');
+    document.getElementById('tab-done').classList.toggle('active', tab === 'done');
+    if (tab === 'active') renderActiveTasks();
+    else renderHistoryTasks();
+}
+
+function renderActiveTasks() {
+    const body = document.getElementById('tasks-body');
+    if (!body) return;
+    if (tasksActive.length === 0) {
+        body.innerHTML = '<div class="task-empty"><div class="task-empty-icon">&#10003;</div><div class="task-empty-title">На сегодня задач нет</div><div class="task-empty-sub">Отличная работа!</div></div>';
+        return;
+    }
+    const preview  = tasksActive.slice(0, 7);
+    const hasMore  = tasksActive.length > 7;
+    body.innerHTML = preview.map(task => buildTaskCard(task)).join('') +
+        (hasMore ? '<button class="show-all-btn" onclick="showAllTasks()">Показать все (' + tasksActive.length + ')</button>' : '');
+}
+
+function buildTaskCard(task) {
+    const ov = getTaskStatus(task) === 'overdue';
+    return '<div class="task-card ' + (ov ? 'overdue' : 'active-task') + '" onclick="openTaskDrawer(\'' + task.id + '\')">' +
+        '<div class="task-dot ' + (ov ? 'red' : 'gray') + '"></div>' +
+        '<div class="task-main">' +
+            '<div class="task-name">' + task.name + '</div>' +
+            '<div class="task-proc">' + task.process + ' &middot; ' + task.instance + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0;">' +
+            '<div class="task-dl-lbl">Дедлайн</div>' +
+            '<div class="task-dl ' + (ov ? 'red' : '') + '">' + fmtDatetime(task.deadline) + '</div>' +
+        '</div>' +
+        '<div class="task-arr">&#8250;</div>' +
+    '</div>';
+}
+
+function showAllTasks() {
+    const body = document.getElementById('tasks-body');
+    if (!body) return;
+    body.innerHTML = tasksActive.map(t => buildTaskCard(t)).join('');
+}
+
+function renderHistoryTasks() {
+    const body = document.getElementById('tasks-body');
+    if (!body) return;
+    if (tasksHistory.length === 0) {
+        body.innerHTML = '<div class="task-empty"><div class="task-empty-icon">&#128203;</div><div class="task-empty-title">История пуста</div><div class="task-empty-sub">Завершённые задачи будут отображаться здесь</div></div>';
+        return;
+    }
+    const rows = tasksHistory.slice(0, 30).map(h =>
+        '<tr>' +
+            '<td>' + h.name + '</td>' +
+            '<td style="color:#6b7280;font-size:0.78rem;">' + h.process + '</td>' +
+            '<td style="white-space:nowrap;">' + fmtDatetime(h.completedAt) + '</td>' +
+            '<td><span class="result-badge" style="background:' + (h.resultType === 'green' ? '#dcfce7' : '#fee2e2') + ';color:' + (h.resultType === 'green' ? '#15803d' : '#dc2626') + ';">' + h.result + '</span></td>' +
+        '</tr>'
+    ).join('');
+    body.innerHTML =
+        '<table class="hist-table">' +
+            '<thead><tr><th>Название задачи</th><th>Процесс</th><th>Дата выполнения</th><th>Результат</th></tr></thead>' +
+            '<tbody>' + rows + '</tbody>' +
+        '</table>';
+}
+
+function openTaskDrawer(taskId) {
+    const task = tasksActive.find(t => t.id === taskId);
+    if (!task) return;
+    const ov = getTaskStatus(task) === 'overdue';
+    document.getElementById('td-proc-tag').textContent = task.process + ' · ' + task.instance;
+    document.getElementById('td-title').textContent = task.name;
+    document.getElementById('td-meta').innerHTML =
+        '<div class="td-meta-item">Процесс: <b>' + task.process + '</b></div>' +
+        '<div class="td-meta-item">Запустил: <b>' + task.startedBy + '</b></div>' +
+        '<div class="td-meta-item">Поступила: <b>' + fmtDatetime(task.arrivedAt) + '</b></div>' +
+        '<div class="td-meta-item" style="color:' + (ov ? '#dc2626' : '#374151') + '">Дедлайн: <b>' + fmtDatetime(task.deadline) + '</b>' + (ov ? ' &#9888; Просрочена' : '') + '</div>';
+    document.getElementById('td-instruction').textContent = task.instruction;
+    document.getElementById('td-outcomes').innerHTML = task.outcomes.map(o =>
+        '<button class="td-outcome-btn ' + (o.primary ? 'primary' : '') + '" onclick="confirmTaskAction(\'' + taskId + '\',\'' + o.label + '\')">' + o.label + '</button>'
+    ).join('');
+    document.getElementById('task-modal').classList.add('open');
+}
+
+function closeTaskDrawer() {
+    document.getElementById('task-modal').classList.remove('open');
+}
+
+function confirmTaskAction(taskId, outcome) {
+    pendingAction = { taskId, outcome };
+    document.getElementById('action-confirm-text').textContent = 'Вы уверены, что хотите выполнить действие «' + outcome + '»? Задача будет завершена и токен уйдёт дальше по маршруту.';
+    document.getElementById('action-confirm-modal').classList.add('open');
+}
+
+function closeActionConfirm() {
+    document.getElementById('action-confirm-modal').classList.remove('open');
+    pendingAction = null;
+}
+
+function executeTaskAction() {
+    if (!pendingAction) return;
+    const { taskId, outcome } = pendingAction;
+    const task = tasksActive.find(t => t.id === taskId);
+    if (task) {
+        tasksActive = tasksActive.filter(t => t.id !== taskId);
+        const positiveLabels = ['Согласовать','Утвердить','Сделано','Выполнено','Согласовано','Одобрить','Одобрено'];
+        tasksHistory.unshift({
+            id: 'H-' + Date.now(),
+            name: task.name,
+            process: task.process + ' — ' + task.instance,
+            completedAt: new Date().toISOString(),
+            result: outcome,
+            resultType: positiveLabels.some(l => outcome.toLowerCase().includes(l.toLowerCase())) ? 'green' : 'red'
+        });
+    }
+    closeActionConfirm();
+    closeTaskDrawer();
+    renderTasksView();
+}
+
+// Auto-refresh overdue statuses every minute
+setInterval(() => {
+    const tv = document.getElementById('tasks-view');
+    if (tv && tv.style.display !== 'none') renderTasksView();
+    else updateTasksKPI();
+}, 60000);
+
+// Init badge on load
+(function initTasksBadge() {
+    const overdueCount = tasksActive.filter(t => getTaskStatus(t) === 'overdue').length;
+    const total = tasksActive.length;
+    const badge = document.getElementById('nav-tasks-badge');
+    if (!badge) return;
+    if (overdueCount > 0) { badge.style.display = 'block'; badge.textContent = overdueCount; }
+    else if (total > 0)   { badge.style.display = 'block'; badge.textContent = total; }
+})();
 </script>
 
 </body>
