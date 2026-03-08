@@ -147,6 +147,37 @@
         .hist-table td { padding:0.6rem 0.75rem; font-size:0.82rem; color:#374151; border-bottom:1px solid #f3f4f6; }
         .hist-table tr:hover td { background:#f9fafb; }
         .result-badge { display:inline-block; padding:0.12rem 0.5rem; border-radius:9999px; font-size:0.7rem; font-weight:500; }
+        /* ===== ANALYTICS / GANTT ===== */
+        #analytics-view { flex:1; display:flex; flex-direction:column; overflow:hidden; background:#f9fafb; }
+        .gantt-wrap    { flex:1; overflow:auto; padding:1.25rem 1.5rem; }
+        .gantt-filter  { padding:0.625rem 1.5rem; background:#fff; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; gap:0.75rem; flex-shrink:0; }
+        .gantt-filter label { font-size:0.78rem; color:#6b7280; }
+        .gantt-filter select { font-size:0.8rem; border:1px solid #e5e7eb; border-radius:0.375rem; padding:0.2rem 0.5rem; color:#374151; }
+        .gantt-outer   { background:#fff; border:1px solid #e5e7eb; border-radius:0.5rem; overflow:hidden; min-width:700px; }
+        .gantt-hdr     { display:flex; border-bottom:2px solid #e5e7eb; background:#f9fafb; position:sticky; top:0; z-index:5; }
+        .gantt-lbl-col { width:210px; flex-shrink:0; border-right:1px solid #e5e7eb; }
+        .gantt-tl-col  { flex:1; position:relative; overflow:hidden; }
+        .gantt-group   { display:flex; align-items:center; background:#f3f4f6; border-bottom:1px solid #e5e7eb; min-height:30px; }
+        .gantt-group-lbl { width:210px; flex-shrink:0; padding:0.35rem 0.75rem; font-size:0.7rem; font-weight:700; text-transform:uppercase; color:#6b7280; letter-spacing:0.04em; border-right:1px solid #e5e7eb; }
+        .gantt-row     { display:flex; align-items:center; border-bottom:1px solid #f3f4f6; min-height:50px; cursor:pointer; transition:background 0.1s; }
+        .gantt-row:hover { background:#faf5ff; }
+        .gantt-row-lbl { width:210px; flex-shrink:0; padding:0.3rem 0.75rem; border-right:1px solid #f3f4f6; }
+        .gantt-tl      { flex:1; position:relative; height:50px; }
+        .gantt-month-tick { position:absolute; top:0; bottom:0; border-left:1px dashed #e5e7eb; pointer-events:none; }
+        .gantt-today-ln { position:absolute; top:0; bottom:0; width:2px; background:#6d28d9; opacity:0.35; z-index:4; pointer-events:none; }
+        .gantt-today-lbl{ position:absolute; top:2px; font-size:0.58rem; font-weight:700; color:#6d28d9; transform:translateX(-50%); }
+        .gantt-bar-wrap { position:absolute; top:14px; height:22px; border-radius:9999px; overflow:hidden; min-width:5px; transition:opacity 0.15s; }
+        .gantt-bar-wrap:hover { opacity:0.85; }
+        .gantt-bar-fill { height:100%; border-radius:9999px; }
+        .gantt-dl-marker{ position:absolute; top:10px; width:2px; height:30px; border-radius:1px; opacity:0.5; z-index:3; pointer-events:none; }
+
+        /* Instance Progress Drawer */
+        #instance-modal  { display:none; position:fixed; inset:0; z-index:800; }
+        #instance-modal.open { display:flex; }
+        .idraw           { width:460px; max-width:95vw; background:#fff; display:flex; flex-direction:column; box-shadow:-8px 0 32px rgba(0,0,0,0.14); animation:slideIn 0.2s ease; }
+        .idraw-body      { flex:1; overflow-y:auto; padding:1.25rem 1.5rem; }
+        .idraw-section   { font-size:0.65rem; font-weight:700; text-transform:uppercase; color:#9ca3af; letter-spacing:0.04em; margin:1rem 0 0.6rem; }
+
         /* Task Drawer */
         #task-modal  { display:none; position:fixed; inset:0; z-index:800; }
         #task-modal.open { display:flex; }
@@ -183,7 +214,7 @@
                 ✓
                 <span id="nav-tasks-badge" style="display:none;position:absolute;top:6px;right:6px;background:#dc2626;color:#fff;border-radius:9999px;font-size:9px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center;"></span>
             </div>
-            <div title="Аналитика" class="sidebar-item p-4 cursor-pointer flex justify-center">📊</div>
+            <div title="Аналитика" id="nav-analytics" class="sidebar-item p-4 cursor-pointer flex justify-center" onclick="showView('analytics')">📊</div>
         </nav>
     </aside>
 
@@ -272,6 +303,26 @@
             <div class="tasks-body" id="tasks-body"></div>
         </div>
 
+        <!-- ==================== ANALYTICS VIEW ==================== -->
+        <div id="analytics-view" style="display:none;">
+            <div class="tasks-header">
+                <h1>Аналитика</h1>
+                <span style="font-size:0.78rem;color:#9ca3af;font-weight:400;">Диаграмма Ганта по экземплярам процессов</span>
+            </div>
+            <div class="gantt-filter">
+                <label>Фильтр:</label>
+                <select id="gantt-filter-sel" onchange="renderGanttChart(this.value?+this.value:null)">
+                    <option value="">Все процессы</option>
+                </select>
+                <span style="font-size:0.72rem;color:#9ca3af;margin-left:auto;">Нажмите на строку экземпляра для просмотра прогресса</span>
+            </div>
+            <div class="gantt-wrap">
+                <div class="gantt-outer">
+                    <div id="gantt-body"></div>
+                </div>
+            </div>
+        </div>
+
     </main>
 </div>
 
@@ -322,6 +373,28 @@
     </div>
 </div>
 
+<!-- ==================== INSTANCE PROGRESS DRAWER ==================== -->
+<div id="instance-modal">
+    <div class="task-backdrop" onclick="closeInstanceDrawer()"></div>
+    <div class="idraw">
+        <div class="td-header">
+            <div style="flex:1;min-width:0;">
+                <div class="td-tag" id="idraw-proc"></div>
+                <div class="td-title" id="idraw-title"></div>
+            </div>
+            <div class="td-close" onclick="closeInstanceDrawer()">✕</div>
+        </div>
+        <div class="td-meta" id="idraw-meta"></div>
+        <div class="idraw-body">
+            <div id="idraw-progress" style="margin-bottom:1.25rem;"></div>
+            <div class="idraw-section">Журнал выполнения задач</div>
+            <div id="idraw-stepper"></div>
+            <div class="idraw-section" style="margin-top:1.25rem;">Схема процесса (шаги)</div>
+            <div id="idraw-schema-steps"></div>
+        </div>
+    </div>
+</div>
+
 <script>
     let nextId = 7;
 
@@ -357,6 +430,119 @@
             { id: 'AL-001', start: '05.06.25', user: 'Система',     status: 'Активен',   progress: 75,  deadline: '06.06.25', overdue: 0,  end: '-' },
             { id: 'AL-002', start: '04.06.25', user: 'Система',     status: 'Просрочен', progress: 50,  deadline: '04.06.25', overdue: 1,  end: '-' },
             { id: 'AL-003', start: '01.06.25', user: 'Система',     status: 'Завершен',  progress: 100, deadline: '02.06.25', overdue: 0,  end: '02.06.25' },
+        ],
+    };
+
+    const instanceTaskLogs = {
+        /* Template 1 — Согласование договора */
+        'E-101': [
+            { step:'Проверка заявки',     type:'task-approval', assignee:'Иванов И.',    sla:'1 день',  startedAt:'01.06 09:00', completedAt:'01.06 16:30', onTime:true,  outcome:'Принято' },
+            { step:'Согласование ДД',     type:'task-approval', assignee:'Юрид. отдел',  sla:'2 дня',   startedAt:'02.06 09:00', completedAt:'04.06 14:00', onTime:true,  outcome:'Согласовано' },
+            { step:'Уведомление',         type:'task-script',   assignee:'Система',       sla:'30 мин.', startedAt:'04.06 14:05', completedAt:null,           onTime:null,  outcome:null, current:true },
+        ],
+        'E-102': [
+            { step:'Проверка заявки',     type:'task-approval', assignee:'Петров А.',     sla:'1 день',  startedAt:'28.05 10:00', completedAt:'28.05 18:45', onTime:true,  outcome:'Принято' },
+            { step:'Согласование ДД',     type:'task-approval', assignee:'Юрид. отдел',  sla:'2 дня',   startedAt:'29.05 09:00', completedAt:null,           onTime:false, outcome:null, current:true },
+        ],
+        'E-103': [
+            { step:'Проверка заявки',     type:'task-approval', assignee:'Сидоров К.',    sla:'1 день',  startedAt:'20.05 09:00', completedAt:'20.05 15:00', onTime:true,  outcome:'Принято' },
+            { step:'Согласование ДД',     type:'task-approval', assignee:'Юрид. отдел',  sla:'2 дня',   startedAt:'21.05 10:00', completedAt:'22.05 11:00', onTime:true,  outcome:'Согласовано' },
+            { step:'Уведомление',         type:'task-script',   assignee:'Система',       sla:'30 мин.', startedAt:'22.05 11:05', completedAt:'22.05 11:20', onTime:true,  outcome:'Отправлено' },
+        ],
+        'E-104': [
+            { step:'Проверка заявки',     type:'task-approval', assignee:'Иванов И.',    sla:'1 день',  startedAt:'15.05 09:00', completedAt:'15.05 14:00', onTime:true,  outcome:'Принято' },
+            { step:'Согласование ДД',     type:'task-approval', assignee:'Козлов В.',    sla:'2 дня',   startedAt:'16.05 09:00', completedAt:'17.05 10:30', onTime:true,  outcome:'Согласовано' },
+            { step:'Уведомление',         type:'task-script',   assignee:'Система',       sla:'30 мин.', startedAt:'17.05 10:35', completedAt:'17.05 10:50', onTime:true,  outcome:'Отправлено' },
+        ],
+        'E-105': [
+            { step:'Проверка заявки',     type:'task-approval', assignee:'Козлов В.',    sla:'1 день',  startedAt:'10.05 09:00', completedAt:'10.05 17:00', onTime:true,  outcome:'Принято' },
+            { step:'Согласование ДД',     type:'task-approval', assignee:'Юрид. отдел',  sla:'2 дня',   startedAt:'11.05 09:00', completedAt:null,           onTime:null,  outcome:null, current:true },
+        ],
+        /* Template 2 — Закупка оборудования */
+        'Z-001': [
+            { step:'Инициация закупки',   type:'task-approval', assignee:'Петров А.',    sla:'2 дня',   startedAt:'12.05 10:00', completedAt:'13.05 11:00', onTime:true,  outcome:'Подтверждено' },
+            { step:'Оценка стоимости',    type:'task-script',   assignee:'Система',       sla:'1 день',  startedAt:'13.05 11:05', completedAt:null,           onTime:null,  outcome:null, current:true },
+        ],
+        'Z-002': [
+            { step:'Инициация закупки',   type:'task-approval', assignee:'Смирнов Д.',   sla:'2 дня',   startedAt:'05.04 09:00', completedAt:'06.04 14:00', onTime:true,  outcome:'Подтверждено' },
+            { step:'Оценка стоимости',    type:'task-script',   assignee:'Система',       sla:'1 день',  startedAt:'06.04 14:05', completedAt:'07.04 09:00', onTime:true,  outcome:'Оценено' },
+            { step:'Согласование бюджета',type:'task-approval', assignee:'Иванов И.',    sla:'3 дня',   startedAt:'07.04 09:30', completedAt:null,           onTime:false, outcome:null, current:true },
+        ],
+        'Z-003': [
+            { step:'Инициация закупки',   type:'task-approval', assignee:'Петров А.',    sla:'2 дня',   startedAt:'01.03 09:00', completedAt:'02.03 10:00', onTime:true,  outcome:'Подтверждено' },
+            { step:'Оценка стоимости',    type:'task-script',   assignee:'Система',       sla:'1 день',  startedAt:'02.03 10:05', completedAt:'03.03 08:00', onTime:true,  outcome:'Оценено' },
+            { step:'Согласование бюджета',type:'task-approval', assignee:'Иванов И.',    sla:'3 дня',   startedAt:'03.03 09:00', completedAt:'05.03 11:00', onTime:true,  outcome:'Согласовано' },
+            { step:'Заключение договора', type:'task-script',   assignee:'Система',       sla:'1 день',  startedAt:'05.03 11:05', completedAt:'14.03 09:00', onTime:true,  outcome:'Выполнено' },
+        ],
+        /* Template 3 — Онбординг сотрудника */
+        'O-201': [
+            { step:'Подготовка рабочего места', type:'task-script',   assignee:'Система',       sla:'1 день',  startedAt:'03.06 09:00', completedAt:'03.06 15:00', onTime:true,  outcome:'Готово' },
+            { step:'Оформление документов',     type:'task-approval', assignee:'Новиков Р.',    sla:'2 дня',   startedAt:'03.06 15:10', completedAt:null,           onTime:null,  outcome:null, current:true },
+        ],
+        'O-202': [
+            { step:'Подготовка рабочего места', type:'task-script',   assignee:'Система',       sla:'1 день',  startedAt:'01.06 09:00', completedAt:'01.06 14:00', onTime:true,  outcome:'Готово' },
+            { step:'Оформление документов',     type:'task-approval', assignee:'Фёдорова Т.',   sla:'2 дня',   startedAt:'01.06 14:10', completedAt:'03.06 11:00', onTime:true,  outcome:'Оформлено' },
+            { step:'Настройка доступов',        type:'task-approval', assignee:'ИТ-отдел',      sla:'1 день',  startedAt:'01.06 14:10', completedAt:null,           onTime:null,  outcome:null, current:true },
+        ],
+        'O-203': [
+            { step:'Подготовка рабочего места', type:'task-script',   assignee:'Система',       sla:'1 день',  startedAt:'25.05 09:00', completedAt:'25.05 12:00', onTime:true,  outcome:'Готово' },
+            { step:'Оформление документов',     type:'task-approval', assignee:'Алексеев М.',   sla:'2 дня',   startedAt:'25.05 12:10', completedAt:'27.05 10:00', onTime:true,  outcome:'Оформлено' },
+            { step:'Настройка доступов',        type:'task-approval', assignee:'ИТ-отдел',      sla:'1 день',  startedAt:'25.05 12:10', completedAt:'26.05 15:00', onTime:true,  outcome:'Настроено' },
+            { step:'Вводный инструктаж',        type:'task-approval', assignee:'HR-отдел',      sla:'1 день',  startedAt:'27.05 11:00', completedAt:'07.06 09:00', onTime:true,  outcome:'Проведён' },
+        ],
+        'O-204': [
+            { step:'Подготовка рабочего места', type:'task-script',   assignee:'Система',       sla:'1 день',  startedAt:'20.05 09:00', completedAt:'20.05 16:00', onTime:true,  outcome:'Готово' },
+            { step:'Оформление документов',     type:'task-approval', assignee:'Захаров П.',    sla:'2 дня',   startedAt:'20.05 16:10', completedAt:'22.05 14:00', onTime:true,  outcome:'Оформлено' },
+            { step:'Настройка доступов',        type:'task-approval', assignee:'ИТ-отдел',      sla:'1 день',  startedAt:'20.05 16:10', completedAt:null,           onTime:false, outcome:null, current:true },
+        ],
+        'O-205': [
+            { step:'Подготовка рабочего места', type:'task-script',   assignee:'Система',       sla:'1 день',  startedAt:'15.05 09:00', completedAt:'15.05 11:00', onTime:true,  outcome:'Готово' },
+            { step:'Оформление документов',     type:'task-approval', assignee:'Кузнецова А.',  sla:'2 дня',   startedAt:'15.05 11:10', completedAt:'17.05 10:00', onTime:true,  outcome:'Оформлено' },
+            { step:'Настройка доступов',        type:'task-approval', assignee:'ИТ-отдел',      sla:'1 день',  startedAt:'15.05 11:10', completedAt:'16.05 14:00', onTime:true,  outcome:'Настроено' },
+            { step:'Вводный инструктаж',        type:'task-approval', assignee:'HR-отдел',      sla:'1 день',  startedAt:'17.05 11:00', completedAt:'28.05 09:00', onTime:true,  outcome:'Проведён' },
+        ],
+        /* Template 4 — Архивный */
+        'A-001': [
+            { step:'Задача проверки',     type:'task-approval', assignee:'Сидоров К.',   sla:'5 дней', startedAt:'10.12 09:00', completedAt:'19.12 14:00', onTime:true,  outcome:'Выполнено' },
+        ],
+        /* Template 5 — S&OP Классический */
+        'S-001': [
+            { step:'Сбор данных о спросе',type:'task-script',   assignee:'Система',       sla:'1 день',  startedAt:'01.05 08:00', completedAt:'01.05 10:00', onTime:true,  outcome:'Собрано' },
+            { step:'Прогноз продаж',      type:'task-approval', assignee:'Громов А.',    sla:'3 дня',   startedAt:'01.05 10:10', completedAt:'04.05 15:00', onTime:true,  outcome:'Подтверждён' },
+            { step:'План производства',   type:'task-approval', assignee:'Петрова Л.',   sla:'3 дня',   startedAt:'01.05 10:10', completedAt:'05.05 12:00', onTime:true,  outcome:'Согласован' },
+            { step:'Согласование плана',  type:'task-approval', assignee:'Иванов И.',    sla:'2 дня',   startedAt:'05.05 13:00', completedAt:null,           onTime:null,  outcome:null, current:true },
+        ],
+        'S-002': [
+            { step:'Сбор данных о спросе',type:'task-script',   assignee:'Система',       sla:'1 день',  startedAt:'01.04 08:00', completedAt:'01.04 09:30', onTime:true,  outcome:'Собрано' },
+            { step:'Прогноз продаж',      type:'task-approval', assignee:'Громов А.',    sla:'3 дня',   startedAt:'01.04 09:40', completedAt:'04.04 14:00', onTime:true,  outcome:'Подтверждён' },
+            { step:'План производства',   type:'task-approval', assignee:'Петрова Л.',   sla:'3 дня',   startedAt:'01.04 09:40', completedAt:'04.04 16:00', onTime:true,  outcome:'Согласован' },
+            { step:'Согласование плана',  type:'task-approval', assignee:'Иванов И.',    sla:'2 дня',   startedAt:'04.04 17:00', completedAt:'06.04 11:00', onTime:true,  outcome:'Принято' },
+            { step:'Финализация плана',   type:'task-approval', assignee:'Громов А.',    sla:'1 день',  startedAt:'06.04 11:30', completedAt:'07.04 10:00', onTime:true,  outcome:'Финализировано' },
+            { step:'Публикация плана',    type:'task-script',   assignee:'Система',       sla:'30 мин.', startedAt:'07.04 10:05', completedAt:'29.04 08:00', onTime:true,  outcome:'Опубликовано' },
+        ],
+        'S-003': [
+            { step:'Сбор данных о спросе',type:'task-script',   assignee:'Система',       sla:'1 день',  startedAt:'01.03 08:00', completedAt:'01.03 09:00', onTime:true,  outcome:'Собрано' },
+            { step:'Прогноз продаж',      type:'task-approval', assignee:'Петрова Л.',   sla:'3 дня',   startedAt:'01.03 09:10', completedAt:'04.03 12:00', onTime:true,  outcome:'Подтверждён' },
+            { step:'План производства',   type:'task-approval', assignee:'Смирнов Д.',   sla:'3 дня',   startedAt:'01.03 09:10', completedAt:'03.03 17:00', onTime:true,  outcome:'Согласован' },
+            { step:'Согласование плана',  type:'task-approval', assignee:'Иванов И.',    sla:'2 дня',   startedAt:'04.03 13:00', completedAt:'06.03 10:00', onTime:true,  outcome:'Принято' },
+            { step:'Финализация плана',   type:'task-approval', assignee:'Петрова Л.',   sla:'1 день',  startedAt:'06.03 10:30', completedAt:'07.03 09:00', onTime:true,  outcome:'Финализировано' },
+            { step:'Публикация плана',    type:'task-script',   assignee:'Система',       sla:'30 мин.', startedAt:'07.03 09:05', completedAt:'30.03 08:00', onTime:true,  outcome:'Опубликовано' },
+        ],
+        /* Template 6 — Авто-пайплайн данных */
+        'AL-001': [
+            { step:'Извлечение данных',   type:'task-script',   assignee:'Система',       sla:'15 мин.', startedAt:'05.06 00:00', completedAt:'05.06 00:12', onTime:true,  outcome:'Выполнено' },
+            { step:'Валидация данных',    type:'task-script',   assignee:'Система',       sla:'10 мин.', startedAt:'05.06 00:13', completedAt:'05.06 00:22', onTime:true,  outcome:'Пройдена' },
+            { step:'Трансформация',       type:'task-script',   assignee:'Система',       sla:'20 мин.', startedAt:'05.06 00:23', completedAt:null,           onTime:null,  outcome:null, current:true },
+        ],
+        'AL-002': [
+            { step:'Извлечение данных',   type:'task-script',   assignee:'Система',       sla:'15 мин.', startedAt:'04.06 00:00', completedAt:'04.06 00:18', onTime:false, outcome:'Выполнено' },
+            { step:'Валидация данных',    type:'task-script',   assignee:'Система',       sla:'10 мин.', startedAt:'04.06 00:19', completedAt:null,           onTime:false, outcome:null, current:true },
+        ],
+        'AL-003': [
+            { step:'Извлечение данных',   type:'task-script',   assignee:'Система',       sla:'15 мин.', startedAt:'01.06 00:00', completedAt:'01.06 00:11', onTime:true,  outcome:'Выполнено' },
+            { step:'Валидация данных',    type:'task-script',   assignee:'Система',       sla:'10 мин.', startedAt:'01.06 00:12', completedAt:'01.06 00:21', onTime:true,  outcome:'Пройдена' },
+            { step:'Трансформация',       type:'task-script',   assignee:'Система',       sla:'20 мин.', startedAt:'01.06 00:22', completedAt:'01.06 00:38', onTime:true,  outcome:'Выполнено' },
+            { step:'Загрузка',            type:'task-script',   assignee:'Система',       sla:'5 мин.',  startedAt:'01.06 00:39', completedAt:'02.06 00:00', onTime:true,  outcome:'Загружено' },
         ],
     };
 
@@ -414,7 +600,7 @@
             return;
         }
         body.innerHTML = instances.map(i => `
-            <tr class="border-b hover:bg-gray-50">
+            <tr class="border-b hover:bg-gray-50" style="cursor:pointer;" onclick="openInstanceDrawer(${templateId},'${i.id}')">
                 <td class="p-3 font-mono text-xs">${i.id}</td>
                 <td class="p-3">${i.start}</td>
                 <td class="p-3">${i.user}</td>
@@ -2090,6 +2276,270 @@ function ctorRenderProcessPropsMeta() {
 }
 </script>
 
+<!-- ==================== ANALYTICS / GANTT LOGIC ==================== -->
+<script>
+function parseGDate(str) {
+    if (!str || str === '-') return null;
+    const p = str.split('.');
+    if (p.length < 3) return null;
+    return new Date(2000 + parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+}
+
+function renderAnalyticsView() {
+    // Populate filter dropdown
+    const sel = document.getElementById('gantt-filter-sel');
+    if (sel && sel.options.length === 1) {
+        templates.forEach(t => {
+            const o = document.createElement('option');
+            o.value = t.id; o.textContent = t.name;
+            sel.appendChild(o);
+        });
+    }
+    renderGanttChart(null);
+}
+
+function renderGanttChart(filterTid) {
+    const cont = document.getElementById('gantt-body');
+    if (!cont) return;
+
+    const MONTH_RU = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+    const STATUS_CLR = {
+        'Активен':   { bg:'#dbeafe', fill:'#3b82f6', border:'#93c5fd' },
+        'Просрочен': { bg:'#fee2e2', fill:'#ef4444', border:'#fca5a5' },
+        'Завершен':  { bg:'#dcfce7', fill:'#22c55e', border:'#86efac' },
+    };
+
+    // Gather all instances
+    const allRows = [];
+    Object.entries(instancesData).forEach(([tid, insts]) => {
+        const tidN = parseInt(tid);
+        if (filterTid && tidN !== filterTid) return;
+        const t = templates.find(t => t.id === tidN);
+        if (!t) return;
+        allRows.push({ isGroup: true, t, tidN });
+        insts.forEach(i => allRows.push({ isGroup: false, i, t, tidN }));
+    });
+
+    if (!allRows.length) { cont.innerHTML = '<div style="padding:3rem;text-align:center;color:#9ca3af;">Нет данных</div>'; return; }
+
+    // Calc date window
+    const today = new Date(); today.setHours(0,0,0,0);
+    let minD = new Date(today), maxD = new Date(today);
+    Object.values(instancesData).forEach(insts => insts.forEach(i => {
+        const s = parseGDate(i.start), d = parseGDate(i.deadline);
+        if (s && s < minD) minD = new Date(s);
+        if (d && d > maxD) maxD = new Date(d);
+    }));
+    minD = new Date(minD.getTime() - 14*864e5);
+    maxD = new Date(maxD.getTime() + 21*864e5);
+    const span = maxD - minD;
+    const pct = d => d ? Math.max(0, Math.min(100, (d - minD) / span * 100)).toFixed(3) : null;
+    const todayPct = pct(today);
+
+    // Month ticks
+    const months = [];
+    let cur = new Date(minD.getFullYear(), minD.getMonth(), 1);
+    while (cur <= maxD) { months.push({ d: new Date(cur), pct: pct(cur) }); cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1); }
+
+    // Header row
+    const monthsHTML = months.map(m =>
+        `<div class="gantt-month-tick" style="left:${m.pct}%;"></div>
+         <div style="position:absolute;left:${m.pct}%;top:6px;font-size:0.62rem;font-weight:600;color:#9ca3af;white-space:nowrap;padding-left:4px;">${MONTH_RU[m.d.getMonth()]} ${m.d.getFullYear().toString().slice(2)}</div>`
+    ).join('');
+
+    const headerHTML = `<div class="gantt-hdr">
+        <div class="gantt-lbl-col" style="padding:0.5rem 0.75rem;font-size:0.65rem;font-weight:700;color:#9ca3af;text-transform:uppercase;">Экземпляр</div>
+        <div class="gantt-tl-col" style="height:36px;position:relative;">
+            ${monthsHTML}
+            <div class="gantt-today-ln" style="left:${todayPct}%;"></div>
+            <div class="gantt-today-lbl" style="left:${todayPct}%;">Сегодня</div>
+        </div>
+    </div>`;
+
+    // Rows HTML
+    const rowsHTML = allRows.map(row => {
+        if (row.isGroup) {
+            return `<div class="gantt-group">
+                <div class="gantt-group-lbl">${escHtml(row.t.name)}</div>
+                <div style="flex:1;position:relative;height:30px;">
+                    ${months.map(m => `<div class="gantt-month-tick" style="left:${m.pct}%;"></div>`).join('')}
+                    <div class="gantt-today-ln" style="left:${todayPct}%;"></div>
+                </div>
+            </div>`;
+        }
+
+        const { i, t, tidN } = row;
+        const sc = STATUS_CLR[i.status] || STATUS_CLR['Активен'];
+        const startPct = pct(parseGDate(i.start));
+        const dlPct    = pct(parseGDate(i.deadline));
+        const barW = dlPct ? Math.max(0.5, dlPct - startPct).toFixed(3) : 4;
+        const fillW = Math.min(100, i.progress);
+        const isOverdue = i.status === 'Просрочен';
+        const isDone = i.status === 'Завершен';
+
+        const iLogs = instanceTaskLogs[i.id] || [];
+        const iAssignees = [...new Set(iLogs.filter(l => l.assignee !== 'Система').map(l => l.assignee))].slice(0, 2);
+        const iAssigneeLbl = iAssignees.length ? iAssignees.join(', ') : escHtml(i.user);
+
+        return `<div class="gantt-row" onclick="openInstanceDrawer(${tidN},'${i.id}')">
+            <div class="gantt-row-lbl">
+                <div style="font-size:0.78rem;font-weight:600;color:#374151;">${escHtml(i.id)}</div>
+                <div style="font-size:0.65rem;color:#9ca3af;">${iAssigneeLbl} · ${fillW}%</div>
+            </div>
+            <div class="gantt-tl">
+                ${months.map(m => `<div class="gantt-month-tick" style="left:${m.pct}%;"></div>`).join('')}
+                <div class="gantt-today-ln" style="left:${todayPct}%;"></div>
+                <div class="gantt-bar-wrap" style="left:${startPct}%;width:${barW}%;background:${sc.bg};${isOverdue?'box-shadow:0 0 0 1.5px '+sc.fill+';':''}">
+                    <div class="gantt-bar-fill" style="width:${fillW}%;background:${sc.fill};"></div>
+                </div>
+                <div class="gantt-dl-marker" style="left:${dlPct}%;background:${isOverdue?'#ef4444':isDone?'#22c55e':'#6b7280'};"></div>
+                <div style="position:absolute;left:${startPct}%;top:33px;font-size:0.58rem;color:#9ca3af;white-space:nowrap;padding-left:2px;">${i.start}</div>
+                <div style="position:absolute;left:${dlPct}%;top:33px;font-size:0.58rem;color:${isOverdue?'#ef4444':'#9ca3af'};white-space:nowrap;transform:translateX(-100%);padding-right:2px;">${i.deadline}</div>
+            </div>
+        </div>`;
+    }).join('');
+
+    cont.innerHTML = headerHTML + rowsHTML;
+}
+
+// ---- Instance Progress Drawer ----
+function topoOrderSchema(schema) {
+    if (!schema) return [];
+    const nodes = schema.nodes, conns = schema.conns;
+    const start = nodes.find(n => n.type === 'start');
+    if (!start) return [...nodes];
+    const visited = new Set(), order = [], queue = [start.id];
+    while (queue.length) {
+        const id = queue.shift();
+        if (visited.has(id)) continue;
+        visited.add(id);
+        const n = nodes.find(n => n.id === id);
+        if (n) order.push(n);
+        conns.filter(c => c.from === id).forEach(c => queue.push(c.to));
+    }
+    nodes.forEach(n => { if (!visited.has(n.id)) order.push(n); });
+    return order;
+}
+
+function openInstanceDrawer(templateId, instanceId) {
+    const insts = instancesData[templateId] || [];
+    const inst  = insts.find(i => i.id === instanceId);
+    const t     = templates.find(t => t.id === templateId);
+    const schema = TEMPLATE_SCHEMAS[templateId];
+    if (!inst || !t) return;
+
+    const TYPE_LBL = { start:'Старт', end:'Конец', 'task-approval':'Согласование', 'task-script':'Скрипт', 'gw-xor':'Шлюз XOR', 'gw-and':'Шлюз AND' };
+
+    const SC = {
+        'Активен':   'background:#dbeafe;color:#1d4ed8',
+        'Просрочен': 'background:#fee2e2;color:#dc2626',
+        'Завершен':  'background:#dcfce7;color:#15803d',
+    };
+
+    const isOverdue = inst.status === 'Просрочен';
+    const pBar = Math.min(100, inst.progress);
+
+    // --- Audit log table ---
+    const logs = instanceTaskLogs[instanceId] || [];
+    let auditHTML = '';
+    if (logs.length) {
+        const rows = logs.map(log => {
+            let statusIcon, statusStyle;
+            if (log.current) {
+                statusIcon = '🔵'; statusStyle = 'color:#1d4ed8;font-weight:600;';
+            } else if (log.completedAt && log.onTime) {
+                statusIcon = '✅'; statusStyle = 'color:#15803d;';
+            } else if (log.completedAt && !log.onTime) {
+                statusIcon = '⚠️'; statusStyle = 'color:#b45309;';
+            } else if (!log.completedAt && log.onTime === false) {
+                statusIcon = '🔴'; statusStyle = 'color:#dc2626;font-weight:600;';
+            } else {
+                statusIcon = '⭕'; statusStyle = 'color:#9ca3af;';
+            }
+            const statusLabel = log.current ? 'В работе'
+                : log.completedAt && log.onTime  ? 'В срок'
+                : log.completedAt && !log.onTime ? 'С опозданием'
+                : !log.completedAt && log.onTime === false ? 'Просрочено'
+                : 'Ожидает';
+            const typeTag = log.type === 'task-approval'
+                ? `<span style="font-size:0.6rem;padding:1px 5px;border-radius:9999px;background:#ede9fe;color:#6d28d9;margin-left:4px;">👤</span>`
+                : `<span style="font-size:0.6rem;padding:1px 5px;border-radius:9999px;background:#f0fdf4;color:#15803d;margin-left:4px;">⚙</span>`;
+            return `<tr style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:0.45rem 0.5rem;font-size:0.72rem;color:#374151;white-space:nowrap;">${escHtml(log.step)}${typeTag}</td>
+                <td style="padding:0.45rem 0.5rem;font-size:0.72rem;color:#374151;white-space:nowrap;">${escHtml(log.assignee)}</td>
+                <td style="padding:0.45rem 0.5rem;font-size:0.7rem;color:#6b7280;white-space:nowrap;">${log.sla}</td>
+                <td style="padding:0.45rem 0.5rem;font-size:0.7rem;color:#6b7280;white-space:nowrap;">${log.startedAt}</td>
+                <td style="padding:0.45rem 0.5rem;font-size:0.7rem;color:#6b7280;white-space:nowrap;">${log.completedAt || '—'}</td>
+                <td style="padding:0.45rem 0.5rem;font-size:0.72rem;white-space:nowrap;${statusStyle}">${statusIcon} ${statusLabel}</td>
+                <td style="padding:0.45rem 0.5rem;font-size:0.7rem;color:#374151;">${log.outcome ? escHtml(log.outcome) : '—'}</td>
+            </tr>`;
+        }).join('');
+        auditHTML = `<div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;min-width:520px;">
+                <thead>
+                    <tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb;">
+                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Шаг</th>
+                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Исполнитель</th>
+                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">SLA</th>
+                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Начало</th>
+                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Выполнено</th>
+                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Статус</th>
+                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Результат</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>`;
+    } else {
+        auditHTML = `<div style="font-size:0.78rem;color:#9ca3af;padding:0.5rem 0;">Журнал выполнения недоступен.</div>`;
+    }
+
+    // --- Schema stepper (compact, secondary) ---
+    let schemaStepsHTML = '';
+    if (schema) {
+        const ordered = topoOrderSchema(schema);
+        const total   = ordered.length;
+        const doneCount = inst.progress >= 100 ? total : Math.max(0, Math.floor(inst.progress / 100 * (total - 1)));
+
+        schemaStepsHTML = `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.25rem;">` +
+            ordered.map((node, idx) => {
+                let state = idx < doneCount ? 'done' : (idx === doneCount && inst.progress < 100) ? 'current' : 'pending';
+                if (inst.progress >= 100) state = 'done';
+                const bg   = state==='done' ? '#22c55e' : state==='current' ? '#6d28d9' : '#e5e7eb';
+                const clr  = state==='pending' ? '#9ca3af' : '#fff';
+                const icon = state==='done' ? '✓ ' : state==='current' ? '● ' : '';
+                return `<div style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.18rem 0.5rem;border-radius:9999px;background:${bg};color:${clr};font-size:0.65rem;font-weight:${state==='current'?700:500};">${icon}${escHtml(node.label)}</div>`;
+            }).join('') +
+        `</div>`;
+    } else {
+        schemaStepsHTML = `<div style="font-size:0.78rem;color:#9ca3af;">Схема не найдена.</div>`;
+    }
+
+    document.getElementById('idraw-proc').textContent  = t.name;
+    document.getElementById('idraw-title').textContent = inst.id;
+    document.getElementById('idraw-meta').innerHTML =
+        `<div class="td-meta-item">Запустил: <b>${escHtml(inst.user)}</b></div>` +
+        `<div class="td-meta-item">Старт: <b>${inst.start}</b></div>` +
+        `<div class="td-meta-item">Дедлайн: <b style="color:${isOverdue?'#dc2626':'inherit'}">${inst.deadline}</b></div>` +
+        `<div class="td-meta-item">Статус: <span style="padding:0.15rem 0.5rem;border-radius:9999px;font-size:0.7rem;font-weight:600;${SC[inst.status]||SC['Активен']}">${inst.status}</span></div>`;
+    document.getElementById('idraw-progress').innerHTML =
+        `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">` +
+            `<span style="font-size:0.72rem;font-weight:600;color:#374151;">Прогресс выполнения</span>` +
+            `<span style="font-size:0.875rem;font-weight:700;color:${isOverdue?'#dc2626':'#6d28d9'};">${pBar}%</span>` +
+        `</div>` +
+        `<div style="width:100%;background:#e5e7eb;border-radius:9999px;height:10px;">` +
+            `<div style="width:${pBar}%;background:${isOverdue?'#ef4444':'#6d28d9'};height:10px;border-radius:9999px;transition:width 0.4s;"></div>` +
+        `</div>`;
+    document.getElementById('idraw-stepper').innerHTML = auditHTML;
+    document.getElementById('idraw-schema-steps').innerHTML = schemaStepsHTML;
+    document.getElementById('instance-modal').classList.add('open');
+}
+
+function closeInstanceDrawer() {
+    document.getElementById('instance-modal').classList.remove('open');
+}
+</script>
+
 <!-- ==================== TASKS SCREEN LOGIC ==================== -->
 <script>
 let currentTaskTab = 'active';
@@ -2173,22 +2623,19 @@ function fmtDatetime(iso) {
 }
 
 function showView(view) {
-    const bp    = document.getElementById('bp-view');
-    const tasks = document.getElementById('tasks-view');
-    const navBp    = document.getElementById('nav-bp');
-    const navTasks = document.getElementById('nav-tasks');
-    if (view === 'bp') {
-        if (bp)    { bp.style.display    = 'flex'; }
-        if (tasks) { tasks.style.display = 'none'; }
-        navBp.classList.add('active-menu');
-        navTasks.classList.remove('active-menu');
-    } else if (view === 'tasks') {
-        if (bp)    { bp.style.display    = 'none'; }
-        if (tasks) { tasks.style.display = 'flex'; }
-        navBp.classList.remove('active-menu');
-        navTasks.classList.add('active-menu');
-        renderTasksView();
-    }
+    const views = ['bp','tasks','analytics'];
+    views.forEach(v => {
+        const el = document.getElementById(v + '-view');
+        if (el) el.style.display = 'none';
+        const nav = document.getElementById('nav-' + v);
+        if (nav) nav.classList.remove('active-menu');
+    });
+    const target = document.getElementById(view + '-view');
+    if (target) target.style.display = 'flex';
+    const navEl = document.getElementById('nav-' + view);
+    if (navEl) navEl.classList.add('active-menu');
+    if (view === 'tasks')     renderTasksView();
+    if (view === 'analytics') renderAnalyticsView();
 }
 
 function renderTasksView() {
