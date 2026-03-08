@@ -396,7 +396,7 @@
 </div>
 
 <script>
-    let nextId = 7;
+    let nextId = 8;
 
     const instancesData = {
         1: [
@@ -430,6 +430,11 @@
             { id: 'AL-001', start: '05.06.25', user: 'Система',     status: 'Активен',   progress: 75,  deadline: '06.06.25', overdue: 0,  end: '-' },
             { id: 'AL-002', start: '04.06.25', user: 'Система',     status: 'Просрочен', progress: 50,  deadline: '04.06.25', overdue: 1,  end: '-' },
             { id: 'AL-003', start: '01.06.25', user: 'Система',     status: 'Завершен',  progress: 100, deadline: '02.06.25', overdue: 0,  end: '02.06.25' },
+        ],
+        7: [
+            { id: 'P-001', start: '01.05.25', user: 'Волков Д.',    status: 'Активен',   progress: 45,  deadline: '30.06.25', overdue: 0,  end: '-' },
+            { id: 'P-002', start: '10.04.25', user: 'Смирнова Е.',  status: 'Просрочен', progress: 72,  deadline: '15.05.25', overdue: 16, end: '-' },
+            { id: 'P-003', start: '01.03.25', user: 'Громов А.',    status: 'Завершен',  progress: 100, deadline: '30.04.25', overdue: 0,  end: '28.04.25' },
         ],
     };
 
@@ -528,6 +533,33 @@
             { step:'Финализация плана',   type:'task-approval', assignee:'Петрова Л.',   sla:'1 день',  startedAt:'06.03 10:30', completedAt:'07.03 09:00', onTime:true,  outcome:'Финализировано' },
             { step:'Публикация плана',    type:'task-script',   assignee:'Система',       sla:'30 мин.', startedAt:'07.03 09:05', completedAt:'30.03 08:00', onTime:true,  outcome:'Опубликовано' },
         ],
+        /* Template 7 — Вывод продукта на рынок */
+        'P-001': [
+            { step:'Анализ рынка и планирование', type:'task-script',   assignee:'Система',              sla:'1 день',   startedAt:'01.05 09:00', completedAt:'01.05 15:30', onTime:true,  outcome:'Выполнено' },
+            { step:'Разработка функционала',      type:'task-approval', assignee:'Команда разработки',   sla:'14 дней',  startedAt:'02.05 09:00', completedAt:'15.05 17:00', onTime:true,  outcome:'Готово к QA' },
+            { step:'Тестирование и QA',           type:'task-approval', assignee:'Сорокин Н. (QA)',      sla:'7 дней',   startedAt:'02.05 09:00', completedAt:'09.05 14:00', onTime:true,  outcome:'Тест-отчёт готов' },
+            { step:'Документация и обучение',     type:'task-approval', assignee:'Лебедева О.',          sla:'7 дней',   startedAt:'02.05 09:00', completedAt:'08.05 11:00', onTime:true,  outcome:'Документация готова' },
+            { step:'Приёмочное тестирование',     type:'task-approval', assignee:'Волков Д.',            sla:'3 дня',    startedAt:'16.05 10:00', completedAt:null,           onTime:null,  outcome:null, current:true },
+        ],
+        'P-002': [
+            { step:'Анализ рынка и планирование', type:'task-script',   assignee:'Система',              sla:'1 день',   startedAt:'10.04 09:00', completedAt:'10.04 13:00', onTime:true,  outcome:'Выполнено' },
+            { step:'Разработка функционала',      type:'task-approval', assignee:'Команда разработки',   sla:'14 дней',  startedAt:'11.04 09:00', completedAt:'25.04 18:30', onTime:true,  outcome:'Готово к QA' },
+            { step:'Тестирование и QA',           type:'task-approval', assignee:'Сорокин Н. (QA)',      sla:'7 дней',   startedAt:'11.04 09:00', completedAt:'20.04 15:00', onTime:true,  outcome:'Тест-отчёт готов' },
+            { step:'Документация и обучение',     type:'task-approval', assignee:'Лебедева О.',          sla:'7 дней',   startedAt:'11.04 09:00', completedAt:'19.04 10:00', onTime:true,  outcome:'Документация готова' },
+            { step:'Приёмочное тестирование',     type:'task-approval', assignee:'Смирнова Е.',          sla:'3 дня',    startedAt:'26.04 09:00', completedAt:'29.04 17:00', onTime:true,  outcome:'Принято' },
+            { step:'Согласование юристов',        type:'task-approval', assignee:'Юридический отдел',    sla:'2 дня',    startedAt:'30.04 09:00', completedAt:null,           onTime:false, outcome:null, current:true },
+            { step:'Маркетинговый запуск',        type:'task-script',   assignee:'Система',              sla:'30 мин.',  startedAt:'30.04 09:00', completedAt:'30.04 09:28', onTime:true,  outcome:'Рассылка отправлена' },
+        ],
+        'P-003': [
+            { step:'Анализ рынка и планирование', type:'task-script',   assignee:'Система',              sla:'1 день',   startedAt:'01.03 09:00', completedAt:'01.03 11:00', onTime:true,  outcome:'Выполнено' },
+            { step:'Разработка функционала',      type:'task-approval', assignee:'Команда разработки',   sla:'14 дней',  startedAt:'02.03 09:00', completedAt:'14.03 16:00', onTime:true,  outcome:'Готово к QA' },
+            { step:'Тестирование и QA',           type:'task-approval', assignee:'Сорокин Н. (QA)',      sla:'7 дней',   startedAt:'02.03 09:00', completedAt:'09.03 12:00', onTime:true,  outcome:'Тест-отчёт готов' },
+            { step:'Документация и обучение',     type:'task-approval', assignee:'Лебедева О.',          sla:'7 дней',   startedAt:'02.03 09:00', completedAt:'08.03 10:00', onTime:true,  outcome:'Документация готова' },
+            { step:'Приёмочное тестирование',     type:'task-approval', assignee:'Громов А.',            sla:'3 дня',    startedAt:'15.03 09:00', completedAt:'17.03 15:00', onTime:true,  outcome:'Принято' },
+            { step:'Согласование юристов',        type:'task-approval', assignee:'Юридический отдел',    sla:'2 дня',    startedAt:'18.03 09:00', completedAt:'19.03 16:00', onTime:true,  outcome:'Одобрено' },
+            { step:'Маркетинговый запуск',        type:'task-script',   assignee:'Система',              sla:'30 мин.',  startedAt:'18.03 09:00', completedAt:'18.03 09:22', onTime:true,  outcome:'Рассылка отправлена' },
+            { step:'Публикация и развёртывание',  type:'task-script',   assignee:'Система',              sla:'1 час',    startedAt:'20.03 08:00', completedAt:'28.04 09:00', onTime:true,  outcome:'Развёрнуто' },
+        ],
         /* Template 6 — Авто-пайплайн данных */
         'AL-001': [
             { step:'Извлечение данных',   type:'task-script',   assignee:'Система',       sla:'15 мин.', startedAt:'05.06 00:00', completedAt:'05.06 00:12', onTime:true,  outcome:'Выполнено' },
@@ -553,6 +585,7 @@
         { id: 4, name: 'Архивный процесс Тест', owner: 'Сидоров К.', count: 1,  date: '01.01.2025', status: 'Архив',    auto: 'Выключен', type: 'БП' },
         { id: 5, name: 'S&OP Классический',     owner: 'Громов А.',  count: 3,  date: '01.03.2025', status: 'Активен',  auto: 'Включен',  type: 'БП' },
         { id: 6, name: 'Авто-пайплайн данных',  owner: 'Иванов И.',  count: 3,  date: '20.05.2025', status: 'Активен',  auto: 'Включен',  type: 'Алгоритм' },
+        { id: 7, name: 'Вывод продукта на рынок', owner: 'Волков Д.', count: 3, date: '01.05.2025', status: 'Активен',  auto: 'Выключен', type: 'БП' },
     ];
 
     let selectedId = null;
@@ -1007,6 +1040,15 @@ function openConstructor() {
     document.getElementById('ctor-status-badge').textContent = 'Черновик';
     document.getElementById('ctor-status-badge').style.background = '#fed7aa';
     document.getElementById('ctor-status-badge').style.color = '#b45309';
+    const palette  = document.querySelector('.palette');
+    const canvHint = document.querySelector('.canvas-hint');
+    if (palette)  palette.style.display = '';
+    if (canvHint) {
+        canvHint.style.background = '#fef9c3';
+        canvHint.style.borderColor = '#fde68a';
+        canvHint.style.color = '#92400e';
+        canvHint.textContent = '💡 Перетащите элемент из палитры на холст. Наведите на узел и потяните за фиолетовую точку, чтобы соединить.';
+    }
     const hp = document.querySelector('.hierarchy-panel');
     const pp = document.querySelector('.props-panel');
     if (hp) hp.style.display = '';
@@ -2095,6 +2137,51 @@ const TEMPLATE_SCHEMAS = {
             { id:8, from:7, to:8,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:9, from:8, to:10, label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:10, from:9, to:10, label:'',         flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+        ]
+    },
+
+    // ---- Вывод продукта на рынок (полный GTM-цикл) ----
+    7: {
+        nodes: [
+            { id:1,  type:'start',         label:'Старт',                        x:80,   y:280, props:{ description:'Запуск GTM-процесса. Инициируется продуктовым менеджером после одобрения роадмапа.', triggerType:'Ручной запуск', schedule:'' }},
+            { id:2,  type:'task-script',   label:'Анализ рынка и планирование',  x:270,  y:258, props:{ algorithm:'Расчет базового прогноза', timeout:60, params:{ forecastPeriod:'90 дней', forecastModel:'ARIMA', dataSource:'Хранилище аналитики', historyMonths:12, excludeOutliers:true }}},
+            { id:3,  type:'gw-and',        label:'Параллельная разработка',       x:490,  y:274, props:{}},
+            { id:4,  type:'task-approval', label:'Разработка функционала',        x:680,  y:100, props:{ instruction:'Реализуйте запланированный функционал согласно ТЗ. Закройте связанные задачи в трекере и задокументируйте отклонения от требований.', assigneeType:'Роль', assignee:'Команда разработки', slaValue:14, slaUnit:'дней', outcomes:['Готово к QA'], taskTracker:true }},
+            { id:5,  type:'task-approval', label:'Тестирование и QA',             x:680,  y:275, props:{ instruction:'Проведите функциональное, регрессионное и нагрузочное тестирование. Составьте отчёт с критичностью каждого дефекта.', assigneeType:'Роль', assignee:'QA-инженер', slaValue:7, slaUnit:'дней', outcomes:['Тест-отчёт готов'], taskTracker:true }},
+            { id:6,  type:'task-approval', label:'Документация и обучение',       x:680,  y:450, props:{ instruction:'Подготовьте пользовательскую документацию, release notes и обучающие материалы. Согласуйте с командой поддержки.', assigneeType:'Роль', assignee:'Технический писатель', slaValue:7, slaUnit:'дней', outcomes:['Документация готова'], taskTracker:true }},
+            { id:7,  type:'gw-and',        label:'Синхронизация результатов',     x:900,  y:274, props:{}},
+            { id:8,  type:'task-approval', label:'Приёмочное тестирование',       x:1090, y:258, props:{ instruction:'Проведите UAT с ключевыми стейкхолдерами. Зафиксируйте результат в протоколе UAT и получите подпись приёмочной комиссии.', assigneeType:'Конкретный пользователь', assignee:'Продуктовый менеджер', slaValue:3, slaUnit:'дней', outcomes:['Принято','Отклонено'], taskTracker:true }},
+            { id:9,  type:'gw-xor',        label:'UAT пройден?',                  x:1310, y:274, props:{}},
+            { id:10, type:'gw-and',        label:'Финальные согласования',        x:1500, y:155, props:{}},
+            { id:11, type:'task-approval', label:'Согласование юристов',          x:1690, y:85,  props:{ instruction:'Проверьте лицензионные соглашения, условия использования и соответствие продукта регуляторным требованиям. Подпишите юридическое заключение.', assigneeType:'Роль', assignee:'Юридический отдел', slaValue:2, slaUnit:'дней', outcomes:['Одобрено'], taskTracker:true }},
+            { id:12, type:'task-script',   label:'Маркетинговый запуск',          x:1690, y:235, props:{ algorithm:'Уведомление Email', timeout:5, params:{ template:'Запуск продукта', recipients:'Маркетинговая рассылка', priority:'Обычный', attachReport:true }}},
+            { id:13, type:'gw-and',        label:'Всё согласовано',               x:1890, y:155, props:{}},
+            { id:14, type:'task-script',   label:'Публикация и развёртывание',    x:2080, y:178, props:{ algorithm:'Экспорт в ERP', timeout:60, params:{ erpSystem:'1С:ERP', exportEntity:'Акт', exportMode:'Создать / Обновить', statusFilter:'Только активные', dryRun:false }}},
+            { id:15, type:'task-approval', label:'Устранение замечаний UAT',      x:1500, y:420, props:{ instruction:'Устраните все критичные и высокоприоритетные дефекты из протокола UAT. Получите подтверждение закрытия от QA-команды.', assigneeType:'Роль', assignee:'Команда разработки', slaValue:5, slaUnit:'дней', outcomes:['Замечания устранены'], taskTracker:true }},
+            { id:16, type:'task-script',   label:'Уведомление об отклонении',     x:1690, y:420, props:{ algorithm:'Уведомление Email', timeout:5, params:{ template:'Отклонение', recipients:'Владелец процесса', priority:'Срочный', attachReport:true }}},
+            { id:17, type:'end',           label:'Конец',                         x:2280, y:280, props:{ description:'Продукт выведен на рынок или возвращён на доработку.' }},
+        ],
+        conns: [
+            { id:1,  from:1,  to:2,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:2,  from:2,  to:3,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:3,  from:3,  to:4,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:4,  from:3,  to:5,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:5,  from:3,  to:6,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:6,  from:4,  to:7,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:7,  from:5,  to:7,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:8,  from:6,  to:7,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:9,  from:7,  to:8,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:10, from:8,  to:9,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:11, from:9,  to:10, label:'Принято',   flowType:'conditional', conditionStep:'8', conditionOp:'eq', conditionAttr:'Завершена' },
+            { id:12, from:9,  to:15, label:'',          flowType:'default',     conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:13, from:10, to:11, label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:14, from:10, to:12, label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:15, from:11, to:13, label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:16, from:12, to:13, label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:17, from:13, to:14, label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:18, from:14, to:17, label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:19, from:15, to:16, label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:20, from:16, to:17, label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
         ]
     },
 };
