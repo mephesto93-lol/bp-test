@@ -225,6 +225,22 @@
             <div class="flex items-center gap-4 text-gray-500">
                 <span title="Загрузить" style="cursor: pointer; font-size: 18px;">⬆</span>
                 <span title="История" style="cursor: pointer; font-size: 18px;">⏱</span>
+                <div style="position:relative;">
+                    <button onclick="toggleNotifPanel()" title="Уведомления" style="background:none;border:none;cursor:pointer;font-size:20px;color:#6b7280;padding:2px;position:relative;line-height:1;">
+                        🔔
+                        <span id="notif-badge" style="position:absolute;top:-2px;right:-4px;background:#ef4444;color:#fff;font-size:0.55rem;font-weight:700;border-radius:9999px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 3px;">3</span>
+                    </button>
+                    <div id="notif-panel" style="display:none;position:absolute;top:calc(100% + 10px);right:-12px;width:340px;background:#fff;border:1px solid #e5e7eb;border-radius:0.75rem;box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:600;">
+                        <div style="padding:0.75rem 1rem;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;">
+                            <span style="font-weight:700;font-size:0.9rem;color:#374151;">🔔 Уведомления</span>
+                            <button onclick="markAllNotifRead()" style="font-size:0.72rem;color:#6d28d9;background:none;border:none;cursor:pointer;">Прочитать все</button>
+                        </div>
+                        <div id="notif-list" style="max-height:360px;overflow-y:auto;"></div>
+                        <div style="padding:0.5rem 1rem;border-top:1px solid #f3f4f6;text-align:center;">
+                            <button onclick="openNotifSettings()" style="font-size:0.75rem;color:#6d28d9;background:none;border:none;cursor:pointer;">⚙ Настройки уведомлений</button>
+                        </div>
+                    </div>
+                </div>
                 <div class="w-8 h-8 bg-purple-200 text-purple-700 rounded-full flex items-center justify-center font-bold text-sm">KD</div>
             </div>
         </header>
@@ -237,6 +253,9 @@
                     <div class="flex gap-2">
                         <button id="btn-copy" onclick="copyTemplate()" disabled class="px-3 py-1 border rounded hover:bg-white flex items-center gap-2 text-sm">
                             📋 Копировать
+                        </button>
+                        <button id="btn-archive" onclick="archiveTemplate()" disabled class="px-3 py-1 border rounded hover:bg-white text-gray-600 flex items-center gap-2 text-sm">
+                            📦 Архивировать
                         </button>
                         <button id="btn-delete" onclick="deleteTemplate()" disabled class="px-3 py-1 border rounded hover:bg-white text-red-500 flex items-center gap-2 text-sm">
                             🗑 Удалить
@@ -314,6 +333,13 @@
                 <select id="gantt-filter-sel" onchange="renderGanttChart(this.value?+this.value:null)">
                     <option value="">Все процессы</option>
                 </select>
+                <label style="margin-left:0.75rem;">Гранулярность:</label>
+                <select id="gantt-gran-sel" onchange="renderGanttChart(document.getElementById('gantt-filter-sel').value?+document.getElementById('gantt-filter-sel').value:null)">
+                    <option value="day">День</option>
+                    <option value="week">Неделя</option>
+                    <option value="month" selected>Месяц</option>
+                    <option value="quarter">Квартал</option>
+                </select>
                 <span style="font-size:0.72rem;color:#9ca3af;margin-left:auto;">Нажмите на строку экземпляра для просмотра прогресса</span>
             </div>
             <div class="gantt-wrap">
@@ -370,6 +396,81 @@
             <button class="btn-cancel" onclick="closeActionConfirm()">Отмена</button>
             <button style="border:none;background:#6d28d9;color:#fff;padding:0.4rem 1rem;border-radius:0.375rem;cursor:pointer;font-size:0.875rem;" onclick="executeTaskAction()">Подтвердить</button>
         </div>
+    </div>
+</div>
+
+<!-- ==================== PROCESS MANAGER MODAL ==================== -->
+<!-- ==================== NOTIFICATION SETTINGS MODAL ==================== -->
+<div id="notif-settings-modal" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:0.75rem;width:480px;max-width:95vw;box-shadow:0 16px 48px rgba(0,0,0,0.22);overflow:hidden;">
+        <div style="padding:1rem 1.25rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;background:#faf5ff;">
+            <div>
+                <div style="font-weight:700;font-size:1rem;color:#374151;">🔔 Настройки уведомлений</div>
+                <div style="font-size:0.72rem;color:#9ca3af;margin-top:2px;">Персональные настройки — применяются ко всем процессам</div>
+            </div>
+            <button onclick="closeNotifSettings()" style="background:none;border:none;font-size:1.2rem;color:#9ca3af;cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:1rem 1.25rem;display:flex;flex-direction:column;gap:1rem;">
+            <div>
+                <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:0.5rem;">Каналы доставки</div>
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;color:#374151;margin-bottom:0.4rem;cursor:pointer;">
+                    <input type="checkbox" id="notif-ch-inapp" /> In-app (колокольчик в портале)
+                </label>
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;color:#374151;cursor:pointer;">
+                    <input type="checkbox" id="notif-ch-email" /> Email
+                </label>
+            </div>
+            <div style="border-top:1px solid #f3f4f6;padding-top:0.75rem;">
+                <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:0.5rem;">События</div>
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;color:#374151;margin-bottom:0.4rem;cursor:pointer;">
+                    <input type="checkbox" id="notif-ev-task" /> Новая задача назначена мне
+                </label>
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;color:#374151;margin-bottom:0.4rem;cursor:pointer;">
+                    <input type="checkbox" id="notif-ev-overdue" /> Задача просрочена
+                </label>
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;color:#374151;margin-bottom:0.4rem;cursor:pointer;">
+                    <input type="checkbox" id="notif-ev-remind" /> Напоминание о приближающемся дедлайне
+                </label>
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-left:1.3rem;margin-bottom:0.4rem;">
+                    <span style="font-size:0.78rem;color:#6b7280;">За</span>
+                    <input type="number" id="notif-remind-hours" min="1" max="72" style="width:52px;padding:0.2rem 0.4rem;border:1px solid #e5e7eb;border-radius:0.375rem;font-size:0.8rem;" />
+                    <span style="font-size:0.78rem;color:#6b7280;">часов до дедлайна</span>
+                </div>
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;color:#374151;margin-bottom:0.4rem;cursor:pointer;">
+                    <input type="checkbox" id="notif-ev-done" /> Экземпляр процесса завершён
+                </label>
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;color:#374151;cursor:pointer;">
+                    <input type="checkbox" id="notif-ev-chain" /> Ошибка в цепочке процессов
+                </label>
+            </div>
+        </div>
+        <div style="padding:0.75rem 1.25rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:0.5rem;">
+            <button onclick="closeNotifSettings()" style="padding:0.4rem 1rem;border:1px solid #e5e7eb;border-radius:0.375rem;background:#fff;font-size:0.82rem;cursor:pointer;">Отмена</button>
+            <button onclick="saveNotifSettings()" style="padding:0.4rem 1rem;border:none;border-radius:0.375rem;background:#6d28d9;color:#fff;font-size:0.82rem;cursor:pointer;font-weight:600;">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<div id="pm-modal" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:0.75rem;width:780px;max-width:95vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,0.22);overflow:hidden;">
+        <div style="padding:1rem 1.25rem;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;background:#faf5ff;">
+            <div>
+                <div style="font-weight:700;font-size:1rem;color:#374151;">🔗 Менеджер процессов</div>
+                <div style="font-size:0.72rem;color:#9ca3af;margin-top:2px;">Версии цепочек процессов — поиск, просмотр и вызов</div>
+            </div>
+            <button onclick="closeProcessManager()" style="background:none;border:none;font-size:1.2rem;color:#9ca3af;cursor:pointer;padding:0.25rem;">✕</button>
+        </div>
+        <div style="padding:0.75rem 1.25rem;border-bottom:1px solid #f3f4f6;display:flex;gap:0.5rem;align-items:center;">
+            <input id="pm-search" type="text" placeholder="Поиск по названию или версии..." oninput="renderProcessManager()"
+                style="flex:1;padding:0.4rem 0.7rem;border:1px solid #e5e7eb;border-radius:0.375rem;font-size:0.82rem;outline:none;" />
+            <select id="pm-status-filter" onchange="renderProcessManager()"
+                style="padding:0.4rem 0.6rem;border:1px solid #e5e7eb;border-radius:0.375rem;font-size:0.82rem;">
+                <option value="">Все статусы</option>
+                <option value="Активна">Активна</option>
+                <option value="Архив">Архив</option>
+            </select>
+        </div>
+        <div id="pm-body" style="overflow-y:auto;flex:1;padding:0.5rem 0;"></div>
     </div>
 </div>
 
@@ -580,11 +681,17 @@
 
     let templates = [
         { id: 1, name: 'Согласование договора', owner: 'Иванов И.',  count: 12, date: '10.05.2025', status: 'Активен',  auto: 'Включен',  type: 'БП' },
-        { id: 2, name: 'Закупка оборудования',  owner: 'Петров А.',  count: 3,  date: '12.05.2025', status: 'Черновик', auto: 'Выключен', type: 'Алгоритм' },
+        { id: 2, name: 'Закупка оборудования',  owner: 'Петров А.',  count: 3,  date: '12.05.2025', status: 'Черновик', auto: 'Выключен', type: 'БП' },
         { id: 3, name: 'Онбординг сотрудника',  owner: 'Иванов И.',  count: 45, date: '01.06.2025', status: 'Активен',  auto: 'Включен',  type: 'БП' },
         { id: 4, name: 'Архивный процесс Тест', owner: 'Сидоров К.', count: 1,  date: '01.01.2025', status: 'Архив',    auto: 'Выключен', type: 'БП' },
         { id: 5, name: 'S&OP Классический',     owner: 'Громов А.',  count: 3,  date: '01.03.2025', status: 'Активен',  auto: 'Включен',  type: 'БП' },
-        { id: 6, name: 'Авто-пайплайн данных',  owner: 'Иванов И.',  count: 3,  date: '20.05.2025', status: 'Активен',  auto: 'Включен',  type: 'Алгоритм' },
+        { id: 6, name: 'Авто-пайплайн данных',  owner: 'Иванов И.',  count: 3,  date: '20.05.2025', status: 'Активен',  auto: 'Включен',  type: 'Цепочка',
+          currentVersion: 'v2.1',
+          versions: [
+            { ver:'v1.0', date:'01.01.25', note:'Начальная версия — базовый пайплайн', status:'Архив' },
+            { ver:'v2.0', date:'01.04.25', note:'Добавлена SQL-агрегация и синхронизация 1С', status:'Архив' },
+            { ver:'v2.1', date:'20.05.25', note:'Оптимизированы фильтры данных, исправлен тайм-аут', status:'Активна' },
+          ]},
         { id: 7, name: 'Вывод продукта на рынок', owner: 'Волков Д.', count: 3, date: '01.05.2025', status: 'Активен',  auto: 'Выключен', type: 'БП' },
     ];
 
@@ -593,15 +700,21 @@
     function updateButtons() {
         const t = templates.find(item => item.id === selectedId);
         document.getElementById('btn-copy').disabled = !t;
+        document.getElementById('btn-archive').disabled = !(t && t.status === 'Активен');
         document.getElementById('btn-delete').disabled = !(t && t.status === 'Черновик');
     }
 
     function renderTemplates() {
         const body = document.getElementById('template-body');
-        body.innerHTML = templates.map(t => `
+        body.innerHTML = templates.map(t => {
+            const isChain = t.type === 'Цепочка';
+            const typeBadge = isChain
+                ? `<span style="font-size:0.6rem;padding:1px 5px;border-radius:9999px;background:#ede9fe;color:#6d28d9;margin-left:4px;font-weight:600;">🔗 Цепочка</span>`
+                : '';
+            return `
             <tr onclick="selectTemplate(${t.id})" class="border-b cursor-pointer hover:bg-blue-50 transition-colors ${selectedId === t.id ? 'selected' : ''}">
                 <td class="p-3 text-gray-400">${t.id}</td>
-                <td class="p-3 font-medium">${t.name}</td>
+                <td class="p-3 font-medium">${t.name}${typeBadge}</td>
                 <td class="p-3">${t.owner}</td>
                 <td class="p-3 text-center">${t.count}</td>
                 <td class="p-3">${t.date}</td>
@@ -612,8 +725,8 @@
                 </td>
                 <td class="p-3 text-xs">${t.auto}</td>
                 <td class="p-3"><span style="cursor:pointer;color:#9ca3af;font-size:1rem;" onmouseover="this.style.color='#6d28d9'" onmouseout="this.style.color='#9ca3af'" onclick="event.stopPropagation();openTemplateView(${t.id})" title="Просмотреть схему">🔍</span></td>
-            </tr>
-        `).join('');
+            </tr>`;
+        }).join('');
     }
 
     function selectTemplate(id) {
@@ -672,6 +785,18 @@
         selectTemplate(newId);
     }
 
+    function archiveTemplate() {
+        if (!selectedId) return;
+        const t = templates.find(item => item.id === selectedId);
+        if (!t || t.status !== 'Активен') return;
+        if (!confirm(`Архивировать шаблон «${t.name}»?\n\nАктивные экземпляры продолжат работать. Новые запустить будет нельзя. Автозапуск будет отключён.`)) return;
+        t.status = 'Архив';
+        t.auto = 'Выключен';
+        renderTemplates();
+        selectTemplate(selectedId);
+        updateButtons();
+    }
+
     function deleteTemplate() {
         if (!selectedId) return;
         const t = templates.find(item => item.id === selectedId);
@@ -700,8 +825,210 @@
         if (e.target === this) closeModal();
     });
 
+    /* ===== PROCESS MANAGER ===== */
+    function openProcessManager(filterTemplateId) {
+        const modal = document.getElementById('pm-modal');
+        modal.style.display = 'flex';
+        const searchEl = document.getElementById('pm-search');
+        if (searchEl) searchEl.value = filterTemplateId ? (templates.find(t => t.id === filterTemplateId)?.name || '') : '';
+        renderProcessManager();
+    }
+
+    function closeProcessManager() {
+        document.getElementById('pm-modal').style.display = 'none';
+    }
+
+    function renderProcessManager() {
+        const search  = (document.getElementById('pm-search')?.value || '').toLowerCase();
+        const statusF = document.getElementById('pm-status-filter')?.value || '';
+        const body    = document.getElementById('pm-body');
+        if (!body) return;
+
+        const chains = templates.filter(t => t.type === 'Цепочка' && t.versions && t.versions.length);
+
+        const matched = chains.filter(t => {
+            const nameMatch = t.name.toLowerCase().includes(search);
+            const verMatch  = t.versions.some(v => v.ver.toLowerCase().includes(search) || (v.note||'').toLowerCase().includes(search));
+            return (!search || nameMatch || verMatch);
+        });
+
+        if (!matched.length) {
+            body.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:2rem;font-size:0.85rem;">Цепочки процессов не найдены</div>';
+            return;
+        }
+
+        body.innerHTML = matched.map(t => {
+            const filteredVersions = statusF ? t.versions.filter(v => v.status === statusF) : t.versions;
+            if (!filteredVersions.length) return '';
+            const rows = filteredVersions.map(v => {
+                const isCurrent = v.ver === t.currentVersion;
+                const statusColor = v.status === 'Активна' ? '#15803d' : '#9ca3af';
+                const statusBg    = v.status === 'Активна' ? '#dcfce7' : '#f3f4f6';
+                return `<tr style="border-bottom:1px solid #f3f4f6;">
+                    <td style="padding:0.45rem 0.75rem;font-size:0.8rem;font-family:monospace;font-weight:600;color:#6d28d9;white-space:nowrap;">
+                        ${v.ver}${isCurrent ? ' <span style="font-size:0.65rem;background:#ede9fe;color:#6d28d9;padding:1px 5px;border-radius:9999px;font-family:sans-serif;">текущая</span>' : ''}
+                    </td>
+                    <td style="padding:0.45rem 0.75rem;font-size:0.75rem;color:#6b7280;white-space:nowrap;">${v.date}</td>
+                    <td style="padding:0.45rem 0.75rem;font-size:0.78rem;color:#374151;">${v.note || '—'}</td>
+                    <td style="padding:0.45rem 0.75rem;">
+                        <span style="background:${statusBg};color:${statusColor};font-size:0.68rem;padding:2px 7px;border-radius:9999px;font-weight:600;">${v.status}</span>
+                    </td>
+                    <td style="padding:0.45rem 0.75rem;white-space:nowrap;text-align:right;">
+                        <button onclick="pmRunVersion(${t.id},'${v.ver}')" style="font-size:0.72rem;background:#6d28d9;color:#fff;border:none;border-radius:0.3rem;padding:3px 10px;cursor:pointer;margin-right:4px;">▶ Запустить</button>
+                        <button onclick="pmViewVersion(${t.id},'${v.ver}')" style="font-size:0.72rem;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;border-radius:0.3rem;padding:3px 10px;cursor:pointer;">Просмотр</button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            return `<div style="margin:0 0.75rem 0.75rem;border:1px solid #e5e7eb;border-radius:0.5rem;overflow:hidden;">
+                <div style="background:#faf5ff;padding:0.5rem 0.75rem;display:flex;align-items:center;gap:0.5rem;border-bottom:1px solid #e5e7eb;">
+                    <span style="font-size:0.85rem;font-weight:700;color:#374151;">🔗 ${escHtml(t.name)}</span>
+                    <span style="font-size:0.7rem;color:#9ca3af;">·</span>
+                    <span style="font-size:0.72rem;color:#6b7280;">${filteredVersions.length} версий</span>
+                    <span style="margin-left:auto;font-size:0.72rem;color:#9ca3af;">Владелец: ${escHtml(t.owner)}</span>
+                </div>
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:#fafafa;border-bottom:1px solid #e5e7eb;">
+                            <th style="padding:0.35rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#9ca3af;font-weight:600;text-align:left;">Версия</th>
+                            <th style="padding:0.35rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#9ca3af;font-weight:600;text-align:left;">Дата</th>
+                            <th style="padding:0.35rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#9ca3af;font-weight:600;text-align:left;">Описание изменений</th>
+                            <th style="padding:0.35rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#9ca3af;font-weight:600;text-align:left;">Статус</th>
+                            <th style="padding:0.35rem 0.75rem;font-size:0.68rem;text-transform:uppercase;color:#9ca3af;font-weight:600;text-align:right;">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+        }).join('');
+    }
+
+    function pmRunVersion(templateId, ver) {
+        const t = templates.find(t => t.id === templateId);
+        if (!t) return;
+        closeProcessManager();
+        const vInfo = t.versions?.find(v => v.ver === ver);
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:2rem;right:2rem;z-index:9999;background:#6d28d9;color:#fff;padding:0.75rem 1.25rem;border-radius:0.5rem;font-size:0.85rem;box-shadow:0 4px 16px rgba(0,0,0,0.2);';
+        toast.textContent = `▶ Запущена цепочка «${t.name}» ${ver}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    function pmViewVersion(templateId, ver) {
+        closeProcessManager();
+        openConstructorView(templateId);
+    }
+
+    document.getElementById('pm-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeProcessManager();
+    });
+
     renderTemplates();
     updateButtons();
+
+    /* ===== NOTIFICATIONS ===== */
+    const notifData = [
+        { id:1, read:false, icon:'👤', title:'Новая задача: Согласовать договор', sub:'Процесс: Согласование договора · E-101', time:'5 мин. назад', type:'task' },
+        { id:2, read:false, icon:'⚠️', title:'Просрочена задача: Подготовить список оборудования', sub:'Процесс: Закупка оборудования · Z-001', time:'1 ч. назад', type:'overdue' },
+        { id:3, read:false, icon:'✅', title:'Экземпляр завершён: E-103', sub:'Процесс: Согласование договора', time:'2 ч. назад', type:'done' },
+        { id:4, read:true,  icon:'⏰', title:'Напоминание: дедлайн через 24 ч.', sub:'Задача: Проверить финансовые условия · E-105', time:'3 ч. назад', type:'reminder' },
+        { id:5, read:true,  icon:'🔗', title:'Цепочка запущена: Авто-пайплайн данных v2.1', sub:'Запустил: Иванов И.', time:'5 ч. назад', type:'chain' },
+    ];
+
+    const notifSettings = {
+        channels: { inapp: true, email: true },
+        events: { taskAssigned: true, taskOverdue: true, instanceDone: true, reminder: true, chainError: true },
+        reminderHours: 24,
+    };
+
+    function renderNotifList() {
+        const list = document.getElementById('notif-list');
+        if (!list) return;
+        if (!notifData.length) { list.innerHTML = '<div style="padding:1.5rem;text-align:center;color:#9ca3af;font-size:0.82rem;">Нет уведомлений</div>'; return; }
+        list.innerHTML = notifData.map(n => `
+            <div onclick="readNotif(${n.id})" style="padding:0.65rem 1rem;border-bottom:1px solid #f9fafb;display:flex;gap:0.65rem;align-items:flex-start;cursor:pointer;background:${n.read?'#fff':'#faf5ff'};transition:background 0.1s;">
+                <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">${n.icon}</span>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:0.8rem;font-weight:${n.read?'400':'600'};color:#374151;line-height:1.3;">${n.title}</div>
+                    <div style="font-size:0.7rem;color:#9ca3af;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.sub}</div>
+                </div>
+                <span style="font-size:0.65rem;color:#d1d5db;flex-shrink:0;margin-top:2px;">${n.time}</span>
+                ${!n.read ? '<span style="width:7px;height:7px;border-radius:50%;background:#6d28d9;flex-shrink:0;margin-top:5px;"></span>' : ''}
+            </div>`).join('');
+    }
+
+    function updateNotifBadge() {
+        const badge = document.getElementById('notif-badge');
+        const unread = notifData.filter(n => !n.read).length;
+        if (badge) { badge.textContent = unread; badge.style.display = unread ? 'flex' : 'none'; }
+    }
+
+    function toggleNotifPanel() {
+        const panel = document.getElementById('notif-panel');
+        if (!panel) return;
+        const open = panel.style.display !== 'none';
+        panel.style.display = open ? 'none' : 'block';
+        if (!open) renderNotifList();
+    }
+
+    function readNotif(id) {
+        const n = notifData.find(n => n.id === id);
+        if (n) { n.read = true; renderNotifList(); updateNotifBadge(); }
+    }
+
+    function markAllNotifRead() {
+        notifData.forEach(n => n.read = true);
+        renderNotifList(); updateNotifBadge();
+    }
+
+    function openNotifSettings() {
+        document.getElementById('notif-panel').style.display = 'none';
+        document.getElementById('notif-settings-modal').style.display = 'flex';
+        renderNotifSettingsModal();
+    }
+
+    function closeNotifSettings() {
+        document.getElementById('notif-settings-modal').style.display = 'none';
+    }
+
+    function renderNotifSettingsModal() {
+        document.getElementById('notif-ch-inapp').checked   = notifSettings.channels.inapp;
+        document.getElementById('notif-ch-email').checked   = notifSettings.channels.email;
+        document.getElementById('notif-ev-task').checked    = notifSettings.events.taskAssigned;
+        document.getElementById('notif-ev-overdue').checked = notifSettings.events.taskOverdue;
+        document.getElementById('notif-ev-done').checked    = notifSettings.events.instanceDone;
+        document.getElementById('notif-ev-remind').checked  = notifSettings.events.reminder;
+        document.getElementById('notif-ev-chain').checked   = notifSettings.events.chainError;
+        document.getElementById('notif-remind-hours').value = notifSettings.reminderHours;
+    }
+
+    function saveNotifSettings() {
+        notifSettings.channels.inapp        = document.getElementById('notif-ch-inapp').checked;
+        notifSettings.channels.email        = document.getElementById('notif-ch-email').checked;
+        notifSettings.events.taskAssigned   = document.getElementById('notif-ev-task').checked;
+        notifSettings.events.taskOverdue    = document.getElementById('notif-ev-overdue').checked;
+        notifSettings.events.instanceDone   = document.getElementById('notif-ev-done').checked;
+        notifSettings.events.reminder       = document.getElementById('notif-ev-remind').checked;
+        notifSettings.events.chainError     = document.getElementById('notif-ev-chain').checked;
+        notifSettings.reminderHours         = +document.getElementById('notif-remind-hours').value || 24;
+        closeNotifSettings();
+        const t = document.createElement('div');
+        t.style.cssText = 'position:fixed;bottom:2rem;right:2rem;z-index:9999;background:#6d28d9;color:#fff;padding:0.75rem 1.25rem;border-radius:0.5rem;font-size:0.85rem;box-shadow:0 4px 16px rgba(0,0,0,0.2);';
+        t.textContent = '✓ Настройки уведомлений сохранены';
+        document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+    }
+
+    // Close notif panel on outside click
+    document.addEventListener('click', function(e) {
+        const panel = document.getElementById('notif-panel');
+        if (panel && panel.style.display !== 'none' && !panel.closest) return;
+        if (panel && panel.style.display !== 'none' && !e.target.closest('#notif-panel') && !e.target.closest('button[onclick="toggleNotifPanel()"]')) {
+            panel.style.display = 'none';
+        }
+    });
+
+    updateNotifBadge();
 </script>
 
 <!-- ==================== CONSTRUCTOR SCREEN ==================== -->
@@ -728,14 +1055,16 @@
     .hier-node-row.selected { background:#ede9fe; color:#6d28d9; font-weight:600; }
 
     /* CENTER CANVAS PANEL */
-    .canvas-panel { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-    .palette { background:#fff; border-bottom:1px solid #e5e7eb; padding:0.5rem 1rem; display:flex; align-items:center; gap:1.25rem; flex-wrap:wrap; flex-shrink:0; }
-    .palette-group { display:flex; align-items:center; gap:0.5rem; }
-    .palette-group-label { font-size:0.62rem; text-transform:uppercase; color:#9ca3af; font-weight:700; white-space:nowrap; }
-    .palette-item { display:flex; flex-direction:column; align-items:center; gap:0.25rem; cursor:grab; padding:0.35rem 0.5rem; border-radius:0.375rem; border:1px solid #e5e7eb; background:#fafafa; user-select:none; transition:border-color 0.15s, box-shadow 0.15s; }
+    .canvas-panel { flex:1; display:flex; flex-direction:row; overflow:hidden; }
+    .canvas-main  { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; }
+    .palette { background:#fff; border-right:1px solid #e5e7eb; padding:0.5rem 0.3rem; display:flex; flex-direction:column; align-items:stretch; gap:0.35rem; flex-shrink:0; width:66px; overflow-y:auto; }
+    .palette-group { display:flex; flex-direction:column; align-items:center; gap:0.3rem; }
+    .palette-group-label { font-size:0.55rem; text-transform:uppercase; color:#9ca3af; font-weight:700; text-align:center; line-height:1.2; padding:0 2px; }
+    .palette-sep { width:100%; height:1px; background:#e5e7eb; margin:0.1rem 0; }
+    .palette-item { display:flex; flex-direction:column; align-items:center; gap:0.2rem; cursor:grab; padding:0.3rem 0.2rem; border-radius:0.375rem; border:1px solid #e5e7eb; background:#fafafa; user-select:none; transition:border-color 0.15s, box-shadow 0.15s; }
     .palette-item:hover { border-color:#6d28d9; box-shadow:0 0 0 2px #ede9fe; }
     .palette-item:active { cursor:grabbing; }
-    .palette-item-label { font-size:0.6rem; color:#6b7280; text-align:center; line-height:1.2; white-space:nowrap; }
+    .palette-item-label { font-size:0.55rem; color:#6b7280; text-align:center; line-height:1.2; white-space:nowrap; }
     .canvas-hint { background:#fef9c3; border-bottom:1px solid #fde68a; padding:0.3rem 1rem; font-size:0.72rem; color:#92400e; flex-shrink:0; }
 
     .canvas-container { flex:1; position:relative; overflow:hidden; cursor:grab; background-color:#f8fafc;
@@ -847,39 +1176,40 @@
                 <div class="palette-group">
                     <span class="palette-group-label">События</span>
                     <div class="palette-item" draggable="true" ondragstart="paletteDragStart(event,'start')">
-                        <div style="width:30px;height:30px;border-radius:50%;background:#dcfce7;border:2px solid #16a34a;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:11px;">▶</div>
+                        <div style="width:22px;height:22px;border-radius:50%;background:#dcfce7;border:2px solid #16a34a;display:flex;align-items:center;justify-content:center;color:#16a34a;font-size:8px;">▶</div>
                         <span class="palette-item-label">Старт</span>
                     </div>
                     <div class="palette-item" draggable="true" ondragstart="paletteDragStart(event,'end')">
-                        <div style="width:30px;height:30px;border-radius:50%;background:#fee2e2;border:3px double #dc2626;display:flex;align-items:center;justify-content:center;color:#dc2626;font-size:10px;">■</div>
+                        <div style="width:22px;height:22px;border-radius:50%;background:#fee2e2;border:3px double #dc2626;display:flex;align-items:center;justify-content:center;color:#dc2626;font-size:8px;">■</div>
                         <span class="palette-item-label">Конец</span>
                     </div>
                 </div>
-                <div style="width:1px;height:36px;background:#e5e7eb;"></div>
+                <div class="palette-sep"></div>
                 <div class="palette-group">
                     <span class="palette-group-label">Действия</span>
                     <div class="palette-item" draggable="true" ondragstart="paletteDragStart(event,'task-script')">
-                        <div style="width:52px;height:28px;background:#eef2ff;border:1.5px solid #6366f1;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#6366f1;font-size:9px;font-weight:700;">&lt;/&gt;</div>
+                        <div style="width:40px;height:20px;background:#eef2ff;border:1.5px solid #6366f1;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#6366f1;font-size:8px;font-weight:700;">&lt;/&gt;</div>
                         <span class="palette-item-label">Алгоритм</span>
                     </div>
                     <div class="palette-item" draggable="true" ondragstart="paletteDragStart(event,'task-approval')">
-                        <div style="width:52px;height:28px;background:#e0f2fe;border:1.5px solid #0369a1;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#0369a1;font-size:9px;">👤 Ок</div>
-                        <span class="palette-item-label">Согласование</span>
+                        <div style="width:40px;height:20px;background:#e0f2fe;border:1.5px solid #0369a1;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#0369a1;font-size:8px;">👤</div>
+                        <span class="palette-item-label">Согласов.</span>
                     </div>
                 </div>
-                <div style="width:1px;height:36px;background:#e5e7eb;"></div>
+                <div class="palette-sep"></div>
                 <div class="palette-group">
                     <span class="palette-group-label">Логика</span>
                     <div class="palette-item" draggable="true" ondragstart="paletteDragStart(event,'gw-xor')">
-                        <div style="width:28px;height:28px;background:#fef3c7;border:1.5px solid #d97706;transform:rotate(45deg);display:flex;align-items:center;justify-content:center;color:#b45309;font-size:9px;font-weight:800;"><span style="transform:rotate(-45deg)">X</span></div>
+                        <div style="width:20px;height:20px;background:#fef3c7;border:1.5px solid #d97706;transform:rotate(45deg);display:flex;align-items:center;justify-content:center;color:#b45309;font-size:8px;font-weight:800;"><span style="transform:rotate(-45deg)">X</span></div>
                         <span class="palette-item-label">XOR</span>
                     </div>
                     <div class="palette-item" draggable="true" ondragstart="paletteDragStart(event,'gw-and')">
-                        <div style="width:28px;height:28px;background:#fef3c7;border:1.5px solid #d97706;transform:rotate(45deg);display:flex;align-items:center;justify-content:center;color:#b45309;font-size:12px;font-weight:800;"><span style="transform:rotate(-45deg)">+</span></div>
+                        <div style="width:20px;height:20px;background:#fef3c7;border:1.5px solid #d97706;transform:rotate(45deg);display:flex;align-items:center;justify-content:center;color:#b45309;font-size:10px;font-weight:800;"><span style="transform:rotate(-45deg)">+</span></div>
                         <span class="palette-item-label">AND</span>
                     </div>
                 </div>
             </div>
+            <div class="canvas-main">
             <div class="canvas-hint">💡 Перетащите элемент из палитры на холст. Наведите на узел и потяните за фиолетовую точку, чтобы соединить.</div>
             <div class="canvas-container" id="canvas-container" ondragover="event.preventDefault()" ondrop="canvasDrop(event)">
                 <div class="canvas-toolbar">
@@ -901,6 +1231,7 @@
                     </svg>
                 </div>
             </div>
+            </div><!-- /canvas-main -->
         </div>
         <!-- RIGHT -->
         <aside class="props-panel">
@@ -936,8 +1267,8 @@
 const NODE_CFG = {
     'start':        { label:'Старт',         color:'#16a34a', bg:'#dcfce7', border:'#16a34a', shape:'circle',  w:72,  h:72,  icon:'▶' },
     'end':          { label:'Конец',          color:'#dc2626', bg:'#fee2e2', border:'#dc2626', shape:'circle',  w:72,  h:72,  icon:'■', dbl:true },
-    'task-script':  { label:'Алгоритм',       color:'#6366f1', bg:'#eef2ff', border:'#6366f1', shape:'rect',    w:130, h:56,  icon:'</>' },
-    'task-approval':{ label:'Согласование',   color:'#0369a1', bg:'#e0f2fe', border:'#0369a1', shape:'rect',    w:130, h:56,  icon:'👤' },
+    'task-script':  { label:'Алгоритм',       color:'#6366f1', bg:'#eef2ff', border:'#6366f1', shape:'rect',    w:140, h:60,  icon:'⚙', badge:'#6366f1' },
+    'task-approval':{ label:'Согласование',   color:'#0369a1', bg:'#e0f2fe', border:'#0369a1', shape:'rect',    w:140, h:60,  icon:'👤', badge:'#0369a1' },
     'gw-xor':       { label:'XOR',            color:'#b45309', bg:'#fef3c7', border:'#d97706', shape:'diamond', w:72,  h:72,  icon:'X' },
     'gw-and':       { label:'AND',            color:'#b45309', bg:'#fef3c7', border:'#d97706', shape:'diamond', w:72,  h:72,  icon:'+' },
 };
@@ -991,9 +1322,56 @@ const ALGO_PARAMS = {
     ],
 };
 
+// ---- Algorithm versions ----
+const ALGO_VERSIONS = {
+    'Расчет базового прогноза': ['v2.3 (текущая)', 'v2.2', 'v2.1', 'v2.0 (устарела)'],
+    'Проверка данных':          ['v1.4 (текущая)', 'v1.3', 'v1.2'],
+    'Экспорт в ERP':            ['v3.1 (текущая)', 'v3.0', 'v2.5'],
+    'Уведомление Email':        ['v1.2 (текущая)', 'v1.1', 'v1.0'],
+    'SQL Процедура #1':         ['v1.0 (текущая)'],
+    'Интеграция 1С':            ['v4.2 (текущая)', 'v4.1', 'v4.0', 'v3.x (устарела)'],
+};
+
+// ---- Algorithm filters (data filters, not process params) ----
+const ALGO_FILTERS = {
+    'Расчет базового прогноза': [
+        { key:'fCategory',  label:'Категория',         type:'text',   placeholder:'Электроника, Одежда... (* = все)' },
+        { key:'fRegion',    label:'Регион',            type:'select', opts:['Все регионы','Москва','СПб','Поволжье','Урал','Сибирь','ДВФО'] },
+        { key:'fWarehouse', label:'Склад',             type:'text',   placeholder:'Код склада или * для всех' },
+        { key:'fCurrency',  label:'Валюта',            type:'select', opts:['RUB','USD','EUR','CNY'] },
+    ],
+    'Проверка данных': [
+        { key:'fObject',    label:'ID объекта',        type:'text',   placeholder:'ID или шаблон (DOC-*, 2025-*)' },
+        { key:'fDateFrom',  label:'Период: с',         type:'date' },
+        { key:'fDateTo',    label:'Период: по',        type:'date' },
+        { key:'fStatus',    label:'Статус объекта',    type:'select', opts:['Все','Активен','Черновик','Архив'] },
+        { key:'fOrg',       label:'Организация',       type:'text',   placeholder:'ИНН или краткое название' },
+    ],
+    'Экспорт в ERP': [
+        { key:'fDateFrom',  label:'Период: с',         type:'date' },
+        { key:'fDateTo',    label:'Период: по',        type:'date' },
+        { key:'fEntity',    label:'Тип сущности',      type:'select', opts:['Все','Договор','Счёт','Акт','Накладная'] },
+        { key:'fOrg',       label:'Организация',       type:'text',   placeholder:'Код или ИНН' },
+        { key:'fProject',   label:'Проект / ЦФО',      type:'text',   placeholder:'Код центра финансовой ответственности' },
+    ],
+    'Интеграция 1С': [
+        { key:'fDocType',   label:'Тип документа',     type:'select', opts:['Все','Приходный ордер','Расходный ордер','Акт','Счёт-фактура'] },
+        { key:'fOrg',       label:'Организация',       type:'text',   placeholder:'Код организации' },
+        { key:'fDateFrom',  label:'Дата от',           type:'date' },
+        { key:'fDateTo',    label:'Дата по',           type:'date' },
+    ],
+    'SQL Процедура #1': [
+        { key:'fSchema',    label:'Схема БД',          type:'text',   placeholder:'public, analytics...' },
+        { key:'fTable',     label:'Таблица / вьюха',   type:'text',   placeholder:'Напр.: mv_sales_daily' },
+        { key:'fDateFrom',  label:'Срез: с',           type:'date' },
+        { key:'fDateTo',    label:'Срез: по',          type:'date' },
+    ],
+};
+
 let ctorNodes = [], ctorConns = [], ctorNodeCnt = 0, ctorConnCnt = 0;
 let ctorSelId = null, connectingFrom = null, tempLine = null, dragging = null;
 let ctorViewMode = 'create'; // 'create' | 'edit-meta' | 'view'
+let ctorCurrentTemplateId = null;
 let ctorProcSettings = {};
 let canvasPan = {x:0, y:0}, canvasZoom = 1;
 let isPanning = false, panStart = {};
@@ -1025,6 +1403,9 @@ function ctorInitProcSettings() {
         endType: 'none',
         endDate: '',
         endAfter: 12,
+        processType: 'БП',
+        isChain: false,
+        processTimeout: 60,
     };
 }
 
@@ -1032,6 +1413,7 @@ function openConstructor() {
     ctorNodes = []; ctorConns = []; ctorNodeCnt = 0; ctorConnCnt = 0;
     ctorSelId = null; connectingFrom = null; tempLine = null; dragging = null;
     ctorViewMode = 'create';
+    ctorCurrentTemplateId = null;
     ctorInitProcSettings();
     canvasPan = {x:0, y:0}; canvasZoom = 1; isPanning = false;
     leftPanelVisible = true; rightPanelVisible = true;
@@ -1057,8 +1439,8 @@ function openConstructor() {
     const rb = document.getElementById('ctbar-right-btn');
     if (lb) { lb.textContent = '◀'; lb.classList.remove('panel-hidden'); }
     if (rb) { rb.textContent = '▶'; rb.classList.remove('panel-hidden'); }
-    const startNode = ctorAddNode('start', 120, 200);
-    ctorSelId = startNode.id;
+    ctorAddNode('start', 120, 200);
+    ctorSelId = null;
     ctorRenderAll();
     applyCanvasTransform();
 }
@@ -1116,14 +1498,22 @@ function ctorTopoOrder() {
     return order;
 }
 
-function ctorIsValid() {
-    if (!ctorNodes.some(n => n.type === 'end')) return false;
-    if (!ctorNodes.some(n => n.type === 'start')) return false;
+function ctorGetIssues() {
+    const issues = [];
+    if (!ctorNodes.some(n => n.type === 'start')) issues.push('Добавьте узел «Старт»');
+    if (!ctorNodes.some(n => n.type === 'end'))   issues.push('Процесс должен иметь узел «Конец»');
     for (const n of ctorNodes) {
-        if (n.type !== 'end'   && !ctorConns.some(c => c.from === n.id)) return false;
-        if (n.type !== 'start' && !ctorConns.some(c => c.to   === n.id)) return false;
+        if (n.type !== 'end'   && !ctorConns.some(c => c.from === n.id)) { issues.push(`«${n.label}»: нет исходящей связи`); break; }
+        if (n.type !== 'start' && !ctorConns.some(c => c.to   === n.id)) { issues.push(`«${n.label}»: нет входящей связи`); break; }
     }
-    return true;
+    const andSplits = ctorNodes.filter(n => n.type === 'gw-and' && ctorConns.filter(c => c.from === n.id).length >= 2).length;
+    const andJoins  = ctorNodes.filter(n => n.type === 'gw-and' && ctorConns.filter(c => c.to   === n.id).length >= 2).length;
+    if (andSplits > andJoins) issues.push(`Параллельные ветви AND нужно свести — добавьте AND-шлюз слияния`);
+    return issues;
+}
+
+function ctorIsValid() {
+    return ctorGetIssues().length === 0;
 }
 
 function ctorRenderAll() {
@@ -1152,9 +1542,9 @@ function ctorRenderNodes() {
                 <span class="node-label" style="color:${cfg.color};font-size:0.58rem;margin-top:1px;">${node.label}</span>
             </div>`;
         } else if (cfg.shape === 'rect') {
-            inner_html = `<div class="node-shape-rect" style="width:${cfg.w}px;height:${cfg.h}px;background:${cfg.bg};border:1.5px solid ${cfg.border};">
-                <span style="font-size:11px;color:${cfg.color};font-weight:700;">${cfg.icon}</span>
-                <span class="node-label" style="color:${cfg.color};">${node.label}</span>
+            inner_html = `<div class="node-shape-rect" style="width:${cfg.w}px;height:${cfg.h}px;background:${cfg.bg};border:1.5px solid ${cfg.border};position:relative;">
+                <span style="position:absolute;top:4px;left:6px;font-size:9px;color:${cfg.color};opacity:0.55;font-weight:700;line-height:1;">${cfg.icon}</span>
+                <span class="node-label" style="color:${cfg.color};font-size:0.68rem;padding:0 8px;word-break:break-word;">${node.label}</span>
             </div>`;
         } else {
             inner_html = `<div class="node-diamond-wrap" style="width:${cfg.w}px;height:${cfg.h}px;">
@@ -1204,7 +1594,7 @@ function ctorRenderConns() {
         // Connection label
         let displayLabel = conn.label;
         if (!displayLabel && fn.type === 'gw-xor') {
-            if (conn.flowType === 'default') displayLabel = '↙ default';
+            if (conn.flowType === 'default') displayLabel = '↙ По умолчанию';
             else if (conn.conditionAttr) displayLabel = conn.conditionAttr;
         }
         if (displayLabel) {
@@ -1255,9 +1645,8 @@ function ctorRenderProps() {
 
 function buildNodePropsHTML(node) {
     const cfg = NODE_CFG[node.type];
-    const iconOf = { circle: node.type==='start'?'🟢':'🔴', rect:'🔷', diamond:'🔶' }[cfg.shape];
-    const inCnt  = ctorConns.filter(c => c.to   === node.id).length;
-    const outCnt = ctorConns.filter(c => c.from === node.id).length;
+    const iconOf = nodeIcon(node);
+    const { inCnt, outCnt } = nodeConnCounts(node.id);
 
     const header = `<div class="props-node-header">
         <span style="font-size:1.3rem;">${iconOf}</span>
@@ -1336,19 +1725,52 @@ function buildUserTaskProps(node) {
         Создавать карточку в Task Tracker
     </label>
     <div class="prop-note">При переходе узла в статус «В работе»</div>
+</div>
+<div class="sep"></div>
+<div class="prop-section-title">🔔 Уведомления</div>
+<div class="prop-group">
+    <label class="checkbox-row">
+        <input type="checkbox" ${p.notifyAssign!==false?'checked':''} onchange="ctorUpdProp(${node.id},'notifyAssign',this.checked)" />
+        Уведомить исполнителя при назначении
+    </label>
+</div>
+<div class="prop-group">
+    <label class="checkbox-row">
+        <input type="checkbox" ${p.notifyRemind?'checked':''} onchange="ctorUpdProp(${node.id},'notifyRemind',this.checked)" />
+        Напоминание за N часов до дедлайна
+    </label>
+    <div style="display:flex;align-items:center;gap:0.4rem;margin-top:0.35rem;margin-left:1.5rem;">
+        <span style="font-size:0.75rem;color:#6b7280;">За</span>
+        <input type="number" class="prop-input" min="1" max="72" style="max-width:56px;" value="${p.remindHours||24}"
+            oninput="ctorUpdProp(${node.id},'remindHours',+this.value||24)" ${p.notifyRemind?'':'disabled'} />
+        <span style="font-size:0.75rem;color:#6b7280;">ч. до дедлайна</span>
+    </div>
+    <div class="prop-note">Переопределяет персональную настройку пользователя</div>
 </div>`;
 }
 
 function buildScriptTaskProps(node) {
     const p = node.props;
-    if (!p.params) p.params = {};
+    if (!p.params)  p.params  = {};
+    if (!p.filters) p.filters = {};
+    if (!p.onError) p.onError = 'stop';
+    if (!p.version) p.version = '';
+
     const algorithms = ['','Расчет базового прогноза','Проверка данных','Экспорт в ERP','Уведомление Email','SQL Процедура #1','Интеграция 1С'];
     const algoOpts = algorithms.map(v => `<option ${p.algorithm===v?'selected':''}>${escHtml(v)||'— выбрать —'}</option>`).join('');
 
+    // Version selector
+    const versions = p.algorithm ? (ALGO_VERSIONS[p.algorithm] || []) : [];
+    const verOpts  = versions.map(v => `<option ${p.version===v?'selected':''}>${escHtml(v)}</option>`).join('');
+    const verBlock = versions.length ? `<div class="prop-group"><label class="prop-label">Версия алгоритма</label>
+    <select class="prop-select" onchange="ctorUpdProp(${node.id},'version',this.value)">${verOpts}</select>
+    <div class="prop-note">Версия фиксируется на момент публикации шаблона</div></div>` : '';
+
+    // Config params
     let paramsHTML = '';
     const paramDefs = ALGO_PARAMS[p.algorithm];
     if (paramDefs) {
-        paramsHTML = `<div class="sep"></div><div class="prop-section-title">⚙️ Параметры: ${escHtml(p.algorithm)}</div>`;
+        paramsHTML = `<div class="sep"></div><div class="prop-section-title">⚙️ Конфигурация: ${escHtml(p.algorithm)}</div>`;
         paramsHTML += paramDefs.map(def => {
             const val = p.params[def.key] !== undefined ? p.params[def.key] : '';
             if (def.type === 'select') {
@@ -1356,40 +1778,60 @@ function buildScriptTaskProps(node) {
                 return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
     <select class="prop-select" onchange="ctorUpdScriptParam(${node.id},'${def.key}',this.value)">${opts}</select></div>`;
             }
-            if (def.type === 'text') {
-                return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
+            if (def.type === 'text') return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
     <input class="prop-input" placeholder="${escHtml(def.placeholder||'')}" value="${escHtml(val)}" oninput="ctorUpdScriptParam(${node.id},'${def.key}',this.value)" /></div>`;
-            }
-            if (def.type === 'number') {
-                return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
+            if (def.type === 'number') return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
     <input type="number" class="prop-input" style="max-width:100px;" min="${def.min||1}" max="${def.max||9999}" placeholder="${escHtml(def.placeholder||'')}" value="${escHtml(val)}" oninput="ctorUpdScriptParam(${node.id},'${def.key}',+this.value||0)" /></div>`;
-            }
-            if (def.type === 'date') {
-                return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
+            if (def.type === 'date') return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
     <input type="date" class="prop-input" value="${escHtml(val)}" onchange="ctorUpdScriptParam(${node.id},'${def.key}',this.value)" /></div>`;
-            }
-            if (def.type === 'checkbox') {
-                return `<div class="prop-group"><label class="checkbox-row">
-    <input type="checkbox" ${val?'checked':''} onchange="ctorUpdScriptParam(${node.id},'${def.key}',this.checked)" />
-    ${escHtml(def.label)}</label></div>`;
-            }
+            if (def.type === 'checkbox') return `<div class="prop-group"><label class="checkbox-row">
+    <input type="checkbox" ${val?'checked':''} onchange="ctorUpdScriptParam(${node.id},'${def.key}',this.checked)" />${escHtml(def.label)}</label></div>`;
             return '';
         }).join('');
     }
 
+    // Filters section
+    let filtersHTML = '';
+    const filterDefs = ALGO_FILTERS[p.algorithm];
+    if (filterDefs) {
+        filtersHTML = `<div class="sep"></div><div class="prop-section-title">🔍 Фильтры данных</div>
+<div class="prop-note" style="margin-bottom:0.5rem;">Ограничивают набор данных, с которыми работает алгоритм на этом шаге</div>`;
+        filtersHTML += filterDefs.map(def => {
+            const val = p.filters[def.key] !== undefined ? p.filters[def.key] : '';
+            if (def.type === 'select') {
+                const opts = def.opts.map(o => `<option ${val===o?'selected':''}>${escHtml(o)}</option>`).join('');
+                return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
+    <select class="prop-select" onchange="ctorUpdScriptFilter(${node.id},'${def.key}',this.value)">${opts}</select></div>`;
+            }
+            if (def.type === 'text') return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
+    <input class="prop-input" placeholder="${escHtml(def.placeholder||'')}" value="${escHtml(val)}" oninput="ctorUpdScriptFilter(${node.id},'${def.key}',this.value)" /></div>`;
+            if (def.type === 'date') return `<div class="prop-group"><label class="prop-label">${escHtml(def.label)}</label>
+    <input type="date" class="prop-input" value="${escHtml(val)}" onchange="ctorUpdScriptFilter(${node.id},'${def.key}',this.value)" /></div>`;
+            return '';
+        }).join('');
+    }
+
+    // onError behaviour
+    const onErrorHTML = `<div class="sep"></div><div class="prop-section-title">⚠️ Поведение при ошибке / тайм-ауте</div>
+<div class="prop-group">
+    <label class="radio-row"><input type="radio" name="onerr_${node.id}" value="stop" ${p.onError!=='skip'?'checked':''} onchange="ctorUpdProp(${node.id},'onError','stop')" /> Остановить цепочку</label>
+    <label class="radio-row" style="margin-top:0.3rem;"><input type="radio" name="onerr_${node.id}" value="skip" ${p.onError==='skip'?'checked':''} onchange="ctorUpdProp(${node.id},'onError','skip')" /> Пропустить шаг и продолжить</label>
+    <div class="prop-note">Тайм-аут задаётся глобально в настройках процесса</div>
+</div>`;
+
     return `
-<div class="prop-group"><label class="prop-label">Выбор алгоритма</label>
+<div class="prop-group"><label class="prop-label">Алгоритм <span class="prop-required">*</span></label>
     <select class="prop-select" onchange="ctorUpdPropRender(${node.id},'algorithm',this.value)">${algoOpts}</select></div>
-<div class="prop-group"><label class="prop-label">Тайм-аут выполнения (мин.)</label>
-    <input type="number" class="prop-input" min="1" max="1440" value="${p.timeout}" oninput="ctorUpdProp(${node.id},'timeout',+this.value||30)" />
-    <div class="prop-note">При превышении узел переходит в статус «Ошибка»</div></div>
-${paramsHTML}`;
+${verBlock}
+${paramsHTML}
+${filtersHTML}
+${onErrorHTML}`;
 }
 
 function buildXorProps(node) {
     const outConns = ctorConns.filter(c => c.from === node.id);
     const prevTasks = ctorNodes.filter(n => (n.type==='task-approval'||n.type==='task-script') && n.id !== node.id);
-    const statusAttrs = ['Просрочена','Завершена','Запланирована','В работе','Отменена'];
+    const systemStatuses = ['Просрочена','Завершена','Запланирована','В работе','Отменена'];
     const hasDefault = outConns.some(c => c.flowType === 'default');
 
     const connsHTML = outConns.length === 0
@@ -1398,7 +1840,14 @@ function buildXorProps(node) {
             const toNode = ctorNodes.find(n => n.id === conn.to);
             const stepOpts = prevTasks.map(n => `<option value="${n.id}" ${String(conn.conditionStep)===String(n.id)?'selected':''}>${escHtml(n.label)}</option>`).join('');
             const opOpts = [['eq','= равно'],['neq','≠ не равно']].map(([v,l]) => `<option value="${v}" ${conn.conditionOp===v?'selected':''}>${l}</option>`).join('');
-            const attrOpts = statusAttrs.map(v => `<option ${conn.conditionAttr===v?'selected':''}>${escHtml(v)}</option>`).join('');
+            const stepNode = conn.conditionStep ? ctorNodes.find(n => String(n.id) === String(conn.conditionStep)) : null;
+            const availableStatuses = (stepNode && stepNode.type === 'task-approval' && stepNode.props.outcomes && stepNode.props.outcomes.length > 0)
+                ? stepNode.props.outcomes
+                : systemStatuses;
+            const attrOpts = availableStatuses.map(v => `<option ${conn.conditionAttr===v?'selected':''}>${escHtml(v)}</option>`).join('');
+            const statusHint = stepNode && stepNode.type === 'task-approval'
+                ? `<div class="prop-note" style="margin-top:0.2rem;">Исходы задачи «${escHtml(stepNode.label)}»</div>`
+                : (stepNode ? `<div class="prop-note" style="margin-top:0.2rem;">Системные статусы алгоритма</div>` : '');
             const canSetDefault = !hasDefault || conn.flowType === 'default';
             return `<div style="border:1px solid #e5e7eb;border-radius:0.375rem;padding:0.5rem;margin-bottom:0.5rem;">
     <div style="font-size:0.72rem;font-weight:600;color:#374151;margin-bottom:0.4rem;">→ ${escHtml(toNode?toNode.label:'Узел '+conn.to)}</div>
@@ -1415,7 +1864,8 @@ function buildXorProps(node) {
             <div style="flex:1;"><label class="prop-label">Оператор</label>
                 <select class="prop-select" onchange="ctorUpdConnProp(${conn.id},'conditionOp',this.value)">${opOpts}</select></div>
             <div style="flex:1;"><label class="prop-label">Статус</label>
-                <select class="prop-select" onchange="ctorUpdConnProp(${conn.id},'conditionAttr',this.value)"><option value="">—</option>${attrOpts}</select></div>
+                <select class="prop-select" onchange="ctorUpdConnProp(${conn.id},'conditionAttr',this.value)"><option value="">—</option>${attrOpts}</select>
+                ${statusHint}</div>
         </div>
     </div>` : `<div class="prop-note" style="padding-left:0.5rem;">Путь если ни одно условие не выполнено</div>`}
 </div>`;
@@ -1454,16 +1904,17 @@ function ctorUpdatePublish() {
     }
     if (ctorViewMode === 'edit-meta') {
         saveBtn.style.display = 'none'; publishBtn.style.display = 'none';
-        hint.innerHTML = '<button style="width:100%;padding:0.45rem;background:#6d28d9;border:none;color:#fff;border-radius:0.375rem;cursor:pointer;font-size:0.8rem;font-weight:500;" onclick="ctorSaveMetaChanges()">&#128190; Сохранить изменения</button>';
+        const isDraft = ctorProcSettings.status === 'Черновик';
+        hint.innerHTML = `<button style="width:100%;padding:0.45rem;background:#6d28d9;border:none;color:#fff;border-radius:0.375rem;cursor:pointer;font-size:0.8rem;font-weight:500;margin-bottom:${isDraft?'0.4rem':'0'};" onclick="ctorSaveMetaChanges()">&#128190; Сохранить изменения</button>`
+            + (isDraft ? `<button style="width:100%;padding:0.45rem;background:#15803d;border:none;color:#fff;border-radius:0.375rem;cursor:pointer;font-size:0.8rem;font-weight:500;" onclick="ctorPublishDraft()">🚀 Опубликовать черновик</button>` : '');
         return;
     }
     saveBtn.style.display = ''; publishBtn.style.display = '';
     hint.style.fontStyle = '';
-    const valid = ctorIsValid();
-    publishBtn.disabled = !valid;
-    if (valid) { hint.textContent = '✅ Процесс готов к публикации'; hint.style.color = '#16a34a'; }
-    else if (!ctorNodes.some(n => n.type === 'end')) { hint.textContent = 'Добавьте узел «Конец»'; hint.style.color = '#9ca3af'; }
-    else { hint.textContent = 'Все узлы должны быть связаны'; hint.style.color = '#9ca3af'; }
+    const issues = ctorGetIssues();
+    publishBtn.disabled = issues.length > 0;
+    if (issues.length === 0) { hint.textContent = '✅ Процесс готов к публикации'; hint.style.color = '#16a34a'; }
+    else { hint.textContent = '⚠ ' + issues[0]; hint.style.color = '#b45309'; }
 }
 
 function ctorSelectNode(id) {
@@ -1497,8 +1948,9 @@ function ctorUpdPropRender(id, key, val) {
 function ctorAddOutcome(nodeId) { const n = ctorNodes.find(n=>n.id===nodeId); if(n&&n.props.outcomes){n.props.outcomes.push('Новый исход');ctorRenderProps();} }
 function ctorRemoveOutcome(nodeId, idx) { const n = ctorNodes.find(n=>n.id===nodeId); if(n&&n.props.outcomes){n.props.outcomes.splice(idx,1);ctorRenderProps();} }
 function ctorUpdOutcome(nodeId, idx, val) { const n = ctorNodes.find(n=>n.id===nodeId); if(n&&n.props.outcomes) n.props.outcomes[idx]=val; }
-function ctorUpdConnProp(connId, key, val) { const c = ctorConns.find(c=>c.id===connId); if(c){c[key]=val;ctorRenderProps();ctorRenderConns();} }
-function ctorUpdScriptParam(nodeId, key, val) { const n = ctorNodes.find(n=>n.id===nodeId); if(n){if(!n.props.params)n.props.params={};n.props.params[key]=val;} }
+function ctorUpdConnProp(connId, key, val) { const c = ctorConns.find(c=>c.id===connId); if(c){c[key]=val;if(key==='conditionStep')c.conditionAttr='';ctorRenderProps();ctorRenderConns();} }
+function ctorUpdScriptParam(nodeId, key, val)  { const n = ctorNodes.find(n=>n.id===nodeId); if(n){if(!n.props.params)n.props.params={};n.props.params[key]=val;} }
+function ctorUpdScriptFilter(nodeId, key, val) { const n = ctorNodes.find(n=>n.id===nodeId); if(n){if(!n.props.filters)n.props.filters={};n.props.filters[key]=val;} }
 
 function ctorDeleteNode() {
     if (!ctorSelId) return;
@@ -1554,7 +2006,7 @@ function ctorSaveDraft() {
     const title = document.getElementById('ctor-title').value || 'Новый бизнес процесс';
     const newId = nextId++;
     const today = new Date().toLocaleDateString('ru-RU').split('.').map(p=>p.padStart(2,'0')).join('.');
-    templates.push({ id:newId, name:title, owner:'KD', count:0, date:today, status:'Черновик', auto:'Выключен', type:'БП' });
+    templates.push({ id:newId, name:title, owner:'KD', count:0, date:today, status:'Черновик', auto:'Выключен', type: ctorProcSettings.processType || 'БП' });
     instancesData[newId] = [];
     const btn = document.getElementById('btn-save-draft');
     const orig = btn.textContent; btn.textContent = '✅ Сохранено!';
@@ -1581,7 +2033,7 @@ function ctorNodeSlaMinutes(node) {
         if (node.props.slaUnit === 'часов') return v * 60;
         return v * 1440;
     }
-    if (node.type === 'task-script') return +node.props.timeout || 0;
+    if (node.type === 'task-script') return +(ctorProcSettings.processTimeout) || +node.props.timeout || 60;
     return 0;
 }
 
@@ -1668,7 +2120,7 @@ function ctorPublish() {
     const newId = nextId++;
     const today = new Date().toLocaleDateString('ru-RU').split('.').map(p=>p.padStart(2,'0')).join('.');
     const autoVal = ctorProcSettings.isRepeating ? 'Включен' : 'Выключен';
-    templates.push({ id:newId, name:title, owner:'KD', count:0, date:today, status:'Активен', auto:autoVal, type:'БП' });
+    templates.push({ id:newId, name:title, owner:'KD', count:0, date:today, status:'Активен', auto:autoVal, type: ctorProcSettings.processType || 'БП' });
     instancesData[newId] = [];
     closeConstructor();
     renderTemplates(); updateButtons();
@@ -1678,6 +2130,29 @@ function onCtorTitleChange() { ctorRenderHierarchy(); }
 
 // ==================== PROCESS SETTINGS ====================
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Иконка узла по форме
+function nodeIcon(node) {
+    const shape = NODE_CFG[node.type]?.shape;
+    if (shape === 'circle') return node.type === 'start' ? '🟢' : '🔴';
+    if (shape === 'diamond') return '🔶';
+    return '🔷';
+}
+
+// Read-only поле для панели свойств
+function roProp(label, val) {
+    if (val === undefined || val === null || val === '') return '';
+    return `<div class="prop-group"><label class="prop-label">${label}</label>`
+         + `<div style="font-size:0.8rem;color:#374151;padding:0.35rem 0.5rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:0.375rem;line-height:1.5;">${escHtml(String(val))}</div></div>`;
+}
+
+// Количество входящих / исходящих связей узла
+function nodeConnCounts(nodeId) {
+    return {
+        inCnt:  ctorConns.filter(c => c.to   === nodeId).length,
+        outCnt: ctorConns.filter(c => c.from === nodeId).length,
+    };
+}
 
 function ctorRenderProcessProps() {
     const content = document.getElementById('props-content');
@@ -1750,6 +2225,59 @@ function buildProcessSettingsHTML() {
     <label class="prop-label">Блокировка нахлёстов</label>
     <select class="prop-select" onchange="ctorProcSettings.overlap=this.value">${overlapOpts}</select>
 </div>
+
+<div class="sep"></div>
+<div class="prop-section-title">🗂 Тип и классификация</div>
+<div class="prop-group">
+    <label class="prop-label">Тип процесса</label>
+    <select class="prop-select" onchange="ctorUpdProcessType(this.value)">
+        ${['БП','Цепочка процессов'].map(v=>`<option ${(s.processType||'БП')===v?'selected':''}>${v}</option>`).join('')}
+    </select>
+    <div class="prop-note">${(s.processType==='Цепочка процессов')?'Цепочка отображается в Менеджере процессов и хранит сквозную историю выполнения':'Определяет отображение в списке шаблонов и менеджере'}</div>
+</div>
+${(s.processType==='Цепочка процессов')?`<div class="prop-group" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:0.375rem;padding:0.5rem 0.6rem;">
+    <div style="font-size:0.72rem;font-weight:600;color:#1d4ed8;margin-bottom:0.25rem;">🔗 Режим цепочки активен</div>
+    <div style="font-size:0.68rem;color:#3b82f6;">История выполнения, логи и метрики будут агрегироваться в Менеджере процессов. Экземпляры отображаются как единый сквозной поток.</div>
+</div>` : ''}
+
+
+<div class="sep"></div>
+<div class="prop-section-title">⏱ Тайм-аут выполнения</div>
+<div class="prop-group">
+    <label class="prop-label">Глобальный тайм-аут (мин.)</label>
+    <input type="number" class="prop-input" style="max-width:90px;" min="1" max="1440" value="${s.processTimeout||60}"
+        oninput="ctorProcSettings.processTimeout=+this.value||60" />
+    <div class="prop-note">Единый тайм-аут для всех шагов-алгоритмов. При превышении — реакция задаётся в настройках каждого шага (стоп / пропуск).</div>
+</div>
+
+<div class="sep"></div>
+<div class="prop-section-title">🔔 Уведомления процесса</div>
+<div class="prop-group">
+    <label class="prop-label">Канал уведомлений</label>
+    <select class="prop-select" onchange="ctorProcSettings.notifChannel=this.value;ctorRenderProcessProps()">
+        ${['In-app + Email','Только In-app','Только Email','Отключены'].map(v=>`<option ${(s.notifChannel||'In-app + Email')===v?'selected':''}>${v}</option>`).join('')}
+    </select>
+</div>
+${(()=>{
+    const disabled = (s.notifChannel||'') === 'Отключены';
+    const dimStyle = disabled ? 'opacity:0.4;pointer-events:none;' : '';
+    return `<div class="prop-group" style="${dimStyle}">
+    <label class="prop-label">Уведомлять владельца при</label>
+    <label class="checkbox-row" style="margin-bottom:0.3rem;">
+        <input type="checkbox" ${s.notifOnDone!==false?'checked':''} ${disabled?'disabled':''} onchange="ctorProcSettings.notifOnDone=this.checked" />
+        Завершении экземпляра
+    </label>
+    <label class="checkbox-row" style="margin-bottom:0.3rem;">
+        <input type="checkbox" ${s.notifOnError!==false?'checked':''} ${disabled?'disabled':''} onchange="ctorProcSettings.notifOnError=this.checked" />
+        Ошибке или падении алгоритма
+    </label>
+    <label class="checkbox-row">
+        <input type="checkbox" ${s.notifOnOverdue?'checked':''} ${disabled?'disabled':''} onchange="ctorProcSettings.notifOnOverdue=this.checked" />
+        Просрочке любой задачи в экземпляре
+    </label>
+    ${disabled ? '<div class="prop-note" style="color:#ef4444;">Уведомления отключены для этого процесса</div>' : ''}
+</div>`;
+})()}
 
 <div class="sep"></div>
 <div class="prop-section-title">🔄 Цикл повторений</div>
@@ -1883,6 +2411,8 @@ function ctorToggleDay(day, el) {
     if (idx >= 0) days.splice(idx, 1); else days.push(day);
     el.classList.toggle('active', days.includes(day));
 }
+function ctorUpdProcessType(val) { ctorProcSettings.processType = val; ctorProcSettings.isChain = (val === 'Цепочка процессов'); ctorRenderProcessProps(); }
+
 function ctorUpdRepeating(val) { ctorProcSettings.isRepeating = val; ctorRenderProcessProps(); }
 function ctorUpdRepeatMode(val) { ctorProcSettings.repeatMode = val; ctorRenderProcessProps(); }
 function ctorUpdMonthlyOpt(val) { ctorProcSettings.monthlyOpt = val; ctorRenderProcessProps(); }
@@ -2017,7 +2547,7 @@ const TEMPLATE_SCHEMAS = {
             { id:1, from:1, to:2, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:2, from:2, to:3, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:3, from:3, to:4, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
-            { id:4, from:4, to:5, label:'Согласовано', flowType:'conditional', conditionStep:'3', conditionOp:'eq', conditionAttr:'Завершена' },
+            { id:4, from:4, to:5, label:'Согласовано', flowType:'conditional', conditionStep:'3', conditionOp:'eq', conditionAttr:'Согласовано' },
             { id:5, from:4, to:6, label:'', flowType:'default', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:6, from:5, to:7, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:7, from:6, to:7, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
@@ -2039,7 +2569,7 @@ const TEMPLATE_SCHEMAS = {
             { id:2, from:2, to:3, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:3, from:3, to:4, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:4, from:4, to:5, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
-            { id:5, from:5, to:6, label:'Утверждено', flowType:'conditional', conditionStep:'4', conditionOp:'eq', conditionAttr:'Завершена' },
+            { id:5, from:5, to:6, label:'Утверждено', flowType:'conditional', conditionStep:'4', conditionOp:'eq', conditionAttr:'Утвердить' },
             { id:6, from:5, to:7, label:'', flowType:'default', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:7, from:6, to:8, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:8, from:7, to:8, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
@@ -2104,7 +2634,7 @@ const TEMPLATE_SCHEMAS = {
             { id:6,  from:5,  to:6,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:7,  from:6,  to:7,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:8,  from:7,  to:8,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
-            { id:9,  from:8,  to:9,  label:'Согласовано',   flowType:'conditional', conditionStep:'7', conditionOp:'eq', conditionAttr:'Завершена' },
+            { id:9,  from:8,  to:9,  label:'Согласовано',   flowType:'conditional', conditionStep:'7', conditionOp:'eq', conditionAttr:'Материалы готовы' },
             { id:10, from:8,  to:10, label:'',              flowType:'default',     conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:11, from:9,  to:11, label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:12, from:10, to:11, label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
@@ -2172,7 +2702,7 @@ const TEMPLATE_SCHEMAS = {
             { id:8,  from:6,  to:7,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:9,  from:7,  to:8,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:10, from:8,  to:9,  label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
-            { id:11, from:9,  to:10, label:'Принято',   flowType:'conditional', conditionStep:'8', conditionOp:'eq', conditionAttr:'Завершена' },
+            { id:11, from:9,  to:10, label:'Принято',   flowType:'conditional', conditionStep:'8', conditionOp:'eq', conditionAttr:'Принято' },
             { id:12, from:9,  to:15, label:'',          flowType:'default',     conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:13, from:10, to:11, label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:14, from:10, to:12, label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
@@ -2200,9 +2730,18 @@ function openConstructorView(templateId, mode) {
     canvasPan = {x:0, y:0}; canvasZoom = 1; isPanning = false;
     leftPanelVisible = true; rightPanelVisible = true;
 
+    ctorCurrentTemplateId = templateId;
     const t = templates.find(t => t.id === templateId);
     ctorInitProcSettings();
-    if (t) { ctorProcSettings.name = t.name; ctorProcSettings.status = t.status; }
+    if (t) {
+        ctorProcSettings.name        = t.name;
+        ctorProcSettings.status      = t.status;
+        ctorProcSettings.isRepeating = t.auto === 'Включен';
+        const sn = ctorNodes.find(n => n.type === 'start');
+        if (sn && sn.props.triggerType === 'По расписанию') {
+            ctorProcSettings.scheduleRaw = sn.props.schedule || '';
+        }
+    }
 
     document.getElementById('constructor-screen').classList.add('visible');
     const titleInput = document.getElementById('ctor-title');
@@ -2267,42 +2806,122 @@ function ctorSaveMetaChanges() {
     setTimeout(() => { if (btn) { btn.innerHTML = orig; btn.disabled = false; } }, 1800);
 }
 
+function ctorPublishDraft() {
+    const t = templates.find(t => t.id === ctorCurrentTemplateId);
+    if (!t || t.status !== 'Черновик') return;
+
+    t.status = 'Активен';
+    ctorProcSettings.status = 'Активен';
+
+    // Update badge in constructor header
+    const badge = document.getElementById('ctor-status-badge');
+    if (badge) { badge.textContent = 'Активен'; badge.style.background = '#dcfce7'; badge.style.color = '#15803d'; }
+
+    // Refresh footer buttons
+    ctorUpdatePublish();
+
+    // Refresh templates list in background
+    renderTemplates(); updateButtons();
+
+    // Toast
+    const toast = document.createElement('div');
+    toast.textContent = '✅ Черновик опубликован — шаблон переведён в статус «Активен»';
+    toast.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:0.65rem 1.25rem;border-radius:0.5rem;font-size:0.82rem;font-weight:500;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.18);';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
 // ---- Read-only props panel (view mode) ----
 function buildNodePropsHTMLReadOnly(node) {
     const cfg = NODE_CFG[node.type];
-    const iconOf = { circle: node.type==='start'?'🟢':'🔴', rect:'🔷', diamond:'🔶' }[cfg.shape];
-    const ro = (label, val) => (val !== undefined && val !== null && val !== '')
-        ? `<div class="prop-group"><label class="prop-label">${label}</label><div style="font-size:0.8rem;color:#374151;padding:0.35rem 0.5rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:0.375rem;line-height:1.5;">${escHtml(String(val))}</div></div>` : '';
-    let details = '';
     const p = node.props;
+    const { inCnt, outCnt } = nodeConnCounts(node.id);
+    let details = '';
     switch(node.type) {
-        case 'start': details = ro('Описание', p.description) + ro('Триггер', p.triggerType); break;
-        case 'end':   details = ro('Описание', p.description); break;
+        case 'start': details = roProp('Описание', p.description) + roProp('Триггер', p.triggerType); break;
+        case 'end':   details = roProp('Описание', p.description); break;
         case 'task-approval':
-            details = ro('Инструкция', p.instruction) +
-                      ro('Исполнитель', (p.assignee ? p.assigneeType + ': ' + p.assignee : p.assigneeType)) +
-                      ro('SLA', p.slaValue + ' ' + p.slaUnit) +
-                      ro('Исходы', (p.outcomes||[]).join(', ')); break;
-        case 'task-script':
-            details = ro('Алгоритм', p.algorithm || '—') + ro('Тайм-аут', p.timeout + ' мин.'); break;
-        case 'gw-xor': details = `<div class="prop-note" style="padding:0.5rem;background:#fffbeb;border-radius:0.375rem;">Маршрутизация по условиям на исходящих связях.</div>`; break;
-        case 'gw-and': details = `<div class="prop-note" style="padding:0.5rem;background:#f0fdf4;border-radius:0.375rem;">Параллельное разделение / слияние потоков.</div>`; break;
+            details = roProp('Инструкция', p.instruction)
+                    + roProp('Исполнитель', p.assignee ? p.assigneeType + ': ' + p.assignee : p.assigneeType)
+                    + roProp('SLA', p.slaValue + ' ' + p.slaUnit)
+                    + roProp('Исходы', (p.outcomes||[]).join(', ')); break;
+        case 'task-script': {
+            const paramDefs = ALGO_PARAMS[p.algorithm];
+            let paramsRO = '';
+            if (paramDefs && p.algorithm) {
+                paramsRO = `<div class="prop-section-title" style="margin-top:0.5rem;">⚙️ Конфигурация: ${escHtml(p.algorithm)}</div>`;
+                paramsRO += paramDefs.map(def => {
+                    const val = (p.params && p.params[def.key] !== undefined) ? p.params[def.key] : '';
+                    const display = def.type === 'checkbox' ? (val ? 'Да' : 'Нет') : (val !== '' ? String(val) : '—');
+                    return roProp(def.label, display);
+                }).join('');
+            }
+            const filterDefs = ALGO_FILTERS[p.algorithm];
+            let filtersRO = '';
+            if (filterDefs && p.algorithm) {
+                filtersRO = `<div class="prop-section-title" style="margin-top:0.5rem;">🔍 Фильтры данных</div>`;
+                filtersRO += filterDefs.map(def => {
+                    const val = (p.filters && p.filters[def.key] !== undefined) ? p.filters[def.key] : '';
+                    return roProp(def.label, val !== '' ? String(val) : '—');
+                }).join('');
+            }
+            const onErrLabel = p.onError === 'skip' ? 'Пропустить шаг и продолжить' : 'Остановить цепочку';
+            details = roProp('Алгоритм', p.algorithm || '—')
+                    + roProp('Версия', p.version || '—')
+                    + roProp('Тайм-аут', p.timeout + ' мин.')
+                    + paramsRO + filtersRO
+                    + roProp('При ошибке / тайм-ауте', onErrLabel);
+            break;
+        }
+        case 'gw-xor': {
+            const xorOutConns = ctorConns.filter(c => c.from === node.id);
+            const xorConnItems = xorOutConns.length === 0
+                ? `<div class="prop-note">Нет исходящих связей.</div>`
+                : xorOutConns.map(conn => {
+                    const toNode = ctorNodes.find(n => n.id === conn.to);
+                    const toLabel = toNode ? toNode.label : 'Узел ' + conn.to;
+                    let condText = '';
+                    if (conn.flowType === 'default') {
+                        condText = `<div style="font-size:0.75rem;color:#d97706;margin-top:0.25rem;">↙ По умолчанию — срабатывает если ни одно условие не выполнено</div>`;
+                    } else {
+                        const stepNode = ctorNodes.find(n => String(n.id) === String(conn.conditionStep));
+                        const stepLabel = stepNode ? stepNode.label : '—';
+                        const opLabel = conn.conditionOp === 'neq' ? '≠ не равно' : '= равно';
+                        condText = `<div style="font-size:0.75rem;color:#374151;margin-top:0.25rem;">Условие: «${escHtml(stepLabel)}» ${opLabel} «${escHtml(conn.conditionAttr || '—')}»</div>`;
+                    }
+                    return `<div style="border:1px solid #e5e7eb;border-radius:0.375rem;padding:0.5rem;margin-bottom:0.5rem;">
+                        <div style="font-size:0.72rem;font-weight:600;color:#374151;">→ ${escHtml(toLabel)}</div>
+                        ${condText}
+                    </div>`;
+                }).join('');
+            details = `<div class="prop-note" style="padding:0.5rem;background:#fffbeb;border-radius:0.375rem;margin-bottom:0.5rem;">Маршрутизация по условиям на исходящих связях.</div>
+                <div class="prop-section-title">Исходящие связи</div>${xorConnItems}`;
+            break;
+        }
+        case 'gw-and': {
+            let gwMode = '', gwModeDesc = '', gwModeColor = '#374151';
+            if (inCnt <= 1 && outCnt >= 2)      { gwMode = 'Fork — Разделение'; gwModeDesc = 'Токен дублируется по всем исходящим веткам одновременно.'; gwModeColor = '#0369a1'; }
+            else if (inCnt >= 2 && outCnt <= 1) { gwMode = 'Join — Слияние';    gwModeDesc = 'Шлюз ждёт завершения ВСЕХ входящих веток перед продолжением.'; gwModeColor = '#15803d'; }
+            else { gwMode = 'Не определён'; gwModeDesc = 'Подключите связи для автоопределения режима.'; gwModeColor = '#9ca3af'; }
+            details = `<div class="prop-note" style="padding:0.5rem;background:#f0fdf4;border-radius:0.375rem;margin-bottom:0.5rem;">Параллельное разделение / слияние потоков.</div>
+                <div class="prop-group"><label class="prop-label">Режим работы</label>
+                <div style="font-size:0.78rem;font-weight:700;color:${gwModeColor};">${gwMode}</div>
+                <div class="prop-note">${gwModeDesc}</div></div>`;
+            break;
+        }
     }
-    const inCnt = ctorConns.filter(c => c.to === node.id).length;
-    const outCnt = ctorConns.filter(c => c.from === node.id).length;
-    return `<div class="props-node-header"><span style="font-size:1.3rem;">${iconOf}</span>
+    return `<div class="props-node-header"><span style="font-size:1.3rem;">${nodeIcon(node)}</span>
         <div><div style="font-size:0.8rem;font-weight:700;color:#374151;">${escHtml(cfg.label)}</div>
         <div style="font-size:0.68rem;color:#9ca3af;">ID: N-${node.id}</div></div></div>
-        ${ro('Название', node.label)}${details}
+        ${roProp('Название', node.label)}${details}
         <div class="conn-info"><div>Входящих: <b>${inCnt}</b> &nbsp;|&nbsp; Исходящих: <b>${outCnt}</b></div></div>`;
 }
 
 // ---- Edit-meta props panel (edit-meta mode) ----
 function buildNodePropsHTMLMeta(node) {
     const cfg = NODE_CFG[node.type];
-    const iconOf = { circle: node.type==='start'?'🟢':'🔴', rect:'🔷', diamond:'🔶' }[cfg.shape];
-    const ro = (label, val) => `<div class="prop-group"><label class="prop-label">${label}</label><div style="font-size:0.8rem;color:#374151;padding:0.35rem 0.5rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:0.375rem;">${escHtml(String(val||'—'))}</div></div>`;
     const p = node.props;
+    const { inCnt, outCnt } = nodeConnCounts(node.id);
     let editable = '';
     switch(node.type) {
         case 'start':
@@ -2318,20 +2937,79 @@ function buildNodePropsHTMLMeta(node) {
                 <div class="prop-group"><label class="prop-label">Исполнитель</label>
                 <select class="prop-select" style="margin-bottom:0.3rem;" onchange="ctorUpdProp(${node.id},'assigneeType',this.value)">${atypes}</select>
                 <input class="prop-input" placeholder="Имя / Роль / Группа" value="${escHtml(p.assignee||'')}" oninput="ctorUpdProp(${node.id},'assignee',this.value)" /></div>
-                ${ro('SLA', p.slaValue + ' ' + p.slaUnit)}${ro('Исходы', (p.outcomes||[]).join(', '))}`;
+                ${roProp('SLA', p.slaValue + ' ' + p.slaUnit)}${roProp('Исходы', (p.outcomes||[]).join(', '))}`;
             break;
-        case 'task-script':
-            editable = ro('Алгоритм', p.algorithm || '—') + ro('Тайм-аут', p.timeout + ' мин.');
+        case 'task-script': {
+            const paramDefs = ALGO_PARAMS[p.algorithm];
+            let paramsRO = '';
+            if (paramDefs && p.algorithm) {
+                paramsRO = `<div class="prop-section-title" style="margin-top:0.5rem;">⚙️ Конфигурация: ${escHtml(p.algorithm)}</div>`;
+                paramsRO += paramDefs.map(def => {
+                    const val = (p.params && p.params[def.key] !== undefined) ? p.params[def.key] : '';
+                    const display = def.type === 'checkbox' ? (val ? 'Да' : 'Нет') : (val !== '' ? String(val) : '—');
+                    return roProp(def.label, display);
+                }).join('');
+            }
+            const filterDefs = ALGO_FILTERS[p.algorithm];
+            let filtersRO = '';
+            if (filterDefs && p.algorithm) {
+                filtersRO = `<div class="prop-section-title" style="margin-top:0.5rem;">🔍 Фильтры данных</div>`;
+                filtersRO += filterDefs.map(def => {
+                    const val = (p.filters && p.filters[def.key] !== undefined) ? p.filters[def.key] : '';
+                    return roProp(def.label, val !== '' ? String(val) : '—');
+                }).join('');
+            }
+            const onErrLabel = p.onError === 'skip' ? 'Пропустить шаг и продолжить' : 'Остановить цепочку';
+            editable = roProp('Алгоритм', p.algorithm || '—')
+                     + roProp('Версия', p.version || '—')
+                     + roProp('Тайм-аут', p.timeout + ' мин.')
+                     + paramsRO + filtersRO
+                     + roProp('При ошибке / тайм-ауте', onErrLabel);
             break;
+        }
+        case 'gw-xor': {
+            const xorOutConns = ctorConns.filter(c => c.from === node.id);
+            const xorConnItems = xorOutConns.length === 0
+                ? `<div class="prop-note">Нет исходящих связей.</div>`
+                : xorOutConns.map(conn => {
+                    const toNode = ctorNodes.find(n => n.id === conn.to);
+                    const toLabel = toNode ? toNode.label : 'Узел ' + conn.to;
+                    let condText = '';
+                    if (conn.flowType === 'default') {
+                        condText = `<div style="font-size:0.75rem;color:#d97706;margin-top:0.25rem;">↙ По умолчанию — срабатывает если ни одно условие не выполнено</div>`;
+                    } else {
+                        const stepNode = ctorNodes.find(n => String(n.id) === String(conn.conditionStep));
+                        const stepLabel = stepNode ? stepNode.label : '—';
+                        const opLabel = conn.conditionOp === 'neq' ? '≠ не равно' : '= равно';
+                        condText = `<div style="font-size:0.75rem;color:#374151;margin-top:0.25rem;">Условие: «${escHtml(stepLabel)}» ${opLabel} «${escHtml(conn.conditionAttr || '—')}»</div>`;
+                    }
+                    return `<div style="border:1px solid #e5e7eb;border-radius:0.375rem;padding:0.5rem;margin-bottom:0.5rem;">
+                        <div style="font-size:0.72rem;font-weight:600;color:#374151;">→ ${escHtml(toLabel)}</div>
+                        ${condText}
+                    </div>`;
+                }).join('');
+            editable = `<div class="prop-note" style="padding:0.4rem 0.5rem;background:#fffbeb;border-radius:0.375rem;margin-bottom:0.5rem;border:1px solid #fde68a;color:#92400e;font-size:0.75rem;">Редактирование условий доступно в режиме «Редактировать».</div>
+                <div class="prop-section-title">Исходящие связи</div>${xorConnItems}`;
+            break;
+        }
+        case 'gw-and': {
+            let gwMode = '', gwModeDesc = '', gwModeColor = '#374151';
+            if (inCnt <= 1 && outCnt >= 2)      { gwMode = 'Fork — Разделение'; gwModeDesc = 'Токен дублируется по всем исходящим веткам одновременно.'; gwModeColor = '#0369a1'; }
+            else if (inCnt >= 2 && outCnt <= 1) { gwMode = 'Join — Слияние';    gwModeDesc = 'Шлюз ждёт завершения ВСЕХ входящих веток перед продолжением.'; gwModeColor = '#15803d'; }
+            else { gwMode = 'Не определён'; gwModeDesc = 'Подключите связи для автоопределения режима.'; gwModeColor = '#9ca3af'; }
+            editable = `<div class="prop-note" style="padding:0.5rem;background:#f0fdf4;border-radius:0.375rem;margin-bottom:0.5rem;">Параллельное разделение / слияние потоков.</div>
+                <div class="prop-group"><label class="prop-label">Режим работы</label>
+                <div style="font-size:0.78rem;font-weight:700;color:${gwModeColor};">${gwMode}</div>
+                <div class="prop-note">${gwModeDesc}</div></div>`;
+            break;
+        }
         default:
             editable = `<div class="prop-note" style="padding:0.5rem;background:#f9fafb;border-radius:0.375rem;border:1px solid #e5e7eb;">Настройка этого элемента недоступна в режиме редактирования метаданных.</div>`;
     }
-    const inCnt = ctorConns.filter(c => c.to === node.id).length;
-    const outCnt = ctorConns.filter(c => c.from === node.id).length;
-    return `<div class="props-node-header"><span style="font-size:1.3rem;">${iconOf}</span>
+    return `<div class="props-node-header"><span style="font-size:1.3rem;">${nodeIcon(node)}</span>
         <div><div style="font-size:0.8rem;font-weight:700;color:#374151;">${escHtml(cfg.label)}</div>
         <div style="font-size:0.68rem;color:#9ca3af;">ID: N-${node.id}</div></div></div>
-        ${ro('Название', node.label)}${editable}
+        ${roProp('Название', node.label)}${editable}
         <div class="conn-info"><div>Входящих: <b>${inCnt}</b> &nbsp;|&nbsp; Исходящих: <b>${outCnt}</b></div></div>`;
 }
 
@@ -2340,11 +3018,21 @@ function ctorRenderProcessPropsReadOnly() {
     const content = document.getElementById('props-content');
     if (!content) return;
     const s = ctorProcSettings;
-    const ro = (label, val) => `<div class="prop-group"><label class="prop-label">${label}</label><div style="font-size:0.8rem;color:#374151;padding:0.35rem 0.5rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:0.375rem;">${escHtml(String(val||'—'))}</div></div>`;
+    const sn = ctorNodes.find(n => n.type === 'start');
+    const scheduleRaw = s.scheduleRaw || (sn && sn.props.schedule) || '';
+    const autoBlock = s.isRepeating
+        ? `${roProp('Автозапуск', 'Включён')}
+           <div class="prop-group">
+               <label class="prop-label">Расписание запуска</label>
+               <div style="font-size:0.8rem;color:#374151;padding:0.4rem 0.5rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:0.375rem;line-height:1.5;">
+                   🕐 ${escHtml(scheduleRaw || 'не указано')}
+               </div>
+           </div>`
+        : roProp('Автозапуск', 'Выключен');
     content.innerHTML = `<div class="prop-section-title" style="margin-bottom:0.75rem;">&#128203; Процесс</div>
-        ${ro('ID процесса', s.id)}${ro('Название', s.name)}${ro('Статус', s.status)}
-        ${ro('Описание', s.description || '—')}${ro('Часовой пояс', s.timezone)}
-        ${ro('Автозапуск', s.isRepeating ? 'Включён' : 'Выключен')}`;
+        ${roProp('ID процесса', s.id)}${roProp('Название', s.name)}${roProp('Статус', s.status)}
+        ${roProp('Описание', s.description || '—')}${roProp('Часовой пояс', s.timezone)}
+        ${autoBlock}`;
 }
 
 // ---- Process-level props for edit-meta mode ----
@@ -2352,14 +3040,25 @@ function ctorRenderProcessPropsMeta() {
     const content = document.getElementById('props-content');
     if (!content) return;
     const s = ctorProcSettings;
-    const ro = (label, val) => `<div class="prop-group"><label class="prop-label">${label}</label><div style="font-size:0.8rem;color:#374151;padding:0.35rem 0.5rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:0.375rem;">${escHtml(String(val||'—'))}</div></div>`;
+    const sn = ctorNodes.find(n => n.type === 'start');
+    const scheduleRaw = s.scheduleRaw || (sn && sn.props.schedule) || '';
+    const autoBlock = s.isRepeating
+        ? `${roProp('Автозапуск', 'Включён')}
+           <div class="prop-group">
+               <label class="prop-label">Расписание запуска</label>
+               <input class="prop-input" value="${escHtml(scheduleRaw)}" placeholder="Напр.: 01:00 каждое 1-е число месяца"
+                   oninput="ctorProcSettings.scheduleRaw=this.value;if(ctorNodes.find(n=>n.type==='start'))ctorNodes.find(n=>n.type==='start').props.schedule=this.value;" />
+               <div class="prop-note">Формат: ЧЧ:ММ + описание периодичности</div>
+           </div>`
+        : roProp('Автозапуск', 'Выключен');
     content.innerHTML = `<div class="prop-section-title" style="margin-bottom:0.75rem;">&#128203; Процесс</div>
-        ${ro('ID процесса', s.id)}${ro('Название', s.name)}${ro('Статус', s.status)}
+        ${roProp('ID процесса', s.id)}${roProp('Название', s.name)}${roProp('Статус', s.status)}
         <div class="prop-group"><label class="prop-label">Описание процесса</label>
             <textarea class="prop-textarea" placeholder="Описание назначения процесса..." oninput="ctorProcSettings.description=this.value">${escHtml(s.description||'')}</textarea></div>
         <div class="prop-group"><label class="prop-label">Владелец</label>
             <input class="prop-input" value="${escHtml((s.owners||[]).join(', '))}" placeholder="ФИО владельца" oninput="ctorProcSettings.owners=this.value.split(',').map(v=>v.trim())" /></div>
-        ${ro('Часовой пояс', s.timezone)}`;
+        ${roProp('Часовой пояс', s.timezone)}
+        ${autoBlock}`;
 }
 </script>
 
@@ -2390,6 +3089,8 @@ function renderGanttChart(filterTid) {
     if (!cont) return;
 
     const MONTH_RU = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+    const QUARTER_RU = ['Q1','Q2','Q3','Q4'];
+    const gran = (document.getElementById('gantt-gran-sel')?.value) || 'month';
     const STATUS_CLR = {
         'Активен':   { bg:'#dbeafe', fill:'#3b82f6', border:'#93c5fd' },
         'Просрочен': { bg:'#fee2e2', fill:'#ef4444', border:'#fca5a5' },
@@ -2423,15 +3124,62 @@ function renderGanttChart(filterTid) {
     const pct = d => d ? Math.max(0, Math.min(100, (d - minD) / span * 100)).toFixed(3) : null;
     const todayPct = pct(today);
 
-    // Month ticks
-    const months = [];
-    let cur = new Date(minD.getFullYear(), minD.getMonth(), 1);
-    while (cur <= maxD) { months.push({ d: new Date(cur), pct: pct(cur) }); cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1); }
+    // Ticks by granularity
+    const ticks = [];
+    let cur = new Date(minD);
+    const curYear = today.getFullYear();
+    // Номер недели в году
+    const isoWeek = d => { const t = new Date(d); t.setHours(0,0,0,0); t.setDate(t.getDate()+4-(t.getDay()||7)); return Math.ceil(((t-new Date(t.getFullYear(),0,1))/864e5+1)/7); };
 
-    // Header row
-    const monthsHTML = months.map(m =>
-        `<div class="gantt-month-tick" style="left:${m.pct}%;"></div>
-         <div style="position:absolute;left:${m.pct}%;top:6px;font-size:0.62rem;font-weight:600;color:#9ca3af;white-space:nowrap;padding-left:4px;">${MONTH_RU[m.d.getMonth()]} ${m.d.getFullYear().toString().slice(2)}</div>`
+    if (gran === 'day') {
+        cur = new Date(minD.getFullYear(), minD.getMonth(), minD.getDate());
+        while (cur <= maxD) {
+            // показываем метку только в начале месяца и с шагом 7 дней
+            const isMonthStart = cur.getDate() === 1;
+            const label = isMonthStart
+                ? MONTH_RU[cur.getMonth()] + (cur.getFullYear() !== curYear ? ' '' + cur.getFullYear().toString().slice(2) : '')
+                : String(cur.getDate());
+            ticks.push({ d: new Date(cur), pct: pct(cur), label, major: isMonthStart });
+            cur.setDate(cur.getDate() + 1);
+        }
+    } else if (gran === 'week') {
+        cur = new Date(minD.getFullYear(), minD.getMonth(), minD.getDate());
+        const dow = cur.getDay(); cur.setDate(cur.getDate() - (dow === 0 ? 6 : dow - 1));
+        while (cur <= maxD) {
+            const isMonthStart = cur.getDate() <= 7; // первая неделя месяца
+            const label = isMonthStart
+                ? MONTH_RU[cur.getMonth()] + (cur.getFullYear() !== curYear ? ' '' + cur.getFullYear().toString().slice(2) : '')
+                : 'Н' + isoWeek(cur);
+            ticks.push({ d: new Date(cur), pct: pct(cur), label, major: isMonthStart });
+            cur.setDate(cur.getDate() + 7);
+        }
+    } else if (gran === 'month') {
+        cur = new Date(minD.getFullYear(), minD.getMonth(), 1);
+        let lastYear = null;
+        while (cur <= maxD) {
+            const isNewYear = cur.getFullYear() !== lastYear;
+            const label = isNewYear
+                ? MONTH_RU[cur.getMonth()] + ' '' + cur.getFullYear().toString().slice(2)
+                : MONTH_RU[cur.getMonth()];
+            lastYear = cur.getFullYear();
+            ticks.push({ d: new Date(cur), pct: pct(cur), label, major: isNewYear });
+            cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+        }
+    } else if (gran === 'quarter') {
+        cur = new Date(minD.getFullYear(), Math.floor(minD.getMonth() / 3) * 3, 1);
+        while (cur <= maxD) {
+            const q = Math.floor(cur.getMonth() / 3);
+            const label = QUARTER_RU[q] + (q === 0 || ticks.length === 0 ? ' ' + cur.getFullYear() : '');
+            ticks.push({ d: new Date(cur), pct: pct(cur), label, major: q === 0 });
+            cur = new Date(cur.getFullYear(), cur.getMonth() + 3, 1);
+        }
+    }
+    const months = ticks; // keep alias for rows below
+
+    // Header — major тики выделяем жирнее
+    const monthsHTML = ticks.map(m =>
+        `<div class="gantt-month-tick" style="left:${m.pct}%;${m.major ? 'border-left:1px solid #d1d5db;' : ''}"></div>`
+        + `<div style="position:absolute;left:${m.pct}%;top:${m.major ? '4px' : '8px'};font-size:${m.major ? '0.65rem' : '0.58rem'};font-weight:${m.major ? '700' : '500'};color:${m.major ? '#6b7280' : '#c4b5fd'  };white-space:nowrap;padding-left:3px;">${m.label}</div>`
     ).join('');
 
     const headerHTML = `<div class="gantt-hdr">
@@ -2632,10 +3380,123 @@ function closeInstanceDrawer() {
 let currentTaskTab = 'active';
 let pendingAction = null;
 
+// Хранит зафиксированные исходы узлов по экземплярам: { instanceId: { nodeId: outcome } }
+const instanceNodeOutcomes = {};
+
+function showToast(msg, color) {
+    color = color || '#6d28d9';
+    const t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:2rem;right:2rem;z-index:9999;background:' + color + ';color:#fff;padding:0.75rem 1.25rem;border-radius:0.5rem;font-size:0.85rem;box-shadow:0 4px 16px rgba(0,0,0,0.2);max-width:360px;';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+}
+
+function slaToMs(val, unit) {
+    if (!val || val < 1) return 24 * 60 * 60 * 1000;
+    const map = { 'минут': 60*1000, 'часов': 3600*1000, 'дней': 86400*1000 };
+    return val * (map[unit] || 86400*1000);
+}
+
+// Обходит схему от узла fromNodeId и возвращает первый найденный task-approval узел
+// или null если достигнут конец процесса
+function traverseSchema(schema, fromNodeId, instanceId, visited) {
+    visited = visited || new Set();
+    if (visited.has(fromNodeId)) return null;
+    visited.add(fromNodeId);
+
+    const outgoing = schema.conns.filter(c => c.from === fromNodeId);
+    for (const conn of outgoing) {
+        const target = schema.nodes.find(n => n.id === conn.to);
+        if (!target) continue;
+
+        if (target.type === 'task-approval') return target;
+        if (target.type === 'end')           return null;
+        if (target.type === 'task-script') {
+            const next = traverseSchema(schema, target.id, instanceId, visited);
+            if (next !== undefined) return next;
+        }
+        if (target.type === 'gw-xor') {
+            return resolveXOR(schema, target.id, instanceId, visited);
+        }
+        if (target.type === 'gw-and') {
+            // AND-join: проходим насквозь; AND-fork: берём первую ветку (остальные создаются отдельно)
+            const next = traverseSchema(schema, target.id, instanceId, visited);
+            if (next !== undefined) return next;
+        }
+    }
+    return null;
+}
+
+// Разрешает маршрут через XOR-шлюз на основе ранее зафиксированных исходов
+function resolveXOR(schema, xorNodeId, instanceId, visited) {
+    const outgoing = schema.conns.filter(c => c.from === xorNodeId);
+    const outcomes = instanceNodeOutcomes[instanceId] || {};
+    let defaultConn = null;
+
+    for (const conn of outgoing) {
+        if (conn.flowType === 'default') { defaultConn = conn; continue; }
+        const sourceOutcome = outcomes[parseInt(conn.conditionStep)];
+        const match = conn.conditionOp === 'neq'
+            ? (sourceOutcome && sourceOutcome !== conn.conditionAttr)
+            : (sourceOutcome !== undefined && sourceOutcome === conn.conditionAttr);
+        if (match) {
+            const target = schema.nodes.find(n => n.id === conn.to);
+            if (!target) continue;
+            if (target.type === 'task-approval') return target;
+            return traverseSchema(schema, target.id, instanceId, visited);
+        }
+    }
+
+    if (defaultConn) {
+        const target = schema.nodes.find(n => n.id === defaultConn.to);
+        if (!target) return null;
+        if (target.type === 'task-approval') return target;
+        return traverseSchema(schema, target.id, instanceId, visited);
+    }
+
+    // Нет подходящей связи и нет default — ошибка маршрутизации
+    showToast('⚠ Ошибка маршрутизации: ни одно условие XOR не выполнено и нет пути «По умолчанию». Экземпляр остановлен.', '#dc2626');
+    return undefined; // undefined = ошибка (отличается от null = конец)
+}
+
+// Основная функция: фиксирует исход и запускает следующую задачу
+function routeToken(task, outcome) {
+    const schema = TEMPLATE_SCHEMAS[task.templateId];
+    if (!schema) return;
+
+    if (!instanceNodeOutcomes[task.instance]) instanceNodeOutcomes[task.instance] = {};
+    instanceNodeOutcomes[task.instance][task.nodeId] = outcome;
+
+    const nextNode = traverseSchema(schema, task.nodeId, task.instance, new Set());
+
+    if (nextNode) {
+        const sla = slaToMs(nextNode.props.slaValue, nextNode.props.slaUnit);
+        const newTask = {
+            id: 'T-' + Date.now(),
+            templateId: task.templateId,
+            nodeId: nextNode.id,
+            name: nextNode.label,
+            process: task.process,
+            instance: task.instance,
+            instruction: nextNode.props.instruction || '',
+            startedBy: 'Система',
+            arrivedAt: new Date().toISOString(),
+            deadline: new Date(Date.now() + sla).toISOString(),
+            outcomes: (nextNode.props.outcomes || ['Завершить']).map((o, i) => ({ label: o, primary: i === 0 }))
+        };
+        tasksActive.push(newTask);
+        showToast('▶ Создана новая задача: «' + nextNode.label + '» — ' + task.instance);
+    } else if (nextNode === null) {
+        showToast('✅ Экземпляр ' + task.instance + ' завершён — достигнут конец процесса.', '#15803d');
+    }
+    // nextNode === undefined уже обработан в resolveXOR
+}
+
 const now = Date.now();
 let tasksActive = [
     {
-        id: 'T-001',
+        id: 'T-001', templateId: 1, nodeId: 2,
         name: 'Согласовать договор с ООО "Альфа"',
         process: 'Согласование договора',
         instance: 'E-101',
@@ -2646,7 +3507,7 @@ let tasksActive = [
         outcomes: [{ label: 'Согласовать', primary: true }, { label: 'Отклонить', primary: false }]
     },
     {
-        id: 'T-002',
+        id: 'T-002', templateId: 2, nodeId: 4,
         name: 'Подготовить список оборудования',
         process: 'Закупка оборудования',
         instance: 'Z-001',
@@ -2657,7 +3518,7 @@ let tasksActive = [
         outcomes: [{ label: 'Утвердить', primary: true }, { label: 'Вернуть на доработку', primary: false }]
     },
     {
-        id: 'T-003',
+        id: 'T-003', templateId: 3, nodeId: 5,
         name: 'Провести вводный инструктаж',
         process: 'Онбординг сотрудника',
         instance: 'O-201',
@@ -2668,7 +3529,7 @@ let tasksActive = [
         outcomes: [{ label: 'Сделано', primary: true }]
     },
     {
-        id: 'T-004',
+        id: 'T-004', templateId: 1, nodeId: 2,
         name: 'Проверить финансовые условия договора',
         process: 'Согласование договора',
         instance: 'E-105',
@@ -2679,7 +3540,7 @@ let tasksActive = [
         outcomes: [{ label: 'Согласовать', primary: true }, { label: 'Отклонить', primary: false }, { label: 'Запросить уточнение', primary: false }]
     },
     {
-        id: 'T-005',
+        id: 'T-005', templateId: 3, nodeId: 4,
         name: 'Выдать доступы в корпоративных системах',
         process: 'Онбординг сотрудника',
         instance: 'O-202',
@@ -2860,7 +3721,7 @@ function executeTaskAction() {
     const task = tasksActive.find(t => t.id === taskId);
     if (task) {
         tasksActive = tasksActive.filter(t => t.id !== taskId);
-        const positiveLabels = ['Согласовать','Утвердить','Сделано','Выполнено','Согласовано','Одобрить','Одобрено'];
+        const positiveLabels = ['Согласовать','Утвердить','Сделано','Выполнено','Согласовано','Одобрить','Одобрено','Принято','Утверждён','Утверждено','Выдано','Проведён','Готово','Готова','Готов'];
         tasksHistory.unshift({
             id: 'H-' + Date.now(),
             name: task.name,
@@ -2869,6 +3730,8 @@ function executeTaskAction() {
             result: outcome,
             resultType: positiveLabels.some(l => outcome.toLowerCase().includes(l.toLowerCase())) ? 'green' : 'red'
         });
+        // Маршрутизация токена: найти следующий узел по схеме процесса
+        if (task.templateId && task.nodeId) routeToken(task, outcome);
     }
     closeActionConfirm();
     closeTaskDrawer();
