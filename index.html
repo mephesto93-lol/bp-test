@@ -1154,6 +1154,21 @@
     .status-display { display:inline-flex; align-items:center; padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.72rem; font-weight:600; }
     .sep { height:1px; background:#f3f4f6; margin:0.875rem 0; }
     .cycle-preview { font-size:0.68rem; color:#6d28d9; background:#f5f3ff; border-radius:0.375rem; padding:0.3rem 0.5rem; margin-top:0.3rem; line-height:1.4; }
+
+    /* GROUPS */
+    .canvas-group { position:absolute; border:2px dashed #93c5fd; border-radius:10px; background:rgba(219,234,254,0.18); z-index:1; cursor:move; box-sizing:border-box; }
+    .canvas-group:hover { border-color:#3b82f6; background:rgba(219,234,254,0.3); }
+    .canvas-group.selected { border-color:#6d28d9; background:rgba(237,233,254,0.22); }
+    .canvas-group-label { position:absolute; top:-10px; left:10px; background:#fff; padding:0 6px; font-size:0.6rem; font-weight:700; color:#3b82f6; white-space:nowrap; border-radius:4px; border:1px solid #93c5fd; line-height:1.8; cursor:text; user-select:none; }
+    .canvas-group.selected .canvas-group-label { color:#6d28d9; border-color:#6d28d9; }
+    .canvas-node.multi-selected > .node-shape-circle { outline:2.5px solid #3b82f6; outline-offset:3px; }
+    .canvas-node.multi-selected > .node-shape-rect { outline:2.5px solid #3b82f6; outline-offset:2px; }
+    .canvas-node.multi-selected > .node-diamond-wrap > .node-shape-diamond { box-shadow:0 0 0 3px #3b82f6; }
+    .ctbar-btn:disabled { opacity:0.35; cursor:not-allowed; }
+    .ctbar-btn:disabled:hover { background:#fff !important; border-color:#e5e7eb !important; color:#374151 !important; }
+    .hier-group-row { padding:0.35rem 0.5rem; font-size:0.78rem; cursor:pointer; display:flex; align-items:center; gap:0.4rem; color:#1d4ed8; border-radius:0.375rem; font-weight:600; }
+    .hier-group-row:hover { background:#dbeafe; }
+    .hier-group-row.selected { background:#ede9fe; color:#6d28d9; }
 </style>
 
 <div id="constructor-screen">
@@ -1162,7 +1177,7 @@
         <input id="ctor-title" class="ctor-title-input" value="Новый бизнес процесс" oninput="onCtorTitleChange()" />
         <span class="ctor-status-badge" id="ctor-status-badge">Черновик</span>
         <div style="flex:1"></div>
-        <span style="font-size:0.72rem;color:#9ca3af;">Del — удалить узел &nbsp;|&nbsp; Esc — отмена связи</span>
+        <span style="font-size:0.72rem;color:#9ca3af;">Del — удалить / разгруппировать &nbsp;|&nbsp; Esc — отмена связи &nbsp;|&nbsp; Shift+клик — выбрать несколько → ⬡ сгруппировать</span>
     </header>
     <div class="ctor-body">
         <!-- LEFT -->
@@ -1218,6 +1233,9 @@
                     <button class="ctbar-btn" onclick="ctorZoomOut()" title="Уменьшить масштаб">🔍−</button>
                     <span class="ctbar-zoom-label" id="ctbar-zoom-lbl">100%</span>
                     <button class="ctbar-btn" onclick="ctorZoomIn()" title="Увеличить масштаб">🔍+</button>
+                    <div class="ctbar-sep"></div>
+                    <button class="ctbar-btn" id="ctbar-group-btn" onclick="ctorGroupSelected()" title="Сгруппировать выбранные узлы" disabled style="font-size:14px;">⬡</button>
+                    <button class="ctbar-btn" id="ctbar-ungroup-btn" onclick="ctorUngroupSelected()" title="Разгруппировать" disabled style="font-size:14px;">⬢</button>
                     <div class="ctbar-sep"></div>
                     <button class="ctbar-btn" id="ctbar-right-btn" onclick="toggleRightPanel()" title="Скрыть/показать свойства">▶</button>
                 </div>
@@ -1375,6 +1393,10 @@ let ctorCurrentTemplateId = null;
 let ctorProcSettings = {};
 let canvasPan = {x:0, y:0}, canvasZoom = 1;
 let isPanning = false, panStart = {};
+let ctorGroups = [], ctorGroupCnt = 0;
+let ctorSelIds = new Set();   // multi-selected node IDs (for grouping)
+let ctorSelGroupId = null;    // selected group ID
+let draggingGroup = null;     // { id, mx, my, nodeStartPos };
 let leftPanelVisible = true, rightPanelVisible = true;
 
 function ctorInitProcSettings() {
@@ -1417,6 +1439,7 @@ function openConstructor() {
     ctorInitProcSettings();
     canvasPan = {x:0, y:0}; canvasZoom = 1; isPanning = false;
     leftPanelVisible = true; rightPanelVisible = true;
+    ctorGroups = []; ctorGroupCnt = 0; ctorSelIds = new Set(); ctorSelGroupId = null; draggingGroup = null;
     document.getElementById('constructor-screen').classList.add('visible');
     document.getElementById('ctor-title').value = ctorProcSettings.name;
     document.getElementById('ctor-status-badge').textContent = 'Черновик';
@@ -1517,11 +1540,13 @@ function ctorIsValid() {
 }
 
 function ctorRenderAll() {
+    ctorRenderGroups();
     ctorRenderNodes();
     ctorRenderConns();
     ctorRenderHierarchy();
     ctorRenderProps();
     ctorUpdatePublish();
+    ctorUpdateGroupBtn();
 }
 
 function ctorRenderNodes() {
@@ -1530,7 +1555,7 @@ function ctorRenderNodes() {
     ctorNodes.forEach(node => {
         const cfg = NODE_CFG[node.type];
         const el = document.createElement('div');
-        el.className = 'canvas-node' + (ctorSelId === node.id ? ' selected' : '');
+        el.className = 'canvas-node' + (ctorSelId === node.id ? ' selected' : '') + (ctorSelIds.has(node.id) ? ' multi-selected' : '');
         el.dataset.nid = node.id;
         el.style.cssText = `left:${node.x}px;top:${node.y}px;width:${cfg.w}px;height:${cfg.h}px;`;
 
@@ -1622,13 +1647,23 @@ function ctorRenderHierarchy() {
     const title = document.getElementById('ctor-title').value || 'Новый бизнес процесс';
     const ordered = ctorTopoOrder();
     const iconOf = n => ({ circle: n.type==='start' ? '🟢' : '🔴', rect: '🔷', diamond: '🔶' })[NODE_CFG[n.type].shape];
+    const groupedNodeIds = new Set(ctorGroups.flatMap(g => g.nodeIds));
+    const groupsHTML = ctorGroups.map(g => {
+        const members = ctorNodes.filter(n => g.nodeIds.includes(n.id));
+        return `<div class="hier-group-row${ctorSelGroupId===g.id?' selected':''}" onclick="ctorSelectGroup(${g.id})">📁 ${escHtml(g.label)}</div>` +
+               members.map(n => `<div class="hier-node-row${ctorSelId===n.id||ctorSelIds.has(n.id)?' selected':''}" style="padding-left:2rem;" onclick="ctorSelectNode(${n.id})">${iconOf(n)} ${n.label}</div>`).join('');
+    }).join('');
+    const ungrouped = ordered.filter(n => !groupedNodeIds.has(n.id));
+    const noSel = ctorSelId===null && ctorSelIds.size===0 && ctorSelGroupId===null;
     document.getElementById('hierarchy-list').innerHTML =
-        `<div class="hier-process-row${ctorSelId===null?' selected':''}" onclick="ctorSelectProcess()" style="cursor:pointer;border-radius:0.375rem;">📄 ${title}</div>` +
-        ordered.map(n => `<div class="hier-node-row${ctorSelId===n.id?' selected':''}" onclick="ctorSelectNode(${n.id})">${iconOf(n)} ${n.label}</div>`).join('');
+        `<div class="hier-process-row${noSel?' selected':''}" onclick="ctorSelectProcess()" style="cursor:pointer;border-radius:0.375rem;">📄 ${title}</div>` +
+        groupsHTML +
+        ungrouped.map(n => `<div class="hier-node-row${ctorSelId===n.id||ctorSelIds.has(n.id)?' selected':''}" onclick="ctorSelectNode(${n.id})">${iconOf(n)} ${n.label}</div>`).join('');
 }
 
 function ctorRenderProps() {
     const content = document.getElementById('props-content');
+    if (ctorSelGroupId !== null) { ctorRenderGroupProps(); return; }
     if (!ctorSelId) {
         if (ctorViewMode === 'view') { ctorRenderProcessPropsReadOnly(); return; }
         if (ctorViewMode === 'edit-meta') { ctorRenderProcessPropsMeta(); return; }
@@ -1919,6 +1954,8 @@ function ctorUpdatePublish() {
 
 function ctorSelectNode(id) {
     ctorSelId = id;
+    ctorSelIds.clear(); ctorSelGroupId = null;
+    ctorUpdateGroupBtn();
     const node = ctorNodes.find(n => n.id === id);
     if (node) {
         const cfg = NODE_CFG[node.type];
@@ -1933,6 +1970,8 @@ function ctorSelectNode(id) {
 
 function ctorSelectProcess() {
     ctorSelId = null;
+    ctorSelIds.clear(); ctorSelGroupId = null;
+    ctorUpdateGroupBtn();
     ctorRenderAll();
 }
 
@@ -1962,16 +2001,156 @@ function ctorDeleteNode() {
     ctorRenderAll();
 }
 
+// ==================== GROUP FUNCTIONS ====================
+
+function ctorRenderGroups() {
+    const inner = document.getElementById('canvas-inner');
+    inner.querySelectorAll('.canvas-group').forEach(el => el.remove());
+    if (ctorViewMode !== 'create') return;
+    const PAD = 22;
+    ctorGroups.forEach(g => {
+        const members = ctorNodes.filter(n => g.nodeIds.includes(n.id));
+        if (members.length < 1) return;
+        const xs  = members.map(n => n.x);
+        const ys  = members.map(n => n.y);
+        const x2s = members.map(n => n.x + NODE_CFG[n.type].w);
+        const y2s = members.map(n => n.y + NODE_CFG[n.type].h);
+        const gx = Math.min(...xs)  - PAD;
+        const gy = Math.min(...ys)  - PAD - 8;
+        const gw = Math.max(...x2s) - Math.min(...xs) + PAD * 2;
+        const gh = Math.max(...y2s) - Math.min(...ys) + PAD * 2 + 8;
+        const el = document.createElement('div');
+        el.className = 'canvas-group' + (ctorSelGroupId === g.id ? ' selected' : '');
+        el.dataset.gid = g.id;
+        el.style.cssText = `left:${gx}px;top:${gy}px;width:${gw}px;height:${gh}px;`;
+        el.innerHTML = `<span class="canvas-group-label" ondblclick="ctorRenameGroup(${g.id})">${escHtml(g.label)}</span>`;
+        el.addEventListener('mousedown', e => ctorGroupMD(e, g.id));
+        inner.insertBefore(el, inner.firstChild);
+    });
+}
+
+function ctorGroupMD(e, groupId) {
+    if (e.button !== 0 || connectingFrom !== null) return;
+    e.stopPropagation();
+    ctorSelGroupId = groupId;
+    ctorSelId = null;
+    ctorSelIds.clear();
+    const g = ctorGroups.find(g => g.id === groupId);
+    if (!g) return;
+    const nodeStartPos = {};
+    ctorNodes.filter(n => g.nodeIds.includes(n.id)).forEach(n => {
+        nodeStartPos[n.id] = { x: n.x, y: n.y };
+    });
+    draggingGroup = { id: groupId, mx: e.clientX, my: e.clientY, nodeStartPos };
+    ctorUpdateGroupBtn();
+    document.querySelectorAll('.canvas-node').forEach(el => { el.classList.remove('selected','multi-selected'); });
+    ctorRenderGroups();
+    ctorRenderHierarchy();
+    ctorRenderProps();
+}
+
+function ctorGroupSelected() {
+    if (ctorSelIds.size < 2) return;
+    const nodeIds = [...ctorSelIds];
+    ctorGroupCnt++;
+    ctorGroups.push({ id: ctorGroupCnt, label: 'Группа ' + ctorGroupCnt, nodeIds });
+    ctorSelIds.clear();
+    ctorSelGroupId = ctorGroupCnt;
+    ctorUpdateGroupBtn();
+    ctorRenderAll();
+}
+
+function ctorUngroupSelected() {
+    if (!ctorSelGroupId) return;
+    ctorGroups = ctorGroups.filter(g => g.id !== ctorSelGroupId);
+    ctorSelGroupId = null;
+    ctorUpdateGroupBtn();
+    ctorRenderAll();
+}
+
+function ctorRenameGroup(groupId) {
+    const g = ctorGroups.find(g => g.id === groupId);
+    if (!g) return;
+    const name = prompt('Название группы:', g.label);
+    if (name !== null && name.trim()) { g.label = name.trim(); ctorRenderGroups(); ctorRenderHierarchy(); }
+}
+
+function ctorSelectGroup(groupId) {
+    ctorSelGroupId = groupId;
+    ctorSelId = null;
+    ctorSelIds.clear();
+    ctorUpdateGroupBtn();
+    document.querySelectorAll('.canvas-node').forEach(el => el.classList.remove('selected','multi-selected'));
+    ctorRenderGroups();
+    ctorRenderHierarchy();
+    ctorRenderProps();
+}
+
+function ctorUpdateGroupBtn() {
+    const gb = document.getElementById('ctbar-group-btn');
+    const ub = document.getElementById('ctbar-ungroup-btn');
+    if (gb) gb.disabled = ctorSelIds.size < 2;
+    if (ub) ub.disabled = !ctorSelGroupId;
+}
+
+function ctorRenderGroupProps() {
+    const g = ctorGroups.find(g => g.id === ctorSelGroupId);
+    if (!g) return;
+    const content = document.getElementById('props-content');
+    const memberLabels = ctorNodes.filter(n => g.nodeIds.includes(n.id)).map(n => escHtml(n.label)).join(', ');
+    content.innerHTML = `
+        <div class="props-node-header">
+            <span style="font-size:1.3rem;">📁</span>
+            <div><div style="font-size:0.8rem;font-weight:700;color:#374151;">Группа</div>
+                 <div style="font-size:0.68rem;color:#9ca3af;">${g.nodeIds.length} узлов</div></div>
+        </div>
+        <div class="prop-group"><label class="prop-label">Название</label>
+            <input class="prop-input" value="${escHtml(g.label)}" oninput="ctorUpdGroupLabel(${g.id},this.value)" /></div>
+        <div class="prop-group"><label class="prop-label">Узлы в группе</label>
+            <div style="font-size:0.75rem;color:#6b7280;line-height:1.5;">${memberLabels || '—'}</div></div>
+        <div class="conn-info">
+            <button class="btn-delete-node" onclick="ctorUngroupSelected()">⬡ Разгруппировать</button>
+        </div>`;
+}
+
+function ctorUpdGroupLabel(groupId, val) {
+    const g = ctorGroups.find(g => g.id === groupId);
+    if (g) { g.label = val; ctorRenderGroups(); ctorRenderHierarchy(); }
+}
+
 function ctorNodeMD(e, nodeId) {
     if (e.button !== 0 || connectingFrom !== null) return;
     e.stopPropagation();
+    if (e.shiftKey) {
+        // Shift+click: toggle multi-selection
+        if (ctorSelIds.has(nodeId)) ctorSelIds.delete(nodeId);
+        else ctorSelIds.add(nodeId);
+        ctorSelId = null;
+        ctorSelGroupId = null;
+        ctorUpdateGroupBtn();
+        document.querySelectorAll('.canvas-node').forEach(el => {
+            const nid = parseInt(el.dataset.nid);
+            el.classList.toggle('multi-selected', ctorSelIds.has(nid));
+            el.classList.remove('selected');
+        });
+        ctorRenderGroups();
+        ctorRenderHierarchy();
+        ctorRenderProps();
+        return;
+    }
+    // Regular click — clear multi-selection, start drag
+    ctorSelIds.clear();
+    ctorSelGroupId = null;
     ctorSelId = nodeId;
     const node = ctorNodes.find(n=>n.id===nodeId);
-    const inner = document.getElementById('canvas-inner');
-    const rect = inner.getBoundingClientRect();
     dragging = { id: nodeId, mx: e.clientX, my: e.clientY, nx: node.x, ny: node.y };
+    ctorUpdateGroupBtn();
     ctorRenderProps(); ctorRenderHierarchy();
-    document.querySelectorAll('.canvas-node').forEach(el => el.classList.toggle('selected', parseInt(el.dataset.nid)===nodeId));
+    document.querySelectorAll('.canvas-node').forEach(el => {
+        el.classList.toggle('selected', parseInt(el.dataset.nid)===nodeId);
+        el.classList.remove('multi-selected');
+    });
+    ctorRenderGroups();
 }
 
 function ctorStartConnect(e, nodeId) {
@@ -2465,6 +2644,26 @@ document.addEventListener('mousemove', e => {
     }
     const inner = document.getElementById('canvas-inner');
     if (!inner) return;
+    if (draggingGroup) {
+        const dx = (e.clientX - draggingGroup.mx) / canvasZoom;
+        const dy = (e.clientY - draggingGroup.my) / canvasZoom;
+        const g = ctorGroups.find(g => g.id === draggingGroup.id);
+        if (g) {
+            g.nodeIds.forEach(nid => {
+                const node = ctorNodes.find(n => n.id === nid);
+                const sp = draggingGroup.nodeStartPos[nid];
+                if (node && sp) {
+                    node.x = Math.max(0, sp.x + dx);
+                    node.y = Math.max(0, sp.y + dy);
+                    const el = inner.querySelector(`[data-nid="${nid}"]`);
+                    if (el) { el.style.left = node.x+'px'; el.style.top = node.y+'px'; }
+                }
+            });
+            ctorRenderGroups();
+            ctorRenderConns();
+        }
+        return;
+    }
     if (dragging) {
         const node = ctorNodes.find(n=>n.id===dragging.id);
         if (!node) return;
@@ -2472,6 +2671,8 @@ document.addEventListener('mousemove', e => {
         node.y = Math.max(0, dragging.ny + (e.clientY - dragging.my) / canvasZoom);
         const el = inner.querySelector(`[data-nid="${dragging.id}"]`);
         if (el) { el.style.left = node.x+'px'; el.style.top = node.y+'px'; }
+        // Update groups that contain this dragged node
+        ctorRenderGroups();
         ctorRenderConns();
     }
     if (connectingFrom !== null && tempLine) {
@@ -2489,6 +2690,7 @@ document.addEventListener('mouseup', e => {
         if (cont) cont.classList.remove('panning');
         return;
     }
+    if (draggingGroup) { draggingGroup = null; ctorRenderAll(); return; }
     if (dragging) { dragging = null; ctorRenderAll(); return; }
     if (connectingFrom !== null) {
         const cp = screenToCanvas(e.clientX, e.clientY);
@@ -2508,6 +2710,7 @@ document.addEventListener('mouseup', e => {
 
 document.addEventListener('keydown', e => {
     if (!document.getElementById('constructor-screen').classList.contains('visible')) return;
+    if (e.key === 'Delete' && ctorSelGroupId) { ctorUngroupSelected(); return; }
     if (e.key === 'Delete' && ctorSelId) ctorDeleteNode();
     if (e.key === 'Escape' && connectingFrom !== null) {
         connectingFrom = null; tempLine = null;
@@ -2519,11 +2722,15 @@ document.addEventListener('keydown', e => {
 document.getElementById('canvas-container').addEventListener('mousedown', e => {
     if (!document.getElementById('constructor-screen').classList.contains('visible')) return;
     if (connectingFrom !== null || e.button !== 0) return;
-    if (e.target.closest('.canvas-node') || e.target.closest('.canvas-toolbar')) return;
+    if (e.target.closest('.canvas-node') || e.target.closest('.canvas-toolbar') || e.target.closest('.canvas-group')) return;
     ctorSelId = null;
+    ctorSelIds.clear(); ctorSelGroupId = null;
+    ctorUpdateGroupBtn();
     isPanning = true;
     panStart = { mx: e.clientX, my: e.clientY, px: canvasPan.x, py: canvasPan.y };
     document.getElementById('canvas-container').classList.add('panning');
+    document.querySelectorAll('.canvas-group').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('.canvas-node').forEach(el => el.classList.remove('selected','multi-selected'));
     ctorRenderHierarchy();
     ctorRenderProps();
 });
