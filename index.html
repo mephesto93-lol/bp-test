@@ -283,8 +283,22 @@
             </section>
 
             <section class="bg-white rounded-lg shadow-sm border">
-                <div class="p-4 border-b bg-gray-50">
+                <div class="p-4 border-b bg-gray-50" style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
                     <h2 class="font-bold text-gray-700">Экземпляры: <span id="selected-process-name" class="text-purple-600 font-normal">Выберите шаблон</span></h2>
+                    <div id="inst-toolbar" style="display:flex;align-items:center;gap:0.4rem;opacity:0;pointer-events:none;transition:opacity 0.15s;">
+                        <button id="inst-btn-progress" onclick="instOpenProgress()" title="Прогресс экземпляра"
+                            style="display:flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;font-size:0.75rem;cursor:pointer;color:#374151;font-weight:500;">
+                            &#9783; Прогресс
+                        </button>
+                        <button id="inst-btn-schema" onclick="instOpenSchema()" title="Схема процесса"
+                            style="display:flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;font-size:0.75rem;cursor:pointer;color:#374151;font-weight:500;">
+                            &#128269; Схема
+                        </button>
+                        <button id="inst-btn-stop" onclick="instTerminate()" title="Прервать экземпляр"
+                            style="display:flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border:1px solid #fca5a5;border-radius:6px;background:#fff;font-size:0.75rem;cursor:pointer;color:#dc2626;font-weight:500;">
+                            &#x2715; Прервать
+                        </button>
+                    </div>
                 </div>
                 <table class="w-full text-left text-sm">
                     <thead class="bg-gray-50 text-gray-500 uppercase text-[10px] border-b">
@@ -297,11 +311,10 @@
                             <th class="p-3">Крайний срок</th>
                             <th class="p-3">Просрочено</th>
                             <th class="p-3">Дата заверш.</th>
-                            <th class="p-3"></th>
                         </tr>
                     </thead>
                     <tbody id="instance-body">
-                        <tr><td colspan="9" class="p-10 text-center text-gray-400">Выберите шаблон процесса в таблице выше для просмотра экземпляров</td></tr>
+                        <tr><td colspan="8" class="p-10 text-center text-gray-400">Выберите шаблон процесса в таблице выше для просмотра экземпляров</td></tr>
                     </tbody>
                 </table>
             </section>
@@ -696,6 +709,8 @@
     ];
 
     let selectedId = null;
+    let selectedInstId = null;
+    let selectedInstTemplateId = null;
 
     function updateButtons() {
         const t = templates.find(item => item.id === selectedId);
@@ -731,6 +746,10 @@
 
     function selectTemplate(id) {
         selectedId = id;
+        selectedInstId = null;
+        selectedInstTemplateId = null;
+        var tb = document.getElementById('inst-toolbar');
+        if (tb) { tb.style.opacity = '0'; tb.style.pointerEvents = 'none'; }
         const t = templates.find(item => item.id === id);
         document.getElementById('selected-process-name').innerText = t.name;
         renderTemplates();
@@ -745,28 +764,65 @@
             body.innerHTML = '<tr><td colspan="9" class="p-10 text-center text-gray-400">Нет экземпляров для данного шаблона</td></tr>';
             return;
         }
-        body.innerHTML = instances.map(i => `
-            <tr class="border-b hover:bg-gray-50" style="cursor:pointer;" onclick="openInstanceDrawer(${templateId},'${i.id}')">
-                <td class="p-3 font-mono text-xs">${i.id}</td>
-                <td class="p-3">${i.start}</td>
-                <td class="p-3">${i.user}</td>
-                <td class="p-3">
-                    <span class="status-badge ${i.status === 'Активен' ? 'bg-blue-100 text-blue-700' : i.status === 'Просрочен' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">
-                        ${i.status}
-                    </span>
-                </td>
-                <td class="p-3">
-                    <div class="w-full bg-gray-200 rounded-full h-1.5">
-                        <div class="bg-purple-600 h-1.5 rounded-full" style="width: ${i.progress}%"></div>
-                    </div>
-                    <div class="text-xs text-gray-400 mt-1">${i.progress}%</div>
-                </td>
-                <td class="p-3 text-xs text-red-600">${i.deadline}</td>
-                <td class="p-3 text-center text-red-600 font-bold">${i.overdue > 0 ? i.overdue : ''}</td>
-                <td class="p-3 text-gray-400">${i.end}</td>
-                <td class="p-3"><span style="cursor:pointer;color:#9ca3af;font-size:1rem;" onmouseover="this.style.color='#6d28d9'" onmouseout="this.style.color='#9ca3af'" onclick="openInstanceView(${templateId})" title="Просмотреть схему">🔍</span></td>
-            </tr>
-        `).join('');
+        var statusCls = function(s) {
+            if (s === 'Активен')   return 'bg-blue-100 text-blue-700';
+            if (s === 'Просрочен') return 'bg-red-100 text-red-700';
+            if (s === 'Прерван')   return 'bg-orange-100 text-orange-700';
+            return 'bg-green-100 text-green-700';
+        };
+        body.innerHTML = instances.map(function(i) {
+            var sel = (selectedInstId === i.id) ? 'background:#f5f3ff;' : '';
+            return '<tr class="border-b hover:bg-gray-50" style="cursor:pointer;' + sel + '" onclick="selectInstance(' + templateId + ',\'' + i.id + '\')">'
+                + '<td class="p-3 font-mono text-xs">' + i.id + '</td>'
+                + '<td class="p-3">' + i.start + '</td>'
+                + '<td class="p-3">' + i.user + '</td>'
+                + '<td class="p-3"><span class="status-badge ' + statusCls(i.status) + '">' + i.status + '</span></td>'
+                + '<td class="p-3"><div class="w-full bg-gray-200 rounded-full h-1.5"><div class="bg-purple-600 h-1.5 rounded-full" style="width:' + i.progress + '%"></div></div><div class="text-xs text-gray-400 mt-1">' + i.progress + '%</div></td>'
+                + '<td class="p-3 text-xs text-red-600">' + i.deadline + '</td>'
+                + '<td class="p-3 text-center text-red-600 font-bold">' + (i.overdue > 0 ? i.overdue : '') + '</td>'
+                + '<td class="p-3 text-gray-400">' + i.end + '</td>'
+                + '</tr>';
+        }).join('');
+    }
+
+    function terminateInstance(templateId, instanceId) {
+        const insts = instancesData[templateId];
+        if (!insts) return;
+        const inst = insts.find(i => i.id === instanceId);
+        if (!inst || (inst.status !== 'Активен' && inst.status !== 'Просрочен')) return;
+        if (!confirm(`Прервать экземпляр ${instanceId}?\n\nВсе активные задачи будут отменены. Действие необратимо.`)) return;
+        const today = new Date().toLocaleDateString('ru-RU').split('.').map(p => p.padStart(2,'0')).join('.');
+        inst.status = 'Прерван';
+        inst.end = today;
+        renderInstances(templateId);
+        var stopBtn = document.getElementById('inst-btn-stop');
+        if (stopBtn) stopBtn.style.display = 'none';
+    }
+
+    function selectInstance(templateId, instanceId) {
+        selectedInstId = instanceId;
+        selectedInstTemplateId = templateId;
+        renderInstances(templateId);
+        // Show toolbar
+        var tb = document.getElementById('inst-toolbar');
+        if (tb) { tb.style.opacity = '1'; tb.style.pointerEvents = 'auto'; }
+        // Show/hide Прервать based on status
+        var insts = instancesData[templateId] || [];
+        var inst = insts.find(function(i) { return i.id === instanceId; });
+        var stopBtn = document.getElementById('inst-btn-stop');
+        if (stopBtn) stopBtn.style.display = (inst && (inst.status === 'Активен' || inst.status === 'Просрочен')) ? 'flex' : 'none';
+    }
+
+    function instOpenProgress() {
+        if (selectedInstId && selectedInstTemplateId) openInstanceDrawer(selectedInstTemplateId, selectedInstId);
+    }
+
+    function instOpenSchema() {
+        if (selectedInstTemplateId) openInstanceView(selectedInstTemplateId);
+    }
+
+    function instTerminate() {
+        if (selectedInstId && selectedInstTemplateId) terminateInstance(selectedInstTemplateId, selectedInstId);
     }
 
     function copyTemplate() {
@@ -3344,7 +3400,7 @@ function renderGanttChart(filterTid) {
             // показываем метку только в начале месяца и с шагом 7 дней
             const isMonthStart = cur.getDate() === 1;
             const label = isMonthStart
-                ? MONTH_RU[cur.getMonth()] + (cur.getFullYear() !== curYear ? ' '' + cur.getFullYear().toString().slice(2) : '')
+                ? MONTH_RU[cur.getMonth()] + (cur.getFullYear() !== curYear ? " '" + cur.getFullYear().toString().slice(2) : '')
                 : String(cur.getDate());
             ticks.push({ d: new Date(cur), pct: pct(cur), label, major: isMonthStart });
             cur.setDate(cur.getDate() + 1);
@@ -3355,7 +3411,7 @@ function renderGanttChart(filterTid) {
         while (cur <= maxD) {
             const isMonthStart = cur.getDate() <= 7; // первая неделя месяца
             const label = isMonthStart
-                ? MONTH_RU[cur.getMonth()] + (cur.getFullYear() !== curYear ? ' '' + cur.getFullYear().toString().slice(2) : '')
+                ? MONTH_RU[cur.getMonth()] + (cur.getFullYear() !== curYear ? " '" + cur.getFullYear().toString().slice(2) : '')
                 : 'Н' + isoWeek(cur);
             ticks.push({ d: new Date(cur), pct: pct(cur), label, major: isMonthStart });
             cur.setDate(cur.getDate() + 7);
@@ -3366,7 +3422,7 @@ function renderGanttChart(filterTid) {
         while (cur <= maxD) {
             const isNewYear = cur.getFullYear() !== lastYear;
             const label = isNewYear
-                ? MONTH_RU[cur.getMonth()] + ' '' + cur.getFullYear().toString().slice(2)
+                ? MONTH_RU[cur.getMonth()] + " '" + cur.getFullYear().toString().slice(2)
                 : MONTH_RU[cur.getMonth()];
             lastYear = cur.getFullYear();
             ticks.push({ d: new Date(cur), pct: pct(cur), label, major: isNewYear });
@@ -3476,6 +3532,7 @@ function openInstanceDrawer(templateId, instanceId) {
         'Активен':   'background:#dbeafe;color:#1d4ed8',
         'Просрочен': 'background:#fee2e2;color:#dc2626',
         'Завершен':  'background:#dcfce7;color:#15803d',
+        'Прерван':   'background:#ffedd5;color:#c2410c',
     };
 
     const isOverdue = inst.status === 'Просрочен';
@@ -3536,25 +3593,44 @@ function openInstanceDrawer(templateId, instanceId) {
         auditHTML = `<div style="font-size:0.78rem;color:#9ca3af;padding:0.5rem 0;">Журнал выполнения недоступен.</div>`;
     }
 
-    // --- Schema stepper (compact, secondary) ---
-    let schemaStepsHTML = '';
-    if (schema) {
-        const ordered = topoOrderSchema(schema);
-        const total   = ordered.length;
-        const doneCount = inst.progress >= 100 ? total : Math.max(0, Math.floor(inst.progress / 100 * (total - 1)));
+    // --- Token position banner ---
+    var currentLog = null;
+    for (var li = 0; li < logs.length; li++) { if (logs[li].current) { currentLog = logs[li]; break; } }
+    var tokenBannerHTML = '';
+    if (currentLog) {
+        var isStuck = currentLog.onTime === false;
+        var bBg = isStuck ? '#fee2e2' : '#dbeafe';
+        var bBorder = isStuck ? '#fca5a5' : '#93c5fd';
+        var bClr = isStuck ? '#dc2626' : '#1d4ed8';
+        var bIco = isStuck ? '&#128308;' : '&#128309;';
+        var stuckLabel = isStuck ? ' &mdash; <b style="color:#dc2626;">\u041f\u0440\u043e\u0441\u0440\u043e\u0447\u0435\u043d\u043e</b>' : '';
+        tokenBannerHTML = '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.75rem;border-radius:8px;background:' + bBg + ';border:1px solid ' + bBorder + ';margin-bottom:0.9rem;">'
+            + '<span>' + bIco + '</span>'
+            + '<div><div style="font-size:0.72rem;font-weight:700;color:' + bClr + ';">\u0422\u043e\u043a\u0435\u043d \u043d\u0430 \u0448\u0430\u0433\u0435: &laquo;' + escHtml(currentLog.step) + '&raquo;</div>'
+            + '<div style="font-size:0.67rem;color:#6b7280;">\u0418\u0441\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c: ' + escHtml(currentLog.assignee) + ' &mdash; SLA: ' + currentLog.sla + stuckLabel + '</div>'
+            + '</div></div>';
+    } else if (inst.progress >= 100) {
+        tokenBannerHTML = '<div style="padding:0.5rem 0.75rem;border-radius:8px;background:#dcfce7;border:1px solid #86efac;margin-bottom:0.9rem;font-size:0.72rem;font-weight:700;color:#15803d;">&#9989; \u042d\u043a\u0437\u0435\u043c\u043f\u043b\u044f\u0440 \u0437\u0430\u0432\u0435\u0440\u0448\u0451\u043d</div>';
+    }
 
-        schemaStepsHTML = `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.25rem;">` +
-            ordered.map((node, idx) => {
-                let state = idx < doneCount ? 'done' : (idx === doneCount && inst.progress < 100) ? 'current' : 'pending';
-                if (inst.progress >= 100) state = 'done';
-                const bg   = state==='done' ? '#22c55e' : state==='current' ? '#6d28d9' : '#e5e7eb';
-                const clr  = state==='pending' ? '#9ca3af' : '#fff';
-                const icon = state==='done' ? '✓ ' : state==='current' ? '● ' : '';
-                return `<div style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.18rem 0.5rem;border-radius:9999px;background:${bg};color:${clr};font-size:0.65rem;font-weight:${state==='current'?700:500};">${icon}${escHtml(node.label)}</div>`;
-            }).join('') +
-        `</div>`;
+    // --- Schema stepper ---
+    var schemaStepsHTML = '';
+    if (schema) {
+        var ordered = topoOrderSchema(schema);
+        var total = ordered.length;
+        var doneCount = inst.progress >= 100 ? total : Math.max(0, Math.floor(inst.progress / 100 * (total - 1)));
+        var chips = '';
+        for (var ni = 0; ni < ordered.length; ni++) {
+            var node = ordered[ni];
+            var state = inst.progress >= 100 ? 'done' : ni < doneCount ? 'done' : ni === doneCount ? 'current' : 'pending';
+            var bg = state === 'done' ? '#22c55e' : state === 'current' ? '#6d28d9' : '#e5e7eb';
+            var clr = state === 'pending' ? '#9ca3af' : '#fff';
+            var ico = state === 'done' ? '&#10003; ' : state === 'current' ? '&#9679; ' : '';
+            chips += '<div style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.2rem 0.55rem;border-radius:9999px;background:' + bg + ';color:' + clr + ';font-size:0.65rem;font-weight:' + (state === 'current' ? 700 : 500) + ';">' + ico + escHtml(node.label) + '</div>';
+        }
+        schemaStepsHTML = '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.25rem;">' + chips + '</div>';
     } else {
-        schemaStepsHTML = `<div style="font-size:0.78rem;color:#9ca3af;">Схема не найдена.</div>`;
+        schemaStepsHTML = '<div style="font-size:0.78rem;color:#9ca3af;">\u0421\u0445\u0435\u043c\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u0430.</div>';
     }
 
     document.getElementById('idraw-proc').textContent  = t.name;
@@ -3565,6 +3641,7 @@ function openInstanceDrawer(templateId, instanceId) {
         `<div class="td-meta-item">Дедлайн: <b style="color:${isOverdue?'#dc2626':'inherit'}">${inst.deadline}</b></div>` +
         `<div class="td-meta-item">Статус: <span style="padding:0.15rem 0.5rem;border-radius:9999px;font-size:0.7rem;font-weight:600;${SC[inst.status]||SC['Активен']}">${inst.status}</span></div>`;
     document.getElementById('idraw-progress').innerHTML =
+        tokenBannerHTML +
         `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">` +
             `<span style="font-size:0.72rem;font-weight:600;color:#374151;">Прогресс выполнения</span>` +
             `<span style="font-size:0.875rem;font-weight:700;color:${isOverdue?'#dc2626':'#6d28d9'};">${pBar}%</span>` +
