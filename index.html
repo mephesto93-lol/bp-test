@@ -3732,7 +3732,12 @@ function openInstanceDrawer(templateId, instanceId) {
     const schema = TEMPLATE_SCHEMAS[templateId];
     if (!inst || !t) return;
 
-    const TYPE_LBL = { start:'Старт', end:'Конец', 'task-approval':'Согласование', 'task-script':'Скрипт', 'gw-xor':'Шлюз XOR', 'gw-and':'Шлюз AND' };
+    // Reset edit mode on open
+    instEditMode = false;
+    var ep0 = document.getElementById('idraw-edit-panel');
+    var eb0 = document.getElementById('idraw-edit-btn');
+    if (ep0) { ep0.style.display = 'none'; ep0.innerHTML = ''; }
+    if (eb0) { eb0.textContent = '✎ Изменить'; eb0.style.background = '#fff'; }
 
     const SC = {
         'Активен':   'background:#dbeafe;color:#1d4ed8',
@@ -3744,62 +3749,9 @@ function openInstanceDrawer(templateId, instanceId) {
     const isOverdue = inst.status === 'Просрочен';
     const pBar = Math.min(100, inst.progress);
 
-    // --- Audit log table ---
+    // --- Audit log table (built via shared function) ---
     const logs = instanceTaskLogs[instanceId] || [];
-    let auditHTML = '';
-    if (logs.length) {
-        const rows = logs.map(log => {
-            let statusIcon, statusStyle;
-            if (log.current) {
-                statusIcon = '🔵'; statusStyle = 'color:#1d4ed8;font-weight:600;';
-            } else if (log.completedAt && log.onTime) {
-                statusIcon = '✅'; statusStyle = 'color:#15803d;';
-            } else if (log.completedAt && !log.onTime) {
-                statusIcon = '⚠️'; statusStyle = 'color:#b45309;';
-            } else if (!log.completedAt && log.onTime === false) {
-                statusIcon = '🔴'; statusStyle = 'color:#dc2626;font-weight:600;';
-            } else {
-                statusIcon = '⭕'; statusStyle = 'color:#9ca3af;';
-            }
-            const statusLabel = log.current ? 'В работе'
-                : log.completedAt && log.onTime  ? 'В срок'
-                : log.completedAt && !log.onTime ? 'С опозданием'
-                : !log.completedAt && log.onTime === false ? 'Просрочено'
-                : 'Ожидает';
-            const typeTag = log.type === 'task-approval'
-                ? `<span style="font-size:0.6rem;padding:1px 5px;border-radius:9999px;background:#ede9fe;color:#6d28d9;margin-left:4px;">👤</span>`
-                : `<span style="font-size:0.6rem;padding:1px 5px;border-radius:9999px;background:#f0fdf4;color:#15803d;margin-left:4px;">⚙</span>`;
-            return `<tr style="border-bottom:1px solid #f3f4f6;">
-                <td style="padding:0.45rem 0.5rem;font-size:0.72rem;color:#374151;white-space:nowrap;">${escHtml(log.step)}${typeTag}</td>
-                <td style="padding:0.45rem 0.5rem;font-size:0.72rem;color:#374151;white-space:nowrap;">${escHtml(log.assignee)}</td>
-                <td style="padding:0.45rem 0.5rem;font-size:0.7rem;color:#6b7280;white-space:nowrap;">${log.sla}</td>
-                <td style="padding:0.45rem 0.5rem;font-size:0.7rem;color:#6b7280;white-space:nowrap;">${log.startedAt}</td>
-                <td style="padding:0.45rem 0.5rem;font-size:0.7rem;color:#6b7280;white-space:nowrap;">${log.completedAt || '—'}</td>
-                <td style="padding:0.45rem 0.5rem;font-size:0.72rem;white-space:nowrap;${statusStyle}">${statusIcon} ${statusLabel}</td>
-                <td style="padding:0.45rem 0.5rem;font-size:0.7rem;color:#374151;">${log.outcome ? escHtml(log.outcome) : '—'}</td>
-                <td style="padding:0.45rem 0.5rem;font-size:0.7rem;color:#374151;max-width:180px;">${log.comment ? '<span style="color:#6d28d9;">' + escHtml(log.comment) + '</span>' : '—'}</td>
-            </tr>`;
-        }).join('');
-        auditHTML = `<div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;min-width:520px;">
-                <thead>
-                    <tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb;">
-                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Шаг</th>
-                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Исполнитель</th>
-                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">SLA</th>
-                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Начало</th>
-                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Выполнено</th>
-                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Статус</th>
-                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Результат</th>
-                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Комментарий</th>
-                    </tr>
-                </thead>
-                <tbody>${rows}</tbody>
-            </table>
-        </div>`;
-    } else {
-        auditHTML = `<div style="font-size:0.78rem;color:#9ca3af;padding:0.5rem 0;">Журнал выполнения недоступен.</div>`;
-    }
+    const auditHTML = instBuildAuditHTML(templateId, instanceId);
 
     // --- Token position banner ---
     var currentLog = null;
@@ -3871,10 +3823,11 @@ function openInstanceDrawer(templateId, instanceId) {
 function closeInstanceDrawer() {
     document.getElementById('instance-modal').classList.remove('open');
     instDrawerCtx = null;
+    instEditMode = false;
     var ep = document.getElementById('idraw-edit-panel');
     if (ep) { ep.style.display = 'none'; ep.innerHTML = ''; }
     var eb = document.getElementById('idraw-edit-btn');
-    if (eb) eb.style.background = '#fff';
+    if (eb) { eb.textContent = '✎ Изменить'; eb.style.background = '#fff'; }
 }
 
 var instDrawerCtx = null; // { templateId, instanceId }
@@ -3891,157 +3844,157 @@ function isoToDDMMYY(s) {
 }
 
 function instToggleEdit() {
-    var ep = document.getElementById('idraw-edit-panel');
+    if (!instDrawerCtx) return;
+    if (instEditMode) { instCancelEdit(); return; }
+    var tId = instDrawerCtx.templateId, iId = instDrawerCtx.instanceId;
+    instEditMode = true;
     var eb = document.getElementById('idraw-edit-btn');
-    console.log('[instToggleEdit] ctx=', instDrawerCtx, 'ep=', ep);
-    if (!instDrawerCtx || !ep) return;
-    if (ep.style.display !== 'none') {
-        ep.style.display = 'none'; ep.innerHTML = '';
-        if (eb) { eb.textContent = '✎ Изменить'; eb.style.background = '#fff'; }
-    } else {
-        ep.innerHTML = instBuildEditPanel(instDrawerCtx.templateId, instDrawerCtx.instanceId);
-        ep.style.display = 'block';
-        instRenderTaskList(instDrawerCtx.templateId, instDrawerCtx.instanceId);
-        if (eb) { eb.textContent = '✕ Свернуть'; eb.style.background = '#f5f3ff'; }
-    }
+    var ep = document.getElementById('idraw-edit-panel');
+    var stepper = document.getElementById('idraw-stepper');
+    if (eb) { eb.textContent = '✕ Свернуть'; eb.style.background = '#f5f3ff'; }
+    if (ep) { ep.innerHTML = instBuildMetaPanel(tId, iId); ep.style.display = 'block'; }
+    if (stepper) stepper.innerHTML = instBuildAuditHTML(tId, iId);
 }
 
-var instEditExpanded = null; // key of currently expanded task row
-
-function instBuildEditPanel(templateId, instanceId) {
+function instBuildMetaPanel(templateId, instanceId) {
     var inst = (instancesData[templateId] || []).find(function(i) { return i.id === instanceId; });
     if (!inst) return '';
     var label = inst.label || inst.id;
     var desc  = inst.description || '';
     var dlISO = ddmmyyToISO(inst.deadline);
     var today = new Date().toISOString().split('T')[0];
-
-    instEditExpanded = null;
-
     return '<div style="padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;background:#fafafa;">' +
-        '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:0.75rem;letter-spacing:0.04em;">✎ Редактирование экземпляра</div>' +
-
-        '<div style="margin-bottom:0.5rem;">' +
-            '<label style="font-size:0.7rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Название</label>' +
-            '<input id="idraw-inp-label" type="text" value="' + escHtml(label) + '" style="width:100%;box-sizing:border-box;font-size:0.82rem;border:1px solid #d1d5db;border-radius:0.35rem;padding:0.35rem 0.5rem;" />' +
+        '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:0.6rem;letter-spacing:0.04em;">✎ Редактирование экземпляра</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">' +
+            '<div><label style="font-size:0.68rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Название</label>' +
+            '<input id="idraw-inp-label" type="text" value="' + escHtml(label) + '" style="width:100%;box-sizing:border-box;font-size:0.8rem;border:1px solid #d1d5db;border-radius:0.35rem;padding:0.3rem 0.5rem;" /></div>' +
+            '<div><label style="font-size:0.68rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Дедлайн</label>' +
+            '<input id="idraw-inp-dl" type="date" value="' + dlISO + '" min="' + today + '" style="width:100%;box-sizing:border-box;font-size:0.8rem;border:1px solid #d1d5db;border-radius:0.35rem;padding:0.3rem 0.5rem;" /></div>' +
         '</div>' +
-        '<div style="margin-bottom:0.5rem;">' +
-            '<label style="font-size:0.7rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Описание</label>' +
-            '<textarea id="idraw-inp-desc" style="width:100%;box-sizing:border-box;font-size:0.8rem;border:1px solid #d1d5db;border-radius:0.35rem;padding:0.35rem 0.5rem;resize:vertical;min-height:52px;font-family:inherit;">' + escHtml(desc) + '</textarea>' +
-        '</div>' +
-        '<div style="margin-bottom:1rem;">' +
-            '<label style="font-size:0.7rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Дедлайн</label>' +
-            '<input id="idraw-inp-dl" type="date" value="' + dlISO + '" min="' + today + '" style="font-size:0.82rem;border:1px solid #d1d5db;border-radius:0.35rem;padding:0.35rem 0.5rem;" />' +
-        '</div>' +
-
-        '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:0.5rem;letter-spacing:0.04em;">Задачи процесса</div>' +
-        '<div id="idraw-task-list"></div>' +
-
-        '<div style="display:flex;gap:0.5rem;margin-top:0.75rem;">' +
-            '<button onclick="instSaveEdit(' + templateId + ',\'' + instanceId + '\')" style="flex:1;padding:0.4rem;background:#6d28d9;color:#fff;border:none;border-radius:0.35rem;font-size:0.8rem;cursor:pointer;font-weight:600;">💾 Сохранить</button>' +
-            '<button onclick="instToggleEdit()" style="padding:0.4rem 0.75rem;background:#fff;color:#374151;border:1px solid #e5e7eb;border-radius:0.35rem;font-size:0.8rem;cursor:pointer;">Отмена</button>' +
-        '</div>' +
+        '<div><label style="font-size:0.68rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Описание</label>' +
+        '<textarea id="idraw-inp-desc" style="width:100%;box-sizing:border-box;font-size:0.78rem;border:1px solid #d1d5db;border-radius:0.35rem;padding:0.3rem 0.5rem;resize:vertical;min-height:44px;font-family:inherit;">' + escHtml(desc) + '</textarea></div>' +
     '</div>';
 }
 
-function instRenderTaskList(templateId, instanceId) {
-    var el = document.getElementById('idraw-task-list');
-    if (!el) return;
-    var users   = ['Иванов И.','Петров А.','Сидоров К.','Козлов В.','Смирнов Д.','Фёдорова Т.','Алексеев М.','Новиков Р.','Кузнецова А.','Юрид. отдел'];
+function instBuildAuditHTML(templateId, instanceId) {
     var logs    = instanceTaskLogs[instanceId] || [];
-    var planned = instancePlannedAssignees[instanceId] || {};
     var schema  = TEMPLATE_SCHEMAS[templateId];
-    var html    = '';
+    var users   = ['Иванов И.','Петров А.','Сидоров К.','Козлов В.','Смирнов Д.','Фёдорова Т.','Алексеев М.','Новиков Р.','Кузнецова А.','Юрид. отдел'];
+    var comments = (instanceTaskComments[instanceId] || {});
+    var pdates   = (instanceTaskPlannedDates[instanceId] || {});
+    var em = instEditMode;
 
-    function taskRow(key, name, assignee, badgeHTML, editable, note) {
-        var isOpen = instEditExpanded === key;
-        var rowBg  = isOpen ? '#f5f3ff' : '#fff';
-        var opts   = ['— не назначен —'].concat(users).map(function(u) {
-            return '<option' + (assignee === u ? ' selected' : '') + '>' + escHtml(u) + '</option>';
-        }).join('');
-        var expandForm = isOpen && editable
-            ? '<div style="padding:0.5rem 0.75rem 0.6rem;border-top:1px solid #ede9fe;">' +
-                '<label style="font-size:0.68rem;color:#6b7280;display:block;margin-bottom:0.3rem;">Исполнитель</label>' +
-                '<select id="idraw-sel-' + key + '" style="width:100%;font-size:0.8rem;border:1px solid #c4b5fd;border-radius:0.3rem;padding:0.3rem 0.5rem;">' + opts + '</select>' +
-                (note ? '<div style="font-size:0.67rem;color:#9ca3af;margin-top:0.3rem;">' + note + '</div>' : '') +
-              '</div>'
-            : (isOpen && !editable ? '<div style="padding:0.4rem 0.75rem 0.5rem;border-top:1px solid #f3f4f6;font-size:0.72rem;color:#9ca3af;">Системная задача — исполнитель не назначается</div>' : '');
-        var chevron = editable ? (isOpen ? '▴' : '›') : '';
-        var cursor  = editable ? 'cursor:pointer;' : '';
-        return '<div style="border:1px solid #e5e7eb;border-radius:0.4rem;margin-bottom:0.4rem;background:' + rowBg + ';overflow:hidden;">' +
-            '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.75rem;' + cursor + '" onclick="' + (editable ? 'instToggleTaskRow(\'' + key + '\',' + templateId + ',\'' + instanceId + '\')' : '') + '">' +
-                badgeHTML +
-                '<div style="flex:1;font-size:0.78rem;font-weight:500;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(name) + '</div>' +
-                '<div style="font-size:0.72rem;color:#6b7280;white-space:nowrap;flex-shrink:0;">' + escHtml(assignee || '—') + '</div>' +
-                '<div style="font-size:0.75rem;color:#9ca3af;margin-left:0.25rem;width:10px;">' + chevron + '</div>' +
-            '</div>' +
-            expandForm +
-        '</div>';
-    }
+    if (!logs.length && !schema) return '<div style="font-size:0.8rem;color:#9ca3af;padding:0.5rem 0;">Журнал пуст.</div>';
 
-    // Steps from logs (completed / current / pending)
+    var cs = 'padding:0.35rem 0.5rem;font-size:0.72rem;vertical-align:middle;';
+    var ths = 'padding:0.3rem 0.5rem;font-size:0.67rem;font-weight:600;text-transform:uppercase;color:#9ca3af;border-bottom:1px solid #e5e7eb;white-space:nowrap;';
+
+    var html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">';
+    html += '<thead><tr style="background:#f9fafb;">';
+    html += '<th style="' + ths + '">Шаг</th><th style="' + ths + '">Исполнитель</th>';
+    html += '<th style="' + ths + '">Старт</th><th style="' + ths + '">SLA</th>';
+    html += '<th style="' + ths + '">Завершено</th><th style="' + ths + '">В срок</th>';
+    html += '<th style="' + ths + '">Итог</th>';
+    html += '<th style="' + ths + '">' + (em ? 'Комментарий' : '') + '</th>';
+    if (em) html += '<th style="' + ths + '">Пл.дата</th>';
+    html += '</tr></thead><tbody>';
+
     logs.forEach(function(l) {
-        if (l.type !== 'task-approval') return;
-        if (l.completedAt) {
-            var badge = '<span style="font-size:0.6rem;background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:9999px;flex-shrink:0;">✓ Выполнено</span>';
-            html += taskRow('done-' + l.step, l.step, l.assignee, badge, false, '');
-        } else if (l.current) {
-            var badge = '<span style="font-size:0.6rem;background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:9999px;flex-shrink:0;">● В работе</span>';
-            html += taskRow('log-' + l.step, l.step, l.assignee, badge, true, 'Изменение применится немедленно');
+        var isDone = !!l.completedAt;
+        var isCurrent = !!l.current;
+        var isApproval = l.type === 'task-approval';
+        var key = isDone ? 'done-' + l.step : 'log-' + l.step;
+
+        var badge = isDone
+            ? '<span style="font-size:0.6rem;background:#dcfce7;color:#15803d;padding:1px 5px;border-radius:9999px;white-space:nowrap;">✓ Выполнено</span>'
+            : isCurrent
+                ? '<span style="font-size:0.6rem;background:#dbeafe;color:#1d4ed8;padding:1px 5px;border-radius:9999px;white-space:nowrap;">● В работе</span>'
+                : '<span style="font-size:0.6rem;background:#fef9c3;color:#854d0e;padding:1px 5px;border-radius:9999px;white-space:nowrap;">⏳ Ожидает</span>';
+
+        var onTime = l.onTime === true ? '<span style="color:#15803d;">✓</span>'
+                   : l.onTime === false ? '<span style="color:#dc2626;">✗</span>' : '—';
+
+        var asgnCell;
+        if (em && !isDone && isApproval) {
+            var opts = users.map(function(u) { return '<option' + (l.assignee === u ? ' selected' : '') + '>' + escHtml(u) + '</option>'; }).join('');
+            asgnCell = '<select id="idraw-asgn-' + key + '" style="font-size:0.7rem;border:1px solid #c4b5fd;border-radius:0.3rem;padding:0.2rem 0.3rem;max-width:110px;">' + opts + '</select>';
         } else {
-            var badge = '<span style="font-size:0.6rem;background:#fef9c3;color:#854d0e;padding:1px 6px;border-radius:9999px;flex-shrink:0;">⏳ Ожидает</span>';
-            html += taskRow('log-' + l.step, l.step, l.assignee, badge, true, 'Изменение применится до начала задачи');
+            asgnCell = escHtml(l.assignee);
         }
+
+        var cmt = comments[key] || '';
+        var cmtCell = em
+            ? '<textarea id="idraw-cmt-' + key + '" style="font-size:0.7rem;border:1px solid #d1d5db;border-radius:0.3rem;padding:0.2rem 0.3rem;width:100%;min-width:80px;max-width:140px;height:36px;resize:vertical;font-family:inherit;">' + escHtml(cmt) + '</textarea>'
+            : (cmt ? '<span style="color:#6b7280;font-style:italic;">' + escHtml(cmt) + '</span>' : '');
+
+        var pdtCell = '';
+        if (em && !isDone) {
+            pdtCell = '<input type="date" id="idraw-pdt-' + key + '" value="' + (pdates[key] || '') + '" style="font-size:0.7rem;border:1px solid #d1d5db;border-radius:0.3rem;padding:0.2rem 0.3rem;" />';
+        }
+
+        html += '<tr style="border-bottom:1px solid #f3f4f6;' + (isCurrent ? 'background:#fafafa;' : '') + '">';
+        html += '<td style="' + cs + '">' + badge + ' <span style="font-size:0.75rem;">' + escHtml(l.step) + '</span></td>';
+        html += '<td style="' + cs + '">' + asgnCell + '</td>';
+        html += '<td style="' + cs + 'white-space:nowrap;color:#6b7280;">' + (l.startedAt || '—') + '</td>';
+        html += '<td style="' + cs + 'white-space:nowrap;color:#6b7280;">' + (l.sla || '—') + '</td>';
+        html += '<td style="' + cs + 'white-space:nowrap;color:#6b7280;">' + (l.completedAt || '—') + '</td>';
+        html += '<td style="' + cs + 'text-align:center;">' + onTime + '</td>';
+        html += '<td style="' + cs + 'color:#6b7280;">' + escHtml(l.outcome || '—') + '</td>';
+        html += '<td style="' + cs + '">' + cmtCell + '</td>';
+        if (em) html += '<td style="' + cs + '">' + pdtCell + '</td>';
+        html += '</tr>';
     });
 
-    // Future steps from schema not yet in logs
-    if (schema) {
+    // Future schema nodes (edit mode only)
+    if (em && schema) {
         var knownSteps = {};
         logs.forEach(function(l) { knownSteps[l.step] = true; });
         schema.nodes.forEach(function(node) {
             if (node.type !== 'task-approval') return;
             if (knownSteps[node.label]) return;
-            var curAsgn = planned[node.id] || node.props.assignee || '';
-            var badge = '<span style="font-size:0.6rem;background:#f3f4f6;color:#6b7280;padding:1px 6px;border-radius:9999px;flex-shrink:0;">◌ Будущий</span>';
-            html += taskRow('node-' + node.id, node.label, curAsgn, badge, true, 'Исполнитель будет назначен при создании задачи');
+            var key = 'node-' + node.id;
+            var curAsgn = (instancePlannedAssignees[instanceId] || {})[node.id] || node.props.assignee || '';
+            var cmt = comments[key] || '';
+            var opts = ['— не назначен —'].concat(users).map(function(u) {
+                return '<option' + (curAsgn === u ? ' selected' : '') + '>' + escHtml(u) + '</option>';
+            }).join('');
+            html += '<tr style="border-bottom:1px solid #f3f4f6;opacity:0.75;">';
+            html += '<td style="' + cs + '"><span style="font-size:0.6rem;background:#f3f4f6;color:#6b7280;padding:1px 5px;border-radius:9999px;white-space:nowrap;">◌ Будущий</span> <span style="font-size:0.75rem;">' + escHtml(node.label) + '</span></td>';
+            html += '<td style="' + cs + '"><select id="idraw-asgn-' + key + '" style="font-size:0.7rem;border:1px solid #c4b5fd;border-radius:0.3rem;padding:0.2rem 0.3rem;max-width:110px;">' + opts + '</select></td>';
+            html += '<td style="' + cs + 'color:#9ca3af;">—</td><td style="' + cs + 'color:#9ca3af;">' + (node.props.sla || '—') + '</td>';
+            html += '<td style="' + cs + 'color:#9ca3af;">—</td><td style="' + cs + 'color:#9ca3af;">—</td><td style="' + cs + 'color:#9ca3af;">—</td>';
+            html += '<td style="' + cs + '"><textarea id="idraw-cmt-' + key + '" style="font-size:0.7rem;border:1px solid #d1d5db;border-radius:0.3rem;padding:0.2rem 0.3rem;width:100%;min-width:80px;max-width:140px;height:36px;resize:vertical;font-family:inherit;">' + escHtml(cmt) + '</textarea></td>';
+            html += '<td style="' + cs + '"><input type="date" id="idraw-pdt-' + key + '" value="' + (pdates[key] || '') + '" style="font-size:0.7rem;border:1px solid #d1d5db;border-radius:0.3rem;padding:0.2rem 0.3rem;" /></td>';
+            html += '</tr>';
         });
     }
 
-    el.innerHTML = html || '<div style="font-size:0.78rem;color:#9ca3af;padding:0.25rem 0;">Задачи не найдены в схеме.</div>';
+    html += '</tbody></table></div>';
+
+    if (em) {
+        html += '<div style="display:flex;gap:0.5rem;margin-top:0.75rem;">' +
+            '<button onclick="instSaveEdit(' + templateId + ',\'' + instanceId + '\')" style="flex:1;padding:0.4rem;background:#6d28d9;color:#fff;border:none;border-radius:0.35rem;font-size:0.8rem;cursor:pointer;font-weight:600;">💾 Сохранить</button>' +
+            '<button onclick="instCancelEdit()" style="padding:0.4rem 0.75rem;background:#fff;color:#374151;border:1px solid #e5e7eb;border-radius:0.35rem;font-size:0.8rem;cursor:pointer;">Отмена</button>' +
+        '</div>';
+    }
+    return html;
 }
 
-function instToggleTaskRow(key, templateId, instanceId) {
-    // Save current open select value before collapsing
-    if (instEditExpanded && instEditExpanded !== key) {
-        instSaveExpandedTask(templateId, instanceId, instEditExpanded);
-    }
-    instEditExpanded = (instEditExpanded === key) ? null : key;
-    instRenderTaskList(templateId, instanceId);
-}
-
-function instSaveExpandedTask(templateId, instanceId, key) {
-    if (!key) return;
-    var sel = document.getElementById('idraw-sel-' + key);
-    if (!sel) return;
-    var val = sel.value;
-    if (key.indexOf('log-') === 0) {
-        var stepName = key.slice(4);
-        var logs = instanceTaskLogs[instanceId] || [];
-        var l = logs.find(function(l) { return !l.completedAt && l.step === stepName; });
-        if (l) l.assignee = val;
-    } else if (key.indexOf('node-') === 0) {
-        var nodeId = parseInt(key.slice(5));
-        if (!instancePlannedAssignees[instanceId]) instancePlannedAssignees[instanceId] = {};
-        if (val && val !== '— не назначен —') instancePlannedAssignees[instanceId][nodeId] = val;
-        else delete instancePlannedAssignees[instanceId][nodeId];
-    }
+function instCancelEdit() {
+    instEditMode = false;
+    var eb = document.getElementById('idraw-edit-btn');
+    var ep = document.getElementById('idraw-edit-panel');
+    var stepper = document.getElementById('idraw-stepper');
+    if (eb) { eb.textContent = '✎ Изменить'; eb.style.background = '#fff'; }
+    if (ep) { ep.style.display = 'none'; ep.innerHTML = ''; }
+    if (stepper && instDrawerCtx) stepper.innerHTML = instBuildAuditHTML(instDrawerCtx.templateId, instDrawerCtx.instanceId);
 }
 
 function instSaveEdit(templateId, instanceId) {
     var inst = (instancesData[templateId] || []).find(function(i) { return i.id === instanceId; });
     if (!inst) return;
 
-    // Save instance fields
+    // Save instance metadata
     var labelEl = document.getElementById('idraw-inp-label');
     var descEl  = document.getElementById('idraw-inp-desc');
     var dlEl    = document.getElementById('idraw-inp-dl');
@@ -4049,16 +4002,49 @@ function instSaveEdit(templateId, instanceId) {
     if (descEl)  inst.description = descEl.value.trim();
     if (dlEl && dlEl.value) inst.deadline = isoToDDMMYY(dlEl.value);
 
-    // Save currently open task row
-    if (instEditExpanded) instSaveExpandedTask(templateId, instanceId, instEditExpanded);
+    // Collect inline task fields
+    var logs   = instanceTaskLogs[instanceId] || [];
+    var schema = TEMPLATE_SCHEMAS[templateId];
+    if (!instanceTaskComments[instanceId])    instanceTaskComments[instanceId] = {};
+    if (!instanceTaskPlannedDates[instanceId]) instanceTaskPlannedDates[instanceId] = {};
+    if (!instancePlannedAssignees[instanceId]) instancePlannedAssignees[instanceId] = {};
 
-    // Close edit panel and refresh drawer
-    var ep = document.getElementById('idraw-edit-panel');
-    var eb = document.getElementById('idraw-edit-btn');
-    if (ep) { ep.style.display = 'none'; ep.innerHTML = ''; }
-    if (eb) { eb.textContent = '✎ Изменить'; eb.style.background = '#fff'; }
-    instEditExpanded = null;
+    logs.forEach(function(l) {
+        var isDone = !!l.completedAt;
+        var key = isDone ? 'done-' + l.step : 'log-' + l.step;
+        if (!isDone && l.type === 'task-approval') {
+            var a = document.getElementById('idraw-asgn-' + key);
+            if (a) l.assignee = a.value;
+        }
+        var c = document.getElementById('idraw-cmt-' + key);
+        if (c) instanceTaskComments[instanceId][key] = c.value.trim();
+        if (!isDone) {
+            var p = document.getElementById('idraw-pdt-' + key);
+            if (p && p.value) instanceTaskPlannedDates[instanceId][key] = p.value;
+        }
+    });
+
+    if (schema) {
+        var knownSteps = {};
+        logs.forEach(function(l) { knownSteps[l.step] = true; });
+        schema.nodes.forEach(function(node) {
+            if (node.type !== 'task-approval' || knownSteps[node.label]) return;
+            var key = 'node-' + node.id;
+            var a = document.getElementById('idraw-asgn-' + key);
+            if (a) {
+                if (a.value && a.value !== '— не назначен —') instancePlannedAssignees[instanceId][node.id] = a.value;
+                else delete instancePlannedAssignees[instanceId][node.id];
+            }
+            var c = document.getElementById('idraw-cmt-' + key);
+            if (c) instanceTaskComments[instanceId][key] = c.value.trim();
+            var p = document.getElementById('idraw-pdt-' + key);
+            if (p && p.value) instanceTaskPlannedDates[instanceId][key] = p.value;
+        });
+    }
+
+    instEditMode = false;
     openInstanceDrawer(templateId, instanceId);
+    showToast('Изменения сохранены');
 }
 </script>
 
@@ -4071,6 +4057,12 @@ let pendingAction = null;
 const instanceNodeOutcomes = {};
 // Плановые исполнители для будущих задач: { instanceId: { nodeId: assignee } }
 var instancePlannedAssignees = {};
+// Комментарии к задачам в журнале: { instanceId: { key: comment } }
+var instanceTaskComments = {};
+// Плановые даты для задач: { instanceId: { key: ISO date } }
+var instanceTaskPlannedDates = {};
+// Флаг режима редактирования в drawer экземпляра
+var instEditMode = false;
 
 function showToast(msg, color) {
     color = color || '#6d28d9';
