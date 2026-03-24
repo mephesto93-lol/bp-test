@@ -392,6 +392,8 @@
         <div class="td-body">
             <div class="td-section-lbl">Инструкция</div>
             <div class="td-instruction" id="td-instruction"></div>
+            <div class="td-section-lbl" style="margin-top:1rem;">Комментарий <span style="font-weight:400;color:#9ca3af;">(необязательно)</span></div>
+            <textarea id="td-comment" placeholder="Введите комментарий к решению..." style="width:100%;box-sizing:border-box;padding:0.5rem 0.75rem;border:1px solid #d1d5db;border-radius:0.375rem;font-size:0.82rem;color:#374151;resize:vertical;min-height:72px;font-family:inherit;line-height:1.4;outline:none;"></textarea>
         </div>
         <div class="td-footer">
             <div class="td-section-lbl">Действия</div>
@@ -496,9 +498,11 @@
                 <div class="td-tag" id="idraw-proc"></div>
                 <div class="td-title" id="idraw-title"></div>
             </div>
+            <button id="idraw-edit-btn" onclick="instToggleEdit()" style="display:none;border:1px solid #e5e7eb;background:#fff;color:#374151;border-radius:0.375rem;padding:0.3rem 0.65rem;font-size:0.75rem;cursor:pointer;white-space:nowrap;margin-right:0.5rem;">✎ Изменить</button>
             <div class="td-close" onclick="closeInstanceDrawer()">✕</div>
         </div>
         <div class="td-meta" id="idraw-meta"></div>
+        <div id="idraw-edit-panel" style="display:none;"></div>
         <div class="idraw-body">
             <div id="idraw-progress" style="margin-bottom:1.25rem;"></div>
             <div class="idraw-section">Журнал выполнения задач</div>
@@ -1254,6 +1258,10 @@
                         <div style="width:22px;height:22px;border-radius:50%;background:#fee2e2;border:3px double #dc2626;display:flex;align-items:center;justify-content:center;color:#dc2626;font-size:8px;">■</div>
                         <span class="palette-item-label">Конец</span>
                     </div>
+                    <div class="palette-item" draggable="true" ondragstart="paletteDragStart(event,'timer')">
+                        <div style="width:22px;height:22px;border-radius:50%;background:#ecfeff;border:2px solid #0891b2;box-shadow:0 0 0 3px #ecfeff,0 0 0 5px #0891b2;display:flex;align-items:center;justify-content:center;color:#0891b2;font-size:10px;">⏱</div>
+                        <span class="palette-item-label">Таймер</span>
+                    </div>
                 </div>
                 <div class="palette-sep"></div>
                 <div class="palette-group">
@@ -1345,6 +1353,7 @@ const NODE_CFG = {
     'task-approval':{ label:'Согласование',   color:'#0369a1', bg:'#e0f2fe', border:'#0369a1', shape:'rect',    w:140, h:60,  icon:'👤', badge:'#0369a1' },
     'gw-xor':       { label:'XOR',            color:'#b45309', bg:'#fef3c7', border:'#d97706', shape:'diamond', w:72,  h:72,  icon:'X' },
     'gw-and':       { label:'AND',            color:'#b45309', bg:'#fef3c7', border:'#d97706', shape:'diamond', w:72,  h:72,  icon:'+' },
+    'timer':        { label:'Таймер',         color:'#0891b2', bg:'#ecfeff', border:'#0891b2', shape:'circle',  w:72,  h:72,  icon:'⏱', dbl:true },
 };
 
 const ALGO_PARAMS = {
@@ -1467,6 +1476,8 @@ function ctorInitProcSettings() {
         calendars: ['Производственный календарь РФ'],
         holidays: true,
         overlap: 'Блокировать новый старт',
+        triggerType: 'Ручной запуск',
+        startTime: '09:00',
         isRepeating: false,
         repeatMode: 'weekly',
         weeklyN: 1,
@@ -1481,6 +1492,7 @@ function ctorInitProcSettings() {
         endType: 'none',
         endDate: '',
         endAfter: 12,
+        simpleCycleDays: 7,
         processType: 'БП',
         isChain: false,
         processTimeout: 60,
@@ -1545,6 +1557,9 @@ function ctorAddNode(type, x, y) {
         case 'task-script':
             props = { algorithm:'', timeout:30, params:{} };
             break;
+        case 'timer':
+            props = { waitType:'duration', waitDays:1, waitDate:'' };
+            break;
         default:
             props = {};
     }
@@ -1588,6 +1603,11 @@ function ctorGetIssues() {
     const andSplits = ctorNodes.filter(n => n.type === 'gw-and' && ctorConns.filter(c => c.from === n.id).length >= 2).length;
     const andJoins  = ctorNodes.filter(n => n.type === 'gw-and' && ctorConns.filter(c => c.to   === n.id).length >= 2).length;
     if (andSplits > andJoins) issues.push(`Параллельные ветви AND нужно свести — добавьте AND-шлюз слияния`);
+    // Date validations
+    const s = ctorProcSettings;
+    if (s.endType === 'date' && s.endDate && s.startDate && s.endDate <= s.startDate) {
+        issues.push('Дата окончания должна быть позже даты начала');
+    }
     return issues;
 }
 
@@ -1702,7 +1722,7 @@ function ctorRenderConns() {
 function ctorRenderHierarchy() {
     const title = document.getElementById('ctor-title').value || 'Новый бизнес процесс';
     const ordered = ctorTopoOrder();
-    const iconOf = n => ({ circle: n.type==='start' ? '🟢' : '🔴', rect: '🔷', diamond: '🔶' })[NODE_CFG[n.type].shape];
+    const iconOf = n => n.type==='start' ? '🟢' : n.type==='end' ? '🔴' : n.type==='timer' ? '⏱' : ({ rect:'🔷', diamond:'🔶' })[NODE_CFG[n.type].shape] || '🔷';
     const groupedNodeIds = new Set(ctorGroups.flatMap(g => g.nodeIds));
     const groupsHTML = ctorGroups.map(g => {
         const members = ctorNodes.filter(n => g.nodeIds.includes(n.id));
@@ -1755,6 +1775,7 @@ function buildNodePropsHTML(node) {
         case 'task-script':   body = buildScriptTaskProps(node); break;
         case 'gw-xor':        body = buildXorProps(node); break;
         case 'gw-and':        body = buildAndProps(node, inCnt, outCnt); break;
+        case 'timer':         body = buildTimerProps(node); break;
     }
     const footer = `<div class="conn-info">
         <div>Входящих: <b>${inCnt}</b> &nbsp;|&nbsp; Исходящих: <b>${outCnt}</b></div>
@@ -1765,21 +1786,41 @@ function buildNodePropsHTML(node) {
 
 function buildStartProps(node) {
     const p = node.props;
-    const triggerOpts = ['Ручной запуск','По расписанию'].map(v =>
-        `<option ${p.triggerType===v?'selected':''}>${escHtml(v)}</option>`).join('');
+    const trig = ctorProcSettings.triggerType || 'Ручной запуск';
     return `
 <div class="prop-group"><label class="prop-label">Описание</label>
     <textarea class="prop-textarea" placeholder="Зачем нужен этот шаг..." oninput="ctorUpdProp(${node.id},'description',this.value)">${escHtml(p.description)}</textarea></div>
 <div class="prop-group"><label class="prop-label">Тип триггера</label>
-    <select class="prop-select" onchange="ctorUpdPropRender(${node.id},'triggerType',this.value)">${triggerOpts}</select></div>
-${p.triggerType==='По расписанию' ? `<div class="prop-group"><label class="prop-label">Расписание</label>
-    <input class="prop-input" placeholder="Напр.: 09:00 каждый ПН" value="${escHtml(p.schedule)}" oninput="ctorUpdProp(${node.id},'schedule',this.value)" />
-    <div class="prop-note">Формат настраивается в блоке «Цикл повторений» процесса</div></div>` : ''}`;
+    <div style="font-size:0.8rem;color:#374151;padding:0.35rem 0.5rem;background:#f9fafb;border:1px solid #e5e7eb;border-radius:0.375rem;">${escHtml(trig)}</div>
+    <div class="prop-note">Задаётся в настройках процесса → «🚀 Запуск процесса»</div></div>`;
 }
 
 function buildEndProps(node) {
     return `<div class="prop-group"><label class="prop-label">Описание</label>
     <textarea class="prop-textarea" placeholder="Условие завершения..." oninput="ctorUpdProp(${node.id},'description',this.value)">${escHtml(node.props.description)}</textarea></div>`;
+}
+
+function buildTimerProps(node) {
+    const p = node.props;
+    const isDur = p.waitType !== 'date';
+    return `
+<div class="prop-group">
+    <label class="prop-label">Тип ожидания</label>
+    <label class="radio-row"><input type="radio" name="wt${node.id}" value="duration" ${isDur?'checked':''} onchange="ctorUpdProp(${node.id},'waitType','duration');ctorRenderProps();" /> Подождать N дней</label>
+    <label class="radio-row"><input type="radio" name="wt${node.id}" value="date"     ${!isDur?'checked':''} onchange="ctorUpdProp(${node.id},'waitType','date');ctorRenderProps();" /> Дождаться даты</label>
+</div>
+${isDur
+    ? `<div class="prop-group"><label class="prop-label">Количество дней</label>
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+        <input type="number" class="prop-input" min="1" max="365" style="max-width:80px;" value="${p.waitDays||1}" oninput="ctorUpdProp(${node.id},'waitDays',+this.value||1)" />
+        <span style="font-size:0.78rem;color:#6b7280;">дн.</span>
+    </div>
+    <div class="prop-note">Процесс продолжится через указанное число дней</div>
+</div>`
+    : `<div class="prop-group"><label class="prop-label">Дата продолжения</label>
+    <input type="date" class="prop-input" value="${escHtml(p.waitDate||'')}" onchange="ctorUpdProp(${node.id},'waitDate',this.value);ctorRenderProps();" />
+    <div class="prop-note">Процесс продолжится начиная с указанной даты</div>
+</div>`}`;
 }
 
 function buildUserTaskProps(node) {
@@ -1809,13 +1850,6 @@ function buildUserTaskProps(node) {
     ${outcomesHTML}
     <button onclick="ctorAddOutcome(${node.id})" style="width:100%;margin-top:0.2rem;padding:0.25rem;font-size:0.75rem;border:1px dashed #9ca3af;border-radius:0.375rem;background:#fafafa;cursor:pointer;color:#6b7280;">+ Добавить исход</button>
     <div class="prop-note">Каждый исход формирует ветку перехода</div>
-</div>
-<div class="prop-group">
-    <label class="checkbox-row">
-        <input type="checkbox" ${p.taskTracker?'checked':''} onchange="ctorUpdProp(${node.id},'taskTracker',this.checked)" />
-        Создавать карточку в Task Tracker
-    </label>
-    <div class="prop-note">При переходе узла в статус «В работе»</div>
 </div>
 <div class="sep"></div>
 <div class="prop-section-title">🔔 Уведомления</div>
@@ -2335,7 +2369,31 @@ function ctorPublish() {
 
     const cp   = ctorCriticalPath();
     const freq = ctorCycleFreqMinutes();
+    const s    = ctorProcSettings;
 
+    // Check: end date < start date + SLA
+    if (s.endType === 'date' && s.endDate && s.startDate && cp.minutes > 0) {
+        const startMs = new Date(s.startDate).getTime();
+        const endMs   = new Date(s.endDate).getTime();
+        if (endMs - startMs < cp.minutes * 60000) {
+            const minEnd = new Date(startMs + cp.minutes * 60000).toISOString().split('T')[0];
+            const pathStr = cp.path.length
+                ? cp.path.map(n => '«' + escHtml(n.label) + '» (' + fmtMinutes(ctorNodeSlaMinutes(n)) + ')').join(' → ')
+                : 'задачи без SLA';
+            document.getElementById('ctor-error-text').innerHTML =
+                'Дата окончания <b>меньше суммарного SLA процесса</b>. ' +
+                'Запущенные экземпляры не успеют завершиться до даты окончания.';
+            document.getElementById('ctor-error-detail').innerHTML =
+                '<b>Критический путь:</b> ' + pathStr + '<br>' +
+                '<b>Макс. длительность:</b> ' + fmtMinutes(cp.minutes) + '<br>' +
+                '<b>Дата начала:</b> ' + formatDateRU(s.startDate) + '<br>' +
+                '<b>Минимальная дата окончания:</b> ' + formatDateRU(minEnd);
+            document.getElementById('ctor-error-modal').style.display = 'flex';
+            return;
+        }
+    }
+
+    // Check: SLA > cycle frequency
     if (cp.minutes > 0 && cp.minutes >= freq) {
         const pathStr = cp.path.length
             ? cp.path.map(n => `«${escHtml(n.label)}» (${fmtMinutes(ctorNodeSlaMinutes(n))})`).join(' → ')
@@ -2369,7 +2427,11 @@ function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'
 // Иконка узла по форме
 function nodeIcon(node) {
     const shape = NODE_CFG[node.type]?.shape;
-    if (shape === 'circle') return node.type === 'start' ? '🟢' : '🔴';
+    if (shape === 'circle') {
+        if (node.type === 'start') return '🟢';
+        if (node.type === 'end')   return '🔴';
+        return '⏱';
+    }
     if (shape === 'diamond') return '🔶';
     return '🔷';
 }
@@ -2515,11 +2577,135 @@ ${(()=>{
 })()}
 
 <div class="sep"></div>
-<div class="prop-section-title">🔄 Цикл повторений</div>
-${buildCycleSectionInner(s)}`;
+<div class="prop-section-title">🚀 Запуск процесса</div>
+<div class="prop-group">
+    <label class="radio-row"><input type="radio" name="trig" ${(s.triggerType||'Ручной запуск')==='Ручной запуск'?'checked':''} onchange="ctorUpdTriggerType('Ручной запуск')" /> Ручной запуск</label>
+    <label class="radio-row"><input type="radio" name="trig" ${s.triggerType==='Каждые N дней'?'checked':''} onchange="ctorUpdTriggerType('Каждые N дней')" /> Повтор каждые N дней</label>
+    <label class="radio-row"><input type="radio" name="trig" ${s.triggerType==='По расписанию'?'checked':''} onchange="ctorUpdTriggerType('По расписанию')" /> По расписанию (расширенный)</label>
+    <div class="prop-note">${s.triggerType==='По расписанию' ? 'Гибкое расписание: еженедельно, ежемесячно, по дням недели.' : s.triggerType==='Каждые N дней' ? 'Процесс создаётся повторно через фиксированное число дней.' : 'Сотрудник запускает каждый экземпляр вручную.'}</div>
+</div>
+${s.triggerType==='По расписанию' ? buildCycleSectionInner(s, true) : s.triggerType==='Каждые N дней' ? buildSimpleCycleSection(s) : buildManualLaunchDates(s)}`;
 }
 
-function buildCycleSectionInner(s) {
+function formatDateRU(iso) {
+    if (!iso) return '';
+    const [y,m,d] = iso.split('-');
+    return d + '.' + m + '.' + y;
+}
+
+function ctorBuildLaunchHint(s) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const isSchedule = s.triggerType === 'По расписанию';
+    const isSimple   = s.triggerType === 'Каждые N дней';
+    const cp = ctorCriticalPath();
+    const cpMin = cp.minutes || 0;
+    const lines = [];
+
+    // When will the process start?
+    if (s.startDate === todayStr) {
+        if (isSchedule || isSimple) {
+            const now = new Date();
+            const parts = (s.startTime || '09:00').split(':').map(Number);
+            const launchToday = now.getHours() < parts[0] || (now.getHours() === parts[0] && now.getMinutes() < parts[1]);
+            if (isSimple) {
+                const days = s.simpleCycleDays || 7;
+                lines.push(launchToday
+                    ? '⚡ Первый запуск <b>сегодня в ' + (s.startTime || '09:00') + '</b>, далее каждые <b>' + days + ' дн.</b>'
+                    : '⏭ Время уже прошло — первый запуск сдвинется на следующий день');
+            } else {
+                lines.push(launchToday
+                    ? '⚡ Первый экземпляр будет создан <b>сегодня в ' + (s.startTime || '09:00') + '</b>'
+                    : '⏭ Время ' + (s.startTime || '09:00') + ' уже прошло — первый экземпляр создастся <b>по следующей итерации</b>');
+            }
+        } else {
+            lines.push('⚡ Процесс будет доступен для запуска <b>сразу после публикации</b>');
+        }
+    } else if (s.startDate > todayStr) {
+        const timeStr = (isSchedule || isSimple) && s.startTime ? ' в <b>' + s.startTime + '</b>' : '';
+        const suffix = isSimple ? ', далее каждые <b>' + (s.simpleCycleDays || 7) + ' дн.</b>' : '';
+        lines.push('📅 Процесс ' + (isSchedule || isSimple ? 'начнёт автозапуск' : 'станет доступен') + ' с <b>' + formatDateRU(s.startDate) + '</b>' + timeStr + suffix);
+    }
+
+    // End date vs SLA warning
+    if (s.endType === 'date' && s.endDate && s.startDate && cpMin > 0) {
+        const startMs = new Date(s.startDate).getTime();
+        const endMs   = new Date(s.endDate).getTime();
+        if (endMs - startMs < cpMin * 60000) {
+            const minEnd = new Date(startMs + cpMin * 60000).toISOString().split('T')[0];
+            lines.push('⚠ Дата окончания наступит раньше завершения экземпляра. Минимум: <b>' + formatDateRU(minEnd) + '</b>');
+        }
+    }
+
+    if (!lines.length) return '';
+    const isWarn = lines.some(l => l.startsWith('⚠'));
+    const bg  = isWarn ? '#fff7ed' : '#f0fdf4';
+    const brd = isWarn ? '#fed7aa' : '#bbf7d0';
+    const clr = isWarn ? '#92400e' : '#15803d';
+    return '<div style="margin-top:0.5rem;padding:0.45rem 0.6rem;background:' + bg + ';border:1px solid ' + brd + ';border-radius:0.375rem;font-size:0.72rem;color:' + clr + ';line-height:1.7;">' + lines.join('<br>') + '</div>';
+}
+
+function buildManualLaunchDates(s) {
+    const today = new Date().toISOString().split('T')[0];
+    let html = `<div class="prop-group">
+    <label class="prop-label">Дата начала</label>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+        <input type="date" class="prop-input" min="${today}" value="${s.startDate}" onchange="ctorProcSettings.startDate=this.value;ctorRenderProcessProps()" style="flex:1;" />
+        <input type="time" class="prop-input" value="${s.startTime||'09:00'}" onchange="ctorProcSettings.startTime=this.value;ctorRenderProcessProps()" style="max-width:90px;" />
+    </div>
+    <div class="prop-note">Процесс станет доступен для запуска с указанной даты и времени</div>
+</div>
+<div class="prop-group"><label class="prop-label">Дата окончания</label>
+    <label class="radio-row"><input type="radio" name="et" value="date" ${s.endType==='date'?'checked':''} onchange="ctorUpdEndType('date')" /> По дате</label>`;
+    if (s.endType==='date') html += `<input type="date" class="prop-input" style="margin-left:1.1rem;margin-top:0.25rem;" min="${today}" value="${s.endDate}" onchange="ctorProcSettings.endDate=this.value;ctorRenderProcessProps()" />`;
+    html += `<label class="radio-row"><input type="radio" name="et" value="none" ${s.endType==='none'?'checked':''} onchange="ctorUpdEndType('none')" /> Нет конечной даты</label>
+</div>`;
+    html += ctorBuildLaunchHint(s);
+    return html;
+}
+
+function buildSimpleCycleSection(s) {
+    const today = new Date().toISOString().split('T')[0];
+    const days = s.simpleCycleDays || 7;
+
+    // Preview: when will the next runs happen?
+    let previewHTML = '';
+    if (s.startDate) {
+        const start = new Date(s.startDate);
+        const dates = [];
+        for (let i = 0; i < 3; i++) {
+            const d = new Date(start.getTime() + i * days * 86400000);
+            dates.push(formatDateRU(d.toISOString().split('T')[0]));
+        }
+        previewHTML = `<div class="cycle-preview">🔁 Запуски: ${dates.join(' → ')} → ...</div>`;
+    }
+
+    let html = `<div class="prop-group">
+    <label class="prop-label">Повторять каждые</label>
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+        <input type="number" class="prop-input" min="1" max="365" style="max-width:72px;" value="${days}"
+            oninput="ctorProcSettings.simpleCycleDays=+this.value||1;ctorRenderProcessProps()" />
+        <span style="font-size:0.8rem;color:#374151;">дней</span>
+    </div>
+    <div class="prop-note">Новый экземпляр создаётся автоматически через указанное число дней после предыдущего</div>
+</div>
+<div class="prop-group">
+    <label class="prop-label">Дата первого запуска</label>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+        <input type="date" class="prop-input" min="${today}" value="${s.startDate}" onchange="ctorProcSettings.startDate=this.value;ctorRenderProcessProps()" style="flex:1;" />
+        <input type="time" class="prop-input" value="${s.startTime||'09:00'}" onchange="ctorProcSettings.startTime=this.value;ctorRenderProcessProps()" style="max-width:90px;" />
+    </div>
+</div>
+${previewHTML}
+<div class="prop-group"><label class="prop-label">Дата окончания</label>
+    <label class="radio-row"><input type="radio" name="et" value="date" ${s.endType==='date'?'checked':''} onchange="ctorUpdEndType('date')" /> По дате</label>`;
+    if (s.endType === 'date') html += `<input type="date" class="prop-input" style="margin-left:1.1rem;margin-top:0.25rem;" min="${today}" value="${s.endDate}" onchange="ctorProcSettings.endDate=this.value;ctorRenderProcessProps()" />`;
+    html += `<label class="radio-row"><input type="radio" name="et" value="none" ${s.endType==='none'?'checked':''} onchange="ctorUpdEndType('none')" /> Нет конечной даты</label>
+</div>`;
+    html += ctorBuildLaunchHint(s);
+    return html;
+}
+
+function buildCycleSectionInner(s, alwaysExpanded) {
     const days7 = ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
     const today  = new Date().toISOString().split('T')[0];
 
@@ -2529,14 +2715,18 @@ function buildCycleSectionInner(s) {
     const m1_12       = Array.from({length:12},(_,i)=>i+1);
     const d1_31       = Array.from({length:31},(_,i)=>i+1);
 
-    let html = `<div class="prop-group">
+    let html = '';
+    if (!alwaysExpanded) {
+        html = `<div class="prop-group">
     <label class="checkbox-row">
         <input type="checkbox" ${s.isRepeating?'checked':''} onchange="ctorUpdRepeating(this.checked)" />
         <span>Повторяющийся процесс</span>
     </label>
 </div>`;
+    }
 
-    if (s.isRepeating) {
+    const showCycle = alwaysExpanded || s.isRepeating;
+    if (showCycle) {
         html += `<div class="prop-group">
     <label class="radio-row"><input type="radio" name="rm" value="weekly" ${s.repeatMode==='weekly'?'checked':''} onchange="ctorUpdRepeatMode('weekly')" /> Еженедельно</label>
     <label class="radio-row"><input type="radio" name="rm" value="monthly" ${s.repeatMode==='monthly'?'checked':''} onchange="ctorUpdRepeatMode('monthly')" /> Ежемесячно</label>
@@ -2592,31 +2782,26 @@ function buildCycleSectionInner(s) {
         }
     }
 
-    // Start date
+    // Start date + time
     html += `<div class="prop-group">
     <label class="prop-label">Дата начала</label>
-    <input type="date" class="prop-input" min="${today}" value="${s.startDate}" onchange="ctorProcSettings.startDate=this.value" />
-    <div class="prop-note">Не может быть в прошлом</div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+        <input type="date" class="prop-input" min="${today}" value="${s.startDate}" onchange="ctorProcSettings.startDate=this.value;ctorRenderProcessProps()" style="flex:1;" />
+        <input type="time" class="prop-input" value="${s.startTime||'09:00'}" onchange="ctorProcSettings.startTime=this.value;ctorRenderProcessProps()" style="max-width:90px;" />
+    </div>
+    <div class="prop-note">Время первого запуска. Не может быть в прошлом.</div>
 </div>`;
 
     // End date section
     const maxAfter = s.repeatMode === 'weekly' ? 52 : 12;
     html += `<div class="prop-group"><label class="prop-label">Дата окончания</label>`;
-    if (s.isRepeating) {
-        html += `<label class="radio-row"><input type="radio" name="et" value="date" ${s.endType==='date'?'checked':''} onchange="ctorUpdEndType('date')" /> По дате</label>`;
-        if (s.endType==='date') html += `<input type="date" class="prop-input" style="margin-left:1.1rem;margin-top:0.25rem;" min="${today}" value="${s.endDate}" onchange="ctorProcSettings.endDate=this.value" />`;
-        html += `<label class="radio-row"><input type="radio" name="et" value="after" ${s.endType==='after'?'checked':''} onchange="ctorUpdEndType('after')" /> После N повторений</label>`;
-        if (s.endType==='after') html += `<div style="display:flex;align-items:center;gap:0.4rem;margin-left:1.1rem;margin-top:0.25rem;"><input type="number" class="prop-input" style="max-width:60px;" min="1" max="${maxAfter}" value="${s.endAfter}" oninput="ctorProcSettings.endAfter=+this.value||1" /><span class="prop-note">макс. ${maxAfter}</span></div>`;
-        html += `<label class="radio-row"><input type="radio" name="et" value="none" ${s.endType==='none'?'checked':''} onchange="ctorUpdEndType('none')" /> Нет конечной даты</label>`;
-    } else {
-        html += `<label class="radio-row"><input type="radio" name="et" value="date" ${s.endType==='date'?'checked':''} onchange="ctorUpdEndType('date')" /> По дате</label>`;
-        if (s.endType==='date') html += `<input type="date" class="prop-input" style="margin-left:1.1rem;margin-top:0.25rem;" min="${today}" value="${s.endDate}" onchange="ctorProcSettings.endDate=this.value" />`;
-        html += `<label class="radio-row"><input type="radio" name="et" value="none" ${s.endType==='none'?'checked':''} onchange="ctorUpdEndType('none')" /> Нет конечной даты</label>`;
-        if (!s.isRepeating && s.endType !== 'date') {
-            html += `<div class="prop-note" style="margin-left:1.1rem;">Дата окончания, повторения и другие параметры цикла станут доступны после включения повторяющегося процесса</div>`;
-        }
-    }
+    html += `<label class="radio-row"><input type="radio" name="et" value="date" ${s.endType==='date'?'checked':''} onchange="ctorUpdEndType('date')" /> По дате</label>`;
+    if (s.endType==='date') html += `<input type="date" class="prop-input" style="margin-left:1.1rem;margin-top:0.25rem;" min="${today}" value="${s.endDate}" onchange="ctorProcSettings.endDate=this.value;ctorRenderProcessProps()" />`;
+    html += `<label class="radio-row"><input type="radio" name="et" value="after" ${s.endType==='after'?'checked':''} onchange="ctorUpdEndType('after')" /> После N повторений</label>`;
+    if (s.endType==='after') html += `<div style="display:flex;align-items:center;gap:0.4rem;margin-left:1.1rem;margin-top:0.25rem;"><input type="number" class="prop-input" style="max-width:60px;" min="1" max="${maxAfter}" value="${s.endAfter}" oninput="ctorProcSettings.endAfter=+this.value||1" /><span class="prop-note">макс. ${maxAfter}</span></div>`;
+    html += `<label class="radio-row"><input type="radio" name="et" value="none" ${s.endType==='none'?'checked':''} onchange="ctorUpdEndType('none')" /> Нет конечной даты</label>`;
     html += `</div>`;
+    html += ctorBuildLaunchHint(s);
 
     return html;
 }
@@ -2648,6 +2833,11 @@ function ctorToggleDay(day, el) {
 }
 function ctorUpdProcessType(val) { ctorProcSettings.processType = val; ctorProcSettings.isChain = (val === 'Цепочка процессов'); ctorRenderProcessProps(); }
 
+function ctorUpdTriggerType(val) {
+    ctorProcSettings.triggerType = val;
+    ctorProcSettings.isRepeating = (val === 'По расписанию' || val === 'Каждые N дней');
+    ctorRenderProcessProps();
+}
 function ctorUpdRepeating(val) { ctorProcSettings.isRepeating = val; ctorRenderProcessProps(); }
 function ctorUpdRepeatMode(val) { ctorProcSettings.repeatMode = val; ctorRenderProcessProps(); }
 function ctorUpdMonthlyOpt(val) { ctorProcSettings.monthlyOpt = val; ctorRenderProcessProps(); }
@@ -2877,7 +3067,8 @@ const TEMPLATE_SCHEMAS = {
         nodes: [
             { id:1,  type:'start',         label:'Старт',                        x:100,  y:280, props:{ description:'Запускает ежемесячный цикл S&OP. Запускается автоматически 1-го числа каждого месяца.', triggerType:'По расписанию', schedule:'01:00 каждое 1-е число месяца' }},
             { id:2,  type:'task-script',   label:'Сбор и анализ данных',         x:290,  y:258, props:{ algorithm:'Расчет базового прогноза', timeout:60, params:{ forecastPeriod:'30 дней', forecastModel:'ARIMA', dataSource:'Хранилище аналитики', historyMonths:12, excludeOutliers:true }}},
-            { id:3,  type:'gw-and',        label:'Параллельное планирование',    x:520,  y:274, props:{}},
+            { id:13, type:'timer',         label:'Заморозка данных',             x:430,  y:262, props:{ waitType:'duration', waitDays:2, waitDate:'' }},
+            { id:3,  type:'gw-and',        label:'Параллельное планирование',    x:560,  y:274, props:{}},
             { id:4,  type:'task-approval', label:'Прогноз спроса',               x:700,  y:150, props:{ instruction:'Проанализируйте статистический прогноз спроса, скорректируйте с учётом рыночной ситуации и акций. Зафиксируйте итоговые цифры по категориям.', assigneeType:'Роль', assignee:'Коммерческий директор', slaValue:3, slaUnit:'дней', outcomes:['Прогноз утверждён'], taskTracker:true }},
             { id:5,  type:'task-approval', label:'Планирование поставок',        x:700,  y:410, props:{ instruction:'Оцените производственные мощности и возможности поставщиков. Подготовьте план поставок с учётом остатков и прогноза спроса.', assigneeType:'Роль', assignee:'Директор по закупкам', slaValue:3, slaUnit:'дней', outcomes:['План поставок готов'], taskTracker:true }},
             { id:6,  type:'gw-and',        label:'Синхронизация планов',         x:940,  y:274, props:{}},
@@ -2890,7 +3081,8 @@ const TEMPLATE_SCHEMAS = {
         ],
         conns: [
             { id:1,  from:1,  to:2,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
-            { id:2,  from:2,  to:3,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:2,  from:2,  to:13, label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:14, from:13, to:3,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:3,  from:3,  to:4,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:4,  from:3,  to:5,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
             { id:5,  from:4,  to:6,  label:'',              flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
@@ -3001,8 +3193,12 @@ function openConstructorView(templateId, mode) {
         ctorProcSettings.status      = t.status;
         ctorProcSettings.isRepeating = t.auto === 'Включен';
         const sn = ctorNodes.find(n => n.type === 'start');
-        if (sn && sn.props.triggerType === 'По расписанию') {
-            ctorProcSettings.scheduleRaw = sn.props.schedule || '';
+        if (sn && sn.props.triggerType) {
+            ctorProcSettings.triggerType = sn.props.triggerType;
+            if (sn.props.triggerType === 'По расписанию') {
+                ctorProcSettings.isRepeating = true;
+                ctorProcSettings.scheduleRaw = sn.props.schedule || '';
+            }
         }
     }
 
@@ -3172,6 +3368,11 @@ function buildNodePropsHTMLReadOnly(node) {
                 <div class="prop-note">${gwModeDesc}</div></div>`;
             break;
         }
+        case 'timer':
+            details = p.waitType === 'date'
+                ? roProp('Тип ожидания', 'Дождаться даты') + roProp('Дата', p.waitDate || '—')
+                : roProp('Тип ожидания', 'Подождать N дней') + roProp('Количество дней', String(p.waitDays || 1));
+            break;
     }
     return `<div class="props-node-header"><span style="font-size:1.3rem;">${nodeIcon(node)}</span>
         <div><div style="font-size:0.8rem;font-weight:700;color:#374151;">${escHtml(cfg.label)}</div>
@@ -3266,6 +3467,11 @@ function buildNodePropsHTMLMeta(node) {
                 <div class="prop-note">${gwModeDesc}</div></div>`;
             break;
         }
+        case 'timer':
+            editable = p.waitType === 'date'
+                ? roProp('Тип ожидания', 'Дождаться даты') + roProp('Дата', p.waitDate || '—')
+                : roProp('Тип ожидания', 'Подождать N дней') + roProp('Количество дней', String(p.waitDays || 1));
+            break;
         default:
             editable = `<div class="prop-note" style="padding:0.5rem;background:#f9fafb;border-radius:0.375rem;border:1px solid #e5e7eb;">Настройка этого элемента недоступна в режиме редактирования метаданных.</div>`;
     }
@@ -3571,6 +3777,7 @@ function openInstanceDrawer(templateId, instanceId) {
                 <td style="padding:0.45rem 0.5rem;font-size:0.7rem;color:#6b7280;white-space:nowrap;">${log.completedAt || '—'}</td>
                 <td style="padding:0.45rem 0.5rem;font-size:0.72rem;white-space:nowrap;${statusStyle}">${statusIcon} ${statusLabel}</td>
                 <td style="padding:0.45rem 0.5rem;font-size:0.7rem;color:#374151;">${log.outcome ? escHtml(log.outcome) : '—'}</td>
+                <td style="padding:0.45rem 0.5rem;font-size:0.7rem;color:#374151;max-width:180px;">${log.comment ? '<span style="color:#6d28d9;">' + escHtml(log.comment) + '</span>' : '—'}</td>
             </tr>`;
         }).join('');
         auditHTML = `<div style="overflow-x:auto;">
@@ -3584,6 +3791,7 @@ function openInstanceDrawer(templateId, instanceId) {
                         <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Выполнено</th>
                         <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Статус</th>
                         <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Результат</th>
+                        <th style="padding:0.4rem 0.5rem;font-size:0.65rem;color:#6b7280;font-weight:600;text-align:left;white-space:nowrap;">Комментарий</th>
                     </tr>
                 </thead>
                 <tbody>${rows}</tbody>
@@ -3633,9 +3841,15 @@ function openInstanceDrawer(templateId, instanceId) {
         schemaStepsHTML = '<div style="font-size:0.78rem;color:#9ca3af;">\u0421\u0445\u0435\u043c\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u0430.</div>';
     }
 
+    instDrawerCtx = { templateId: templateId, instanceId: instanceId };
+    var editBtn = document.getElementById('idraw-edit-btn');
+    if (editBtn) editBtn.style.display = (inst.status === 'Активен' || inst.status === 'Просрочен') ? 'inline-flex' : 'none';
+
+    var instLabel = inst.label || inst.id;
     document.getElementById('idraw-proc').textContent  = t.name;
-    document.getElementById('idraw-title').textContent = inst.id;
+    document.getElementById('idraw-title').textContent = instLabel !== inst.id ? instLabel + ' (' + inst.id + ')' : inst.id;
     document.getElementById('idraw-meta').innerHTML =
+        (inst.description ? `<div class="td-meta-item" style="font-style:italic;color:#6b7280;">${escHtml(inst.description)}</div>` : '') +
         `<div class="td-meta-item">Запустил: <b>${escHtml(inst.user)}</b></div>` +
         `<div class="td-meta-item">Старт: <b>${inst.start}</b></div>` +
         `<div class="td-meta-item">Дедлайн: <b style="color:${isOverdue?'#dc2626':'inherit'}">${inst.deadline}</b></div>` +
@@ -3656,6 +3870,195 @@ function openInstanceDrawer(templateId, instanceId) {
 
 function closeInstanceDrawer() {
     document.getElementById('instance-modal').classList.remove('open');
+    instDrawerCtx = null;
+    var ep = document.getElementById('idraw-edit-panel');
+    if (ep) { ep.style.display = 'none'; ep.innerHTML = ''; }
+    var eb = document.getElementById('idraw-edit-btn');
+    if (eb) eb.style.background = '#fff';
+}
+
+var instDrawerCtx = null; // { templateId, instanceId }
+
+function ddmmyyToISO(s) {
+    if (!s || s === '-') return '';
+    var p = s.split('.');
+    return p.length === 3 ? '20' + p[2] + '-' + p[1] + '-' + p[0] : '';
+}
+function isoToDDMMYY(s) {
+    if (!s) return '-';
+    var p = s.split('-');
+    return p.length === 3 ? p[2] + '.' + p[1] + '.' + p[0].slice(2) : s;
+}
+
+function instToggleEdit() {
+    var ep = document.getElementById('idraw-edit-panel');
+    var eb = document.getElementById('idraw-edit-btn');
+    console.log('[instToggleEdit] ctx=', instDrawerCtx, 'ep=', ep);
+    if (!instDrawerCtx || !ep) return;
+    if (ep.style.display !== 'none') {
+        ep.style.display = 'none'; ep.innerHTML = '';
+        if (eb) { eb.textContent = '✎ Изменить'; eb.style.background = '#fff'; }
+    } else {
+        ep.innerHTML = instBuildEditPanel(instDrawerCtx.templateId, instDrawerCtx.instanceId);
+        ep.style.display = 'block';
+        instRenderTaskList(instDrawerCtx.templateId, instDrawerCtx.instanceId);
+        if (eb) { eb.textContent = '✕ Свернуть'; eb.style.background = '#f5f3ff'; }
+    }
+}
+
+var instEditExpanded = null; // key of currently expanded task row
+
+function instBuildEditPanel(templateId, instanceId) {
+    var inst = (instancesData[templateId] || []).find(function(i) { return i.id === instanceId; });
+    if (!inst) return '';
+    var label = inst.label || inst.id;
+    var desc  = inst.description || '';
+    var dlISO = ddmmyyToISO(inst.deadline);
+    var today = new Date().toISOString().split('T')[0];
+
+    instEditExpanded = null;
+
+    return '<div style="padding:0.75rem 1rem;border-bottom:1px solid #e5e7eb;background:#fafafa;">' +
+        '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:0.75rem;letter-spacing:0.04em;">✎ Редактирование экземпляра</div>' +
+
+        '<div style="margin-bottom:0.5rem;">' +
+            '<label style="font-size:0.7rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Название</label>' +
+            '<input id="idraw-inp-label" type="text" value="' + escHtml(label) + '" style="width:100%;box-sizing:border-box;font-size:0.82rem;border:1px solid #d1d5db;border-radius:0.35rem;padding:0.35rem 0.5rem;" />' +
+        '</div>' +
+        '<div style="margin-bottom:0.5rem;">' +
+            '<label style="font-size:0.7rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Описание</label>' +
+            '<textarea id="idraw-inp-desc" style="width:100%;box-sizing:border-box;font-size:0.8rem;border:1px solid #d1d5db;border-radius:0.35rem;padding:0.35rem 0.5rem;resize:vertical;min-height:52px;font-family:inherit;">' + escHtml(desc) + '</textarea>' +
+        '</div>' +
+        '<div style="margin-bottom:1rem;">' +
+            '<label style="font-size:0.7rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Дедлайн</label>' +
+            '<input id="idraw-inp-dl" type="date" value="' + dlISO + '" min="' + today + '" style="font-size:0.82rem;border:1px solid #d1d5db;border-radius:0.35rem;padding:0.35rem 0.5rem;" />' +
+        '</div>' +
+
+        '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;color:#6b7280;margin-bottom:0.5rem;letter-spacing:0.04em;">Задачи процесса</div>' +
+        '<div id="idraw-task-list"></div>' +
+
+        '<div style="display:flex;gap:0.5rem;margin-top:0.75rem;">' +
+            '<button onclick="instSaveEdit(' + templateId + ',\'' + instanceId + '\')" style="flex:1;padding:0.4rem;background:#6d28d9;color:#fff;border:none;border-radius:0.35rem;font-size:0.8rem;cursor:pointer;font-weight:600;">💾 Сохранить</button>' +
+            '<button onclick="instToggleEdit()" style="padding:0.4rem 0.75rem;background:#fff;color:#374151;border:1px solid #e5e7eb;border-radius:0.35rem;font-size:0.8rem;cursor:pointer;">Отмена</button>' +
+        '</div>' +
+    '</div>';
+}
+
+function instRenderTaskList(templateId, instanceId) {
+    var el = document.getElementById('idraw-task-list');
+    if (!el) return;
+    var users   = ['Иванов И.','Петров А.','Сидоров К.','Козлов В.','Смирнов Д.','Фёдорова Т.','Алексеев М.','Новиков Р.','Кузнецова А.','Юрид. отдел'];
+    var logs    = instanceTaskLogs[instanceId] || [];
+    var planned = instancePlannedAssignees[instanceId] || {};
+    var schema  = TEMPLATE_SCHEMAS[templateId];
+    var html    = '';
+
+    function taskRow(key, name, assignee, badgeHTML, editable, note) {
+        var isOpen = instEditExpanded === key;
+        var rowBg  = isOpen ? '#f5f3ff' : '#fff';
+        var opts   = ['— не назначен —'].concat(users).map(function(u) {
+            return '<option' + (assignee === u ? ' selected' : '') + '>' + escHtml(u) + '</option>';
+        }).join('');
+        var expandForm = isOpen && editable
+            ? '<div style="padding:0.5rem 0.75rem 0.6rem;border-top:1px solid #ede9fe;">' +
+                '<label style="font-size:0.68rem;color:#6b7280;display:block;margin-bottom:0.3rem;">Исполнитель</label>' +
+                '<select id="idraw-sel-' + key + '" style="width:100%;font-size:0.8rem;border:1px solid #c4b5fd;border-radius:0.3rem;padding:0.3rem 0.5rem;">' + opts + '</select>' +
+                (note ? '<div style="font-size:0.67rem;color:#9ca3af;margin-top:0.3rem;">' + note + '</div>' : '') +
+              '</div>'
+            : (isOpen && !editable ? '<div style="padding:0.4rem 0.75rem 0.5rem;border-top:1px solid #f3f4f6;font-size:0.72rem;color:#9ca3af;">Системная задача — исполнитель не назначается</div>' : '');
+        var chevron = editable ? (isOpen ? '▴' : '›') : '';
+        var cursor  = editable ? 'cursor:pointer;' : '';
+        return '<div style="border:1px solid #e5e7eb;border-radius:0.4rem;margin-bottom:0.4rem;background:' + rowBg + ';overflow:hidden;">' +
+            '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.75rem;' + cursor + '" onclick="' + (editable ? 'instToggleTaskRow(\'' + key + '\',' + templateId + ',\'' + instanceId + '\')' : '') + '">' +
+                badgeHTML +
+                '<div style="flex:1;font-size:0.78rem;font-weight:500;color:#374151;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(name) + '</div>' +
+                '<div style="font-size:0.72rem;color:#6b7280;white-space:nowrap;flex-shrink:0;">' + escHtml(assignee || '—') + '</div>' +
+                '<div style="font-size:0.75rem;color:#9ca3af;margin-left:0.25rem;width:10px;">' + chevron + '</div>' +
+            '</div>' +
+            expandForm +
+        '</div>';
+    }
+
+    // Steps from logs (completed / current / pending)
+    logs.forEach(function(l) {
+        if (l.type !== 'task-approval') return;
+        if (l.completedAt) {
+            var badge = '<span style="font-size:0.6rem;background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:9999px;flex-shrink:0;">✓ Выполнено</span>';
+            html += taskRow('done-' + l.step, l.step, l.assignee, badge, false, '');
+        } else if (l.current) {
+            var badge = '<span style="font-size:0.6rem;background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:9999px;flex-shrink:0;">● В работе</span>';
+            html += taskRow('log-' + l.step, l.step, l.assignee, badge, true, 'Изменение применится немедленно');
+        } else {
+            var badge = '<span style="font-size:0.6rem;background:#fef9c3;color:#854d0e;padding:1px 6px;border-radius:9999px;flex-shrink:0;">⏳ Ожидает</span>';
+            html += taskRow('log-' + l.step, l.step, l.assignee, badge, true, 'Изменение применится до начала задачи');
+        }
+    });
+
+    // Future steps from schema not yet in logs
+    if (schema) {
+        var knownSteps = {};
+        logs.forEach(function(l) { knownSteps[l.step] = true; });
+        schema.nodes.forEach(function(node) {
+            if (node.type !== 'task-approval') return;
+            if (knownSteps[node.label]) return;
+            var curAsgn = planned[node.id] || node.props.assignee || '';
+            var badge = '<span style="font-size:0.6rem;background:#f3f4f6;color:#6b7280;padding:1px 6px;border-radius:9999px;flex-shrink:0;">◌ Будущий</span>';
+            html += taskRow('node-' + node.id, node.label, curAsgn, badge, true, 'Исполнитель будет назначен при создании задачи');
+        });
+    }
+
+    el.innerHTML = html || '<div style="font-size:0.78rem;color:#9ca3af;padding:0.25rem 0;">Задачи не найдены в схеме.</div>';
+}
+
+function instToggleTaskRow(key, templateId, instanceId) {
+    // Save current open select value before collapsing
+    if (instEditExpanded && instEditExpanded !== key) {
+        instSaveExpandedTask(templateId, instanceId, instEditExpanded);
+    }
+    instEditExpanded = (instEditExpanded === key) ? null : key;
+    instRenderTaskList(templateId, instanceId);
+}
+
+function instSaveExpandedTask(templateId, instanceId, key) {
+    if (!key) return;
+    var sel = document.getElementById('idraw-sel-' + key);
+    if (!sel) return;
+    var val = sel.value;
+    if (key.indexOf('log-') === 0) {
+        var stepName = key.slice(4);
+        var logs = instanceTaskLogs[instanceId] || [];
+        var l = logs.find(function(l) { return !l.completedAt && l.step === stepName; });
+        if (l) l.assignee = val;
+    } else if (key.indexOf('node-') === 0) {
+        var nodeId = parseInt(key.slice(5));
+        if (!instancePlannedAssignees[instanceId]) instancePlannedAssignees[instanceId] = {};
+        if (val && val !== '— не назначен —') instancePlannedAssignees[instanceId][nodeId] = val;
+        else delete instancePlannedAssignees[instanceId][nodeId];
+    }
+}
+
+function instSaveEdit(templateId, instanceId) {
+    var inst = (instancesData[templateId] || []).find(function(i) { return i.id === instanceId; });
+    if (!inst) return;
+
+    // Save instance fields
+    var labelEl = document.getElementById('idraw-inp-label');
+    var descEl  = document.getElementById('idraw-inp-desc');
+    var dlEl    = document.getElementById('idraw-inp-dl');
+    if (labelEl) inst.label       = labelEl.value.trim() || inst.id;
+    if (descEl)  inst.description = descEl.value.trim();
+    if (dlEl && dlEl.value) inst.deadline = isoToDDMMYY(dlEl.value);
+
+    // Save currently open task row
+    if (instEditExpanded) instSaveExpandedTask(templateId, instanceId, instEditExpanded);
+
+    // Close edit panel and refresh drawer
+    var ep = document.getElementById('idraw-edit-panel');
+    var eb = document.getElementById('idraw-edit-btn');
+    if (ep) { ep.style.display = 'none'; ep.innerHTML = ''; }
+    if (eb) { eb.textContent = '✎ Изменить'; eb.style.background = '#fff'; }
+    instEditExpanded = null;
+    openInstanceDrawer(templateId, instanceId);
 }
 </script>
 
@@ -3666,6 +4069,8 @@ let pendingAction = null;
 
 // Хранит зафиксированные исходы узлов по экземплярам: { instanceId: { nodeId: outcome } }
 const instanceNodeOutcomes = {};
+// Плановые исполнители для будущих задач: { instanceId: { nodeId: assignee } }
+var instancePlannedAssignees = {};
 
 function showToast(msg, color) {
     color = color || '#6d28d9';
@@ -3769,8 +4174,11 @@ function routeToken(task, outcome) {
             deadline: new Date(Date.now() + sla).toISOString(),
             outcomes: (nextNode.props.outcomes || ['Завершить']).map((o, i) => ({ label: o, primary: i === 0 }))
         };
+        // Apply planned assignee if set
+        const plannedAsgn = (instancePlannedAssignees[task.instance] || {})[nextNode.id];
+        if (plannedAsgn) newTask.assignee = plannedAsgn;
         tasksActive.push(newTask);
-        showToast('▶ Создана новая задача: «' + nextNode.label + '» — ' + task.instance);
+        showToast('▶ Создана новая задача: «' + nextNode.label + '»' + (plannedAsgn ? ' → ' + plannedAsgn : '') + ' — ' + task.instance);
     } else if (nextNode === null) {
         showToast('✅ Экземпляр ' + task.instance + ' завершён — достигнут конец процесса.', '#15803d');
     }
@@ -3957,11 +4365,12 @@ function renderHistoryTasks() {
             '<td style="color:#6b7280;font-size:0.78rem;">' + h.process + '</td>' +
             '<td style="white-space:nowrap;">' + fmtDatetime(h.completedAt) + '</td>' +
             '<td><span class="result-badge" style="background:' + (h.resultType === 'green' ? '#dcfce7' : '#fee2e2') + ';color:' + (h.resultType === 'green' ? '#15803d' : '#dc2626') + ';">' + h.result + '</span></td>' +
+            '<td style="font-size:0.78rem;color:#6d28d9;max-width:200px;">' + (h.comment ? h.comment : '<span style="color:#d1d5db;">—</span>') + '</td>' +
         '</tr>'
     ).join('');
     body.innerHTML =
         '<table class="hist-table">' +
-            '<thead><tr><th>Название задачи</th><th>Процесс</th><th>Дата выполнения</th><th>Результат</th></tr></thead>' +
+            '<thead><tr><th>Название задачи</th><th>Процесс</th><th>Дата выполнения</th><th>Результат</th><th>Комментарий</th></tr></thead>' +
             '<tbody>' + rows + '</tbody>' +
         '</table>';
 }
@@ -3986,10 +4395,14 @@ function openTaskDrawer(taskId) {
 
 function closeTaskDrawer() {
     document.getElementById('task-modal').classList.remove('open');
+    var commentEl = document.getElementById('td-comment');
+    if (commentEl) commentEl.value = '';
 }
 
 function confirmTaskAction(taskId, outcome) {
-    pendingAction = { taskId, outcome };
+    const commentEl = document.getElementById('td-comment');
+    const comment = commentEl ? commentEl.value.trim() : '';
+    pendingAction = { taskId, outcome, comment };
     document.getElementById('action-confirm-text').textContent = 'Вы уверены, что хотите выполнить действие «' + outcome + '»? Задача будет завершена и токен уйдёт дальше по маршруту.';
     document.getElementById('action-confirm-modal').classList.add('open');
 }
@@ -4001,7 +4414,7 @@ function closeActionConfirm() {
 
 function executeTaskAction() {
     if (!pendingAction) return;
-    const { taskId, outcome } = pendingAction;
+    const { taskId, outcome, comment } = pendingAction;
     const task = tasksActive.find(t => t.id === taskId);
     if (task) {
         tasksActive = tasksActive.filter(t => t.id !== taskId);
@@ -4012,8 +4425,14 @@ function executeTaskAction() {
             process: task.process + ' — ' + task.instance,
             completedAt: new Date().toISOString(),
             result: outcome,
-            resultType: positiveLabels.some(l => outcome.toLowerCase().includes(l.toLowerCase())) ? 'green' : 'red'
+            resultType: positiveLabels.some(l => outcome.toLowerCase().includes(l.toLowerCase())) ? 'green' : 'red',
+            comment: comment || ''
         });
+        // Сохранить комментарий в журнале экземпляра (текущий активный шаг)
+        if (comment && instanceTaskLogs[task.instance]) {
+            const logEntry = instanceTaskLogs[task.instance].find(l => l.current);
+            if (logEntry) logEntry.comment = comment;
+        }
         // Маршрутизация токена: найти следующий узел по схеме процесса
         if (task.templateId && task.nodeId) routeToken(task, outcome);
     }
