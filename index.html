@@ -201,6 +201,41 @@
         .td-outcome-btn:hover { background:#ede9fe; }
         .td-outcome-btn.primary { background:#6d28d9; color:#fff; }
         .td-outcome-btn.primary:hover { background:#5b21b6; }
+
+        /* ===== TASK VIEW MODAL ===== */
+        #tv-modal { display:none; position:fixed; inset:0; z-index:900; }
+        .tv-wrap  { display:flex; width:100%; height:100%; }
+        .tv-left  { width:390px; flex-shrink:0; background:#fff; display:flex; flex-direction:column; box-shadow:4px 0 16px rgba(0,0,0,0.08); z-index:1; }
+        .tv-left-hdr { height:56px; padding:0 1.1rem 0 1.25rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e5e7eb; flex-shrink:0; }
+        .tv-left-title { font-size:0.88rem; font-weight:700; color:#0B1F33; }
+        .tv-tabs { display:flex; border-bottom:1px solid #e5e7eb; flex-shrink:0; }
+        .tv-tab  { flex:1; padding:0.5rem 0.15rem; font-size:0.68rem; font-weight:500; cursor:pointer; text-align:center; border-bottom:2px solid transparent; margin-bottom:-1px; color:#6b7280; transition:color 0.12s; display:flex; align-items:center; justify-content:center; gap:0.25rem; white-space:nowrap; }
+        .tv-tab.active { color:#9000FF; border-bottom-color:#9000FF; background:#faf5ff; }
+        .tv-tab:hover:not(.active) { color:#374151; }
+        .tv-cnt  { font-size:0.62rem; font-weight:700; padding:1px 5px; border-radius:9999px; line-height:1.4; }
+        .tv-list { flex:1; overflow-y:auto; }
+        .tv-item { border-left:5px solid; border-bottom:1px solid #f3f4f6; padding:0.78rem 0.9rem 0.78rem 0.75rem; cursor:pointer; transition:background 0.1s; }
+        .tv-item:hover:not(.tv-selected) { background:#faf5ff; }
+        .tv-item.tv-selected { background:#f5f3ff; outline:1px solid #0B1F33; outline-offset:-1px; }
+        .tv-item-title { font-size:0.8rem; font-weight:600; color:#0B1F33; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .tv-item-sub   { font-size:0.7rem; color:#878787; margin:0.18rem 0 0.38rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .tv-item-foot  { display:flex; align-items:center; justify-content:space-between; gap:0.5rem; }
+        .tv-badge { font-size:0.63rem; padding:1px 7px; border-radius:4px; flex-shrink:0; }
+        .tv-time  { font-size:0.63rem; color:#878787; text-align:right; }
+        .tv-dot   { width:7px; height:7px; border-radius:50%; background:#6d28d9; flex-shrink:0; margin-top:3px; }
+        .tv-right { flex:1; background:#F5F6F8; padding:1rem; overflow-y:auto; display:flex; flex-direction:column; min-width:0; }
+        .tv-card  { background:#fff; border-radius:0.5rem; flex:1; display:flex; flex-direction:column; min-height:0; overflow:hidden; }
+        .tv-card-hdr  { padding:1.1rem 1.5rem; border-bottom:1px solid #f3f4f6; flex-shrink:0; }
+        .tv-card-tag  { font-size:0.63rem; text-transform:uppercase; color:#9ca3af; font-weight:700; margin-bottom:0.2rem; letter-spacing:0.04em; }
+        .tv-card-title{ font-size:1rem; font-weight:700; color:#0B1F33; line-height:1.35; margin-bottom:0.45rem; }
+        .tv-card-body { flex:1; overflow-y:auto; padding:1.1rem 1.5rem; }
+        .tv-card-foot { padding:0.9rem 1.5rem; border-top:1px solid #f3f4f6; flex-shrink:0; }
+        .tv-meta-grid { display:grid; grid-template-columns:165px 1fr; }
+        .tv-meta-lbl  { font-size:0.77rem; color:#878787; padding:0.4rem 0; border-bottom:1px solid #f9fafb; }
+        .tv-meta-val  { font-size:0.77rem; color:#0B1F33; font-weight:500; padding:0.4rem 0; border-bottom:1px solid #f9fafb; }
+        .tv-sec-lbl   { font-size:0.63rem; font-weight:700; text-transform:uppercase; color:#9ca3af; letter-spacing:0.04em; margin-bottom:0.4rem; }
+        .tv-instruction { font-size:0.83rem; color:#374151; line-height:1.6; background:#f9fafb; border-radius:0.375rem; padding:0.6rem 0.8rem; }
+        .tv-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; color:#9ca3af; font-size:0.875rem; padding:3rem; text-align:center; }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800">
@@ -410,6 +445,28 @@
         <div class="modal-actions">
             <button class="btn-cancel" onclick="closeActionConfirm()">Отмена</button>
             <button style="border:none;background:#6d28d9;color:#fff;padding:0.4rem 1rem;border-radius:0.375rem;cursor:pointer;font-size:0.875rem;" onclick="executeTaskAction()">Подтвердить</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== TASK VIEW MODAL ==================== -->
+<div id="tv-modal">
+    <div class="tv-wrap">
+        <div class="tv-left">
+            <div class="tv-left-hdr">
+                <span class="tv-left-title">Задачи и уведомления</span>
+                <button onclick="closeTaskViewModal()" style="background:none;border:none;font-size:1.1rem;color:#9ca3af;cursor:pointer;padding:0.2rem 0.3rem;border-radius:0.25rem;line-height:1;" title="Закрыть">✕</button>
+            </div>
+            <div class="tv-tabs">
+                <div id="tv-tab-all"     class="tv-tab active" onclick="tvSetFilter('all')">Все <span class="tv-cnt" id="tv-cnt-all" style="background:#ede9fe;color:#6d28d9;"></span></div>
+                <div id="tv-tab-overdue" class="tv-tab"        onclick="tvSetFilter('overdue')">Просроченные <span class="tv-cnt" id="tv-cnt-overdue" style="background:#fee2e2;color:#dc2626;"></span></div>
+                <div id="tv-tab-done"    class="tv-tab"        onclick="tvSetFilter('done')">Завершённые <span class="tv-cnt" id="tv-cnt-done" style="background:#D2FAEF;color:#22BB55;"></span></div>
+                <div id="tv-tab-notif"   class="tv-tab"        onclick="tvSetFilter('notif')">Уведомления <span class="tv-cnt" id="tv-cnt-notif" style="background:#ede9fe;color:#6d28d9;"></span></div>
+            </div>
+            <div id="tv-list" class="tv-list"></div>
+        </div>
+        <div class="tv-right">
+            <div class="tv-card" id="tv-detail"></div>
         </div>
     </div>
 </div>
@@ -1034,7 +1091,13 @@
 
     function readNotif(id) {
         const n = notifData.find(n => n.id === id);
-        if (n) { n.read = true; renderNotifList(); updateNotifBadge(); }
+        if (n) {
+            n.read = true;
+            renderNotifList();
+            updateNotifBadge();
+            document.getElementById('notif-panel').style.display = 'none';
+            openTaskViewModal(id, 'notif');
+        }
     }
 
     function markAllNotifRead() {
@@ -4368,21 +4431,7 @@ function renderHistoryTasks() {
 }
 
 function openTaskDrawer(taskId) {
-    const task = tasksActive.find(t => t.id === taskId);
-    if (!task) return;
-    const ov = getTaskStatus(task) === 'overdue';
-    document.getElementById('td-proc-tag').textContent = task.process + ' · ' + task.instance;
-    document.getElementById('td-title').textContent = task.name;
-    document.getElementById('td-meta').innerHTML =
-        '<div class="td-meta-item">Процесс: <b>' + task.process + '</b></div>' +
-        '<div class="td-meta-item">Запустил: <b>' + task.startedBy + '</b></div>' +
-        '<div class="td-meta-item">Поступила: <b>' + fmtDatetime(task.arrivedAt) + '</b></div>' +
-        '<div class="td-meta-item" style="color:' + (ov ? '#dc2626' : '#374151') + '">Дедлайн: <b>' + fmtDatetime(task.deadline) + '</b>' + (ov ? ' &#9888; Просрочена' : '') + '</div>';
-    document.getElementById('td-instruction').textContent = task.instruction;
-    document.getElementById('td-outcomes').innerHTML = task.outcomes.map(o =>
-        '<button class="td-outcome-btn ' + (o.primary ? 'primary' : '') + '" onclick="confirmTaskAction(\'' + taskId + '\',\'' + o.label + '\')">' + o.label + '</button>'
-    ).join('');
-    document.getElementById('task-modal').classList.add('open');
+    openTaskViewModal(taskId, 'task');
 }
 
 function closeTaskDrawer() {
@@ -4431,6 +4480,22 @@ function executeTaskAction() {
     closeActionConfirm();
     closeTaskDrawer();
     renderTasksView();
+    // Refresh TV modal if open
+    var tvModal = document.getElementById('tv-modal');
+    if (tvModal && tvModal.style.display !== 'none') {
+        // Point to the newly completed history entry
+        var newHistId = tasksHistory.length ? tasksHistory[0].id : null;
+        if (newHistId) {
+            tvCurrentItem = { id: newHistId, type: 'done' };
+            tvFilter = 'done';
+        } else {
+            tvCurrentItem = tasksActive.length ? { id: tasksActive[0].id, type: 'task' } : null;
+            tvFilter = 'all';
+        }
+        if (typeof tvApplyTabClasses === 'function') {
+            tvApplyTabClasses(); tvRenderTabs(); tvRenderList(); tvRenderDetail();
+        }
+    }
 }
 
 // Auto-refresh overdue statuses every minute
@@ -4449,6 +4514,345 @@ setInterval(() => {
     if (overdueCount > 0) { badge.style.display = 'block'; badge.textContent = overdueCount; }
     else if (total > 0)   { badge.style.display = 'block'; badge.textContent = total; }
 })();
+</script>
+
+<!-- ==================== TASK VIEW MODAL LOGIC ==================== -->
+<script>
+/* Link task-type notifications to actual tasks */
+(function() {
+    if (typeof notifData === 'undefined') return;
+    var links = { 1: 'T-001', 2: 'T-002' };
+    notifData.forEach(function(n) { if (links[n.id]) n.linkedTaskId = links[n.id]; });
+})();
+
+var tvCurrentItem = null; // { id, type: 'task'|'notif' }
+var tvFilter = 'all';
+
+function openTaskViewModal(itemId, itemType) {
+    tvCurrentItem = { id: itemId, type: itemType };
+    // Select sensible default tab
+    if (itemType === 'done') tvFilter = 'done';
+    else if (itemType === 'notif') tvFilter = 'all';
+    else tvFilter = getTaskStatus(tasksActive.find(function(t){return t.id===itemId;})||{deadline:new Date(Date.now()+1)}) === 'overdue' ? 'overdue' : 'all';
+    tvApplyTabClasses();
+    tvRenderTabs();
+    tvRenderList();
+    tvRenderDetail();
+    document.getElementById('tv-modal').style.display = 'flex';
+}
+
+function closeTaskViewModal() {
+    document.getElementById('tv-modal').style.display = 'none';
+    tvCurrentItem = null;
+}
+
+function tvSetFilter(f) {
+    tvFilter = f;
+    tvApplyTabClasses();
+    tvRenderList();
+}
+
+function tvApplyTabClasses() {
+    ['all','overdue','done','notif'].forEach(function(k) {
+        var el = document.getElementById('tv-tab-' + k);
+        if (el) el.className = 'tv-tab' + (k === tvFilter ? ' active' : '');
+    });
+}
+
+function tvGetAllItems() {
+    var items = [];
+    tasksActive.forEach(function(t) { items.push({ id: t.id, type: 'task', data: t }); });
+    if (typeof notifData !== 'undefined') {
+        notifData.forEach(function(n) { items.push({ id: n.id, type: 'notif', data: n }); });
+    }
+    return items;
+}
+
+function tvGetItems() {
+    if (tvFilter === 'overdue') {
+        return tasksActive
+            .filter(function(t) { return getTaskStatus(t) === 'overdue'; })
+            .map(function(t) { return { id: t.id, type: 'task', data: t }; });
+    }
+    if (tvFilter === 'done') {
+        return tasksHistory.map(function(h) { return { id: h.id, type: 'done', data: h }; });
+    }
+    if (tvFilter === 'notif') {
+        return typeof notifData !== 'undefined'
+            ? notifData.map(function(n) { return { id: n.id, type: 'notif', data: n }; }) : [];
+    }
+    // 'all' — active tasks + notifications
+    return tvGetAllItems();
+}
+
+function tvRenderTabs() {
+    var overdueCount = tasksActive.filter(function(t) { return getTaskStatus(t) === 'overdue'; }).length;
+    var doneCount    = tasksHistory.length;
+    var notifCount   = typeof notifData !== 'undefined' ? notifData.length : 0;
+    var allCount     = tasksActive.length + notifCount;
+    function setCnt(id, n) {
+        var el = document.getElementById(id);
+        if (el) { el.textContent = n; el.style.display = n > 0 ? '' : 'none'; }
+    }
+    setCnt('tv-cnt-all',     allCount);
+    setCnt('tv-cnt-overdue', overdueCount);
+    setCnt('tv-cnt-done',    doneCount);
+    setCnt('tv-cnt-notif',   notifCount);
+}
+
+function tvItemConfig(item) {
+    if (item.type === 'done') {
+        var isGreen = item.data.resultType === 'green';
+        return {
+            border: isGreen ? '#22BB55' : '#EE4444',
+            badgeBg: isGreen ? '#D2FAEF' : '#FFEED4',
+            badgeColor: isGreen ? '#22BB55' : '#EE4444',
+            badgeText: item.data.result,
+            title: item.data.name,
+            sub: item.data.process,
+            time: fmtDatetime(item.data.completedAt),
+            timeLabel: 'Завершено',
+            timeColor: '#878787'
+        };
+    }
+    if (item.type === 'task') {
+        var ov = getTaskStatus(item.data) === 'overdue';
+        return {
+            border: ov ? '#EE4444' : '#9000FF',
+            badgeBg: ov ? '#FFEED4' : '#F1E0FF',
+            badgeColor: ov ? '#EF5F07' : '#9000FF',
+            badgeText: ov ? 'Просрочено' : 'Задача',
+            title: item.data.name,
+            sub: item.data.process + ' · ' + item.data.instance,
+            time: fmtDatetime(item.data.deadline),
+            timeLabel: 'Дедлайн',
+            timeColor: ov ? '#EE4444' : '#878787'
+        };
+    }
+    var t = item.data.type;
+    var map = {
+        'task':     { border:'#9000FF', badgeBg:'#F1E0FF', badgeColor:'#9000FF', badgeText:'Задача' },
+        'overdue':  { border:'#EE4444', badgeBg:'#FFEED4', badgeColor:'#EF5F07', badgeText:'Просрочено' },
+        'done':     { border:'#22BB55', badgeBg:'#D2FAEF', badgeColor:'#22BB55', badgeText:'Завершено' },
+        'reminder': { border:'#EF5F07', badgeBg:'#FFF7E0', badgeColor:'#B45309', badgeText:'Напоминание' },
+        'chain':    { border:'#0369A1', badgeBg:'#E0F2FE', badgeColor:'#0369A1', badgeText:'Цепочка' }
+    };
+    var c = map[t] || map['task'];
+    return {
+        border: c.border, badgeBg: c.badgeBg, badgeColor: c.badgeColor, badgeText: c.badgeText,
+        title: item.data.title, sub: item.data.sub, time: item.data.time, timeLabel: '', timeColor: '#878787'
+    };
+}
+
+function tvRenderList() {
+    var list = document.getElementById('tv-list');
+    if (!list) return;
+    var items = tvGetItems();
+    if (!items.length) {
+        list.innerHTML = '<div style="padding:2.5rem;text-align:center;color:#9ca3af;font-size:0.82rem;">Нет элементов</div>';
+        return;
+    }
+    list.innerHTML = items.map(function(item) {
+        var cfg = tvItemConfig(item);
+        var isSel = tvCurrentItem && String(tvCurrentItem.id) === String(item.id) && tvCurrentItem.type === item.type;
+        var isUnread = item.type === 'notif' && !item.data.read;
+        return '<div class="tv-item' + (isSel ? ' tv-selected' : '') + '" ' +
+            'style="border-left-color:' + cfg.border + ';" ' +
+            'onclick="tvSelectItem(\'' + String(item.id).replace(/'/g,"&#39;") + '\',\'' + item.type + '\')">' +
+            '<div style="display:flex;align-items:flex-start;gap:0.4rem;margin-bottom:0.15rem;">' +
+                '<div class="tv-item-title" style="flex:1;">' + escHtml(cfg.title) + '</div>' +
+                (isUnread ? '<div class="tv-dot"></div>' : '') +
+            '</div>' +
+            '<div class="tv-item-sub">' + escHtml(cfg.sub) + '</div>' +
+            '<div class="tv-item-foot">' +
+                '<span class="tv-badge" style="background:' + cfg.badgeBg + ';color:' + cfg.badgeColor + ';">' + cfg.badgeText + '</span>' +
+                '<span class="tv-time" style="color:' + cfg.timeColor + ';">' +
+                    (cfg.timeLabel ? '<span style="color:#bbb;">' + cfg.timeLabel + ': </span>' : '') +
+                    escHtml(cfg.time) +
+                '</span>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+function tvSelectItem(id, type) {
+    var realId = type === 'notif' ? parseInt(id) : String(id);
+    tvCurrentItem = { id: realId, type: type };
+    if (type === 'notif' && typeof notifData !== 'undefined') {
+        var n = notifData.find(function(n) { return n.id === realId; });
+        if (n) n.read = true;
+        if (typeof updateNotifBadge === 'function') updateNotifBadge();
+        if (typeof renderNotifList === 'function') renderNotifList();
+    }
+    // Switch to the right tab if needed
+    if (type === 'done'    && tvFilter !== 'done')    { tvFilter = 'done';    tvApplyTabClasses(); tvRenderTabs(); tvRenderList(); }
+    else if (type === 'task' && getTaskStatus(tasksActive.find(function(t){return t.id===realId;})||{deadline:new Date(Date.now()+1)}) === 'overdue' && tvFilter !== 'overdue' && tvFilter !== 'all') { /* keep current */ }
+    else { tvRenderList(); }
+    tvRenderDetail();
+}
+
+function tvRenderDetail() {
+    var el = document.getElementById('tv-detail');
+    if (!el) return;
+    if (!tvCurrentItem) {
+        el.innerHTML = '<div class="tv-empty"><div style="font-size:2.5rem;margin-bottom:0.75rem;">📋</div><div>Выберите задачу или уведомление из списка слева</div></div>';
+        return;
+    }
+    if (tvCurrentItem.type === 'done') {
+        var hist = tasksHistory.find(function(h) { return h.id === tvCurrentItem.id; });
+        if (!hist) { el.innerHTML = '<div class="tv-empty">Запись не найдена</div>'; return; }
+        tvRenderHistoryDetail(el, hist);
+    } else if (tvCurrentItem.type === 'task') {
+        var task = tasksActive.find(function(t) { return t.id === tvCurrentItem.id; });
+        if (!task) { el.innerHTML = '<div class="tv-empty">Задача не найдена или уже выполнена</div>'; return; }
+        tvRenderTaskDetail(el, task);
+    } else {
+        var notif = typeof notifData !== 'undefined'
+            ? notifData.find(function(n) { return n.id === tvCurrentItem.id; }) : null;
+        if (!notif) { el.innerHTML = '<div class="tv-empty">Уведомление не найдено</div>'; return; }
+        tvRenderNotifDetail(el, notif);
+    }
+}
+
+function tvMetaRow(label, valueHTML) {
+    return '<div class="tv-meta-lbl">' + label + '</div><div class="tv-meta-val">' + valueHTML + '</div>';
+}
+
+function tvRenderTaskDetail(el, task) {
+    var ov = getTaskStatus(task) === 'overdue';
+    var badge = ov
+        ? '<span class="tv-badge" style="font-size:0.7rem;padding:2px 10px;background:#FFEED4;color:#EF5F07;">Просрочено</span>'
+        : '<span class="tv-badge" style="font-size:0.7rem;padding:2px 10px;background:#F1E0FF;color:#9000FF;">Задача</span>';
+
+    el.innerHTML =
+        '<div class="tv-card-hdr">' +
+            '<div class="tv-card-tag">' + escHtml(task.process) + ' · ' + escHtml(task.instance) + '</div>' +
+            '<div class="tv-card-title">' + escHtml(task.name) + '</div>' +
+            badge +
+        '</div>' +
+        '<div class="tv-card-body">' +
+            '<div class="tv-meta-grid">' +
+                tvMetaRow('Процесс', escHtml(task.process)) +
+                tvMetaRow('Экземпляр', escHtml(task.instance)) +
+                tvMetaRow('Запустил', escHtml(task.startedBy || '—')) +
+                tvMetaRow('Поступила', fmtDatetime(task.arrivedAt)) +
+                tvMetaRow('Дедлайн',
+                    '<span style="color:' + (ov ? '#EE4444' : 'inherit') + ';font-weight:' + (ov ? '700' : '500') + ';">' +
+                    fmtDatetime(task.deadline) +
+                    (ov ? ' <span style="font-size:0.68rem;">⚠ Просрочена</span>' : '') + '</span>') +
+            '</div>' +
+            (task.instruction
+                ? '<div style="margin-top:1rem;">' +
+                  '<div class="tv-sec-lbl">Инструкция</div>' +
+                  '<div class="tv-instruction">' + escHtml(task.instruction) + '</div>' +
+                  '</div>'
+                : '') +
+        '</div>' +
+        '<div class="tv-card-foot">' +
+            '<div style="margin-bottom:0.6rem;">' +
+                '<div class="tv-sec-lbl">Комментарий <span style="font-weight:400;text-transform:none;font-size:0.7rem;">(необязательно)</span></div>' +
+                '<textarea id="tv-comment" placeholder="Введите комментарий к решению..." style="width:100%;box-sizing:border-box;padding:0.4rem 0.65rem;border:1px solid #e5e7eb;border-radius:0.35rem;font-size:0.78rem;color:#374151;resize:none;height:56px;font-family:inherit;outline:none;"></textarea>' +
+            '</div>' +
+            '<div class="tv-sec-lbl">Действия</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.35rem;">' +
+            task.outcomes.map(function(o) {
+                return '<button onclick="tvConfirmAction(\'' + escHtml(task.id) + '\',\'' + escHtml(o.label) + '\')" style="' +
+                    'padding:0.45rem 1.2rem;border-radius:0.35rem;font-size:0.82rem;font-weight:600;cursor:pointer;border:none;' +
+                    'background:' + (o.primary ? '#6d28d9' : '#f3f4f6') + ';' +
+                    'color:' + (o.primary ? '#fff' : '#374151') + ';">' +
+                    escHtml(o.label) + '</button>';
+            }).join('') +
+            '</div>' +
+        '</div>';
+}
+
+function tvRenderHistoryDetail(el, hist) {
+    var isGreen = hist.resultType === 'green';
+    var badge = '<span class="tv-badge" style="font-size:0.7rem;padding:2px 10px;background:' +
+        (isGreen ? '#D2FAEF' : '#FFEED4') + ';color:' + (isGreen ? '#22BB55' : '#EE4444') + ';">' +
+        escHtml(hist.result) + '</span>';
+
+    el.innerHTML =
+        '<div class="tv-card-hdr">' +
+            '<div class="tv-card-tag">Завершённая задача</div>' +
+            '<div class="tv-card-title">' + escHtml(hist.name) + '</div>' +
+            badge +
+        '</div>' +
+        '<div class="tv-card-body">' +
+            '<div class="tv-meta-grid">' +
+                tvMetaRow('Процесс / экземпляр', escHtml(hist.process)) +
+                tvMetaRow('Завершено', fmtDatetime(hist.completedAt)) +
+                tvMetaRow('Результат',
+                    '<span style="color:' + (isGreen ? '#22BB55' : '#EE4444') + ';font-weight:700;">' +
+                    (isGreen ? '✓ ' : '✗ ') + escHtml(hist.result) + '</span>') +
+                tvMetaRow('Комментарий',
+                    hist.comment
+                        ? '<span style="color:#374151;font-style:italic;">' + escHtml(hist.comment) + '</span>'
+                        : '<span style="color:#d1d5db;">—</span>') +
+            '</div>' +
+        '</div>' +
+        '<div class="tv-card-foot">' +
+            '<div style="display:flex;align-items:center;gap:0.5rem;color:#9ca3af;font-size:0.78rem;">' +
+                '<span style="font-size:1rem;">✅</span>' +
+                '<span>Задача выполнена. Действия недоступны.</span>' +
+            '</div>' +
+        '</div>';
+}
+
+function tvRenderNotifDetail(el, notif) {
+    var typeMap = {
+        'task':     { label:'Задача',        bg:'#F1E0FF', color:'#9000FF' },
+        'overdue':  { label:'Просрочено',    bg:'#FFEED4', color:'#EF5F07' },
+        'done':     { label:'Завершено',     bg:'#D2FAEF', color:'#22BB55' },
+        'reminder': { label:'Напоминание',   bg:'#FFF7E0', color:'#B45309' },
+        'chain':    { label:'Цепочка',       bg:'#E0F2FE', color:'#0369A1' }
+    };
+    var tc = typeMap[notif.type] || typeMap['task'];
+    var badge = '<span class="tv-badge" style="font-size:0.7rem;padding:2px 10px;background:' + tc.bg + ';color:' + tc.color + ';">' + tc.label + '</span>';
+    var linkedTask = notif.linkedTaskId ? tasksActive.find(function(t) { return t.id === notif.linkedTaskId; }) : null;
+
+    el.innerHTML =
+        '<div class="tv-card-hdr">' +
+            '<div style="font-size:1.75rem;line-height:1;margin-bottom:0.4rem;">' + notif.icon + '</div>' +
+            '<div class="tv-card-title">' + escHtml(notif.title) + '</div>' +
+            badge +
+        '</div>' +
+        '<div class="tv-card-body">' +
+            '<div class="tv-meta-grid">' +
+                tvMetaRow('Тип', '<span style="color:' + tc.color + ';font-weight:600;">' + tc.label + '</span>') +
+                tvMetaRow('Описание', escHtml(notif.sub)) +
+                tvMetaRow('Время', notif.time) +
+                tvMetaRow('Статус', notif.read
+                    ? '<span style="color:#22BB55;">✓ Прочитано</span>'
+                    : '<span style="color:#6d28d9;font-weight:600;">● Новое</span>') +
+            '</div>' +
+            (linkedTask
+                ? '<div style="margin-top:1.1rem;padding:0.75rem 1rem;background:#f5f3ff;border-radius:0.375rem;border-left:3px solid #9000FF;">' +
+                  '<div style="font-size:0.63rem;font-weight:700;text-transform:uppercase;color:#9000FF;letter-spacing:0.04em;margin-bottom:0.25rem;">Связанная задача</div>' +
+                  '<div style="font-size:0.82rem;font-weight:600;color:#0B1F33;">' + escHtml(linkedTask.name) + '</div>' +
+                  '<div style="font-size:0.7rem;color:#878787;margin:0.15rem 0 0.5rem;">' + escHtml(linkedTask.process + ' · ' + linkedTask.instance) + '</div>' +
+                  '<button onclick="tvSelectItem(\'' + linkedTask.id + '\',\'task\')" style="font-size:0.78rem;padding:0.3rem 0.8rem;background:#9000FF;color:#fff;border:none;border-radius:0.35rem;cursor:pointer;font-weight:600;">Открыть задачу →</button>' +
+                  '</div>'
+                : '') +
+        '</div>' +
+        '<div class="tv-card-foot">' +
+            '<div style="display:flex;align-items:center;gap:0.5rem;color:#9ca3af;font-size:0.78rem;">' +
+                '<span style="font-size:1rem;">ℹ️</span>' +
+                (linkedTask
+                    ? '<span>Информационное уведомление о задаче. Нажмите «Открыть задачу» для выполнения действий.</span>'
+                    : '<span>Информационное уведомление. Действия не требуются.</span>') +
+            '</div>' +
+        '</div>';
+}
+
+function tvConfirmAction(taskId, outcome) {
+    var commentEl = document.getElementById('tv-comment');
+    var comment = commentEl ? commentEl.value.trim() : '';
+    pendingAction = { taskId: taskId, outcome: outcome, comment: comment };
+    document.getElementById('action-confirm-text').textContent =
+        'Вы уверены, что хотите выполнить действие «' + outcome + '»? Задача будет завершена и токен уйдёт дальше по маршруту.';
+    document.getElementById('action-confirm-modal').classList.add('open');
+}
 </script>
 
 </body>
