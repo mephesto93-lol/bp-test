@@ -309,6 +309,7 @@
                             <th class="p-3">Дата обн.</th>
                             <th class="p-3">Статус</th>
                             <th class="p-3">Автозапуск</th>
+                            <th class="p-3">SLA</th>
                             <th class="p-3"></th>
                         </tr>
                     </thead>
@@ -782,6 +783,9 @@
             const typeBadge = isChain
                 ? `<span style="font-size:0.6rem;padding:1px 5px;border-radius:9999px;background:#ede9fe;color:#6d28d9;margin-left:4px;font-weight:600;">🔗 Цепочка</span>`
                 : '';
+            const slaMin = (typeof schemaCriticalPathMinutes === 'function' && typeof TEMPLATE_SCHEMAS !== 'undefined')
+                ? schemaCriticalPathMinutes(TEMPLATE_SCHEMAS[t.id]) : 0;
+            const slaLbl = (slaMin > 0 && typeof fmtMinutes === 'function') ? fmtMinutes(slaMin) : '—';
             return `
             <tr onclick="selectTemplate(${t.id})" class="border-b cursor-pointer hover:bg-blue-50 transition-colors ${selectedId === t.id ? 'selected' : ''}">
                 <td class="p-3 text-gray-400">${t.id}</td>
@@ -795,6 +799,7 @@
                     </span>
                 </td>
                 <td class="p-3 text-xs">${t.auto}</td>
+                <td class="p-3 text-xs font-medium" style="color:#6d28d9;white-space:nowrap;">⏱ ${slaLbl}</td>
                 <td class="p-3"><span style="cursor:pointer;color:#9ca3af;font-size:1rem;" onmouseover="this.style.color='#6d28d9'" onmouseout="this.style.color='#9ca3af'" onclick="event.stopPropagation();openTemplateView(${t.id})" title="Просмотреть схему">🔍</span></td>
             </tr>`;
         }).join('');
@@ -1361,6 +1366,8 @@
                     <button class="ctbar-btn" id="ctbar-ungroup-btn" onclick="ctorUngroupSelected()" title="Разгруппировать" disabled style="font-size:14px;">⬢</button>
                     <div class="ctbar-sep"></div>
                     <button class="ctbar-btn" id="ctbar-right-btn" onclick="toggleRightPanel()" title="Скрыть/показать свойства">▶</button>
+                    <div class="ctbar-sep"></div>
+                    <span id="ctbar-sla-lbl" title="Суммарный SLA критического пути" style="font-size:11px;color:#6b7280;padding:0 4px;white-space:nowrap;">⏱ —</span>
                 </div>
                 <div class="canvas-inner" id="canvas-inner">
                     <svg id="conn-svg">
@@ -1682,6 +1689,22 @@ function ctorRenderAll() {
     ctorRenderProps();
     ctorUpdatePublish();
     ctorUpdateGroupBtn();
+    ctorUpdateSlaLabel();
+}
+
+function ctorUpdateSlaLabel() {
+    const el = document.getElementById('ctbar-sla-lbl');
+    if (!el) return;
+    const cp = ctorCriticalPath();
+    if (cp.minutes > 0) {
+        el.textContent = '⏱ ' + fmtMinutes(cp.minutes);
+        el.style.color = '#6d28d9';
+        el.style.fontWeight = '600';
+    } else {
+        el.textContent = '⏱ —';
+        el.style.color = '#9ca3af';
+        el.style.fontWeight = '400';
+    }
 }
 
 function ctorRenderNodes() {
@@ -3230,6 +3253,48 @@ const TEMPLATE_SCHEMAS = {
     },
 };
 
+// ---- Critical path for a pre-built schema ----
+function schemaCriticalPathMinutes(schema) {
+    if (!schema) return 0;
+    const nodes = schema.nodes, conns = schema.conns;
+    const nodeMin = function(n) {
+        if (n.type === 'task-approval') {
+            const v = +n.props.slaValue || 0;
+            if (n.props.slaUnit === 'минут') return v;
+            if (n.props.slaUnit === 'часов') return v * 60;
+            return v * 1440;
+        }
+        if (n.type === 'task-script') return +(n.props.timeout) || 0;
+        if (n.type === 'timer') return (+n.props.waitDays || 0) * 1440;
+        return 0;
+    };
+    const start = nodes.find(n => n.type === 'start');
+    if (!start) return 0;
+    const inDeg = {};
+    nodes.forEach(n => inDeg[n.id] = 0);
+    conns.forEach(c => { inDeg[c.to] = (inDeg[c.to] || 0) + 1; });
+    const queue = nodes.filter(n => inDeg[n.id] === 0).map(n => n.id);
+    const topo = [];
+    while (queue.length) {
+        const id = queue.shift(); topo.push(id);
+        conns.filter(c => c.from === id).forEach(c => { if (--inDeg[c.to] === 0) queue.push(c.to); });
+    }
+    const dist = {};
+    nodes.forEach(n => dist[n.id] = -1);
+    dist[start.id] = 0;
+    for (const id of topo) {
+        if (dist[id] < 0) continue;
+        const w = nodeMin(nodes.find(n => n.id === id));
+        conns.filter(c => c.from === id).forEach(c => {
+            const nd = dist[id] + w;
+            if (nd > dist[c.to]) dist[c.to] = nd;
+        });
+    }
+    const ends = nodes.filter(n => n.type === 'end');
+    if (!ends.length) return 0;
+    return Math.max(0, ...ends.map(e => dist[e.id]));
+}
+
 // ---- Open constructor for a template (view / edit-meta mode) ----
 function openConstructorView(templateId, mode) {
     const schema = TEMPLATE_SCHEMAS[templateId];
@@ -3846,11 +3911,28 @@ function openInstanceDrawer(templateId, instanceId) {
         `<div class="td-meta-item">Старт: <b>${inst.start}</b></div>` +
         `<div class="td-meta-item">Дедлайн: <b style="color:${isOverdue?'#dc2626':'inherit'}">${inst.deadline}</b></div>` +
         `<div class="td-meta-item">Статус: <span style="padding:0.15rem 0.5rem;border-radius:9999px;font-size:0.7rem;font-weight:600;${SC[inst.status]||SC['Активен']}">${inst.status}</span></div>`;
+    // Days chip
+    var daysChip = '';
+    if (inst.status !== 'Завершен' && inst.status !== 'Прерван') {
+        var dlISO2 = ddmmyyToISO(inst.deadline);
+        if (dlISO2) {
+            var todayMs = new Date().setHours(0,0,0,0);
+            var dlMs    = new Date(dlISO2).setHours(0,0,0,0);
+            var diffDays = Math.round((dlMs - todayMs) / 86400000);
+            if (diffDays > 0) {
+                daysChip = `<span style="font-size:0.68rem;font-weight:600;padding:0.15rem 0.6rem;border-radius:9999px;background:#dcfce7;color:#15803d;white-space:nowrap;">осталось ${diffDays} дн.</span>`;
+            } else if (diffDays === 0) {
+                daysChip = `<span style="font-size:0.68rem;font-weight:600;padding:0.15rem 0.6rem;border-radius:9999px;background:#fef9c3;color:#854d0e;white-space:nowrap;">срок сегодня</span>`;
+            } else {
+                daysChip = `<span style="font-size:0.68rem;font-weight:600;padding:0.15rem 0.6rem;border-radius:9999px;background:#fee2e2;color:#dc2626;white-space:nowrap;">просрочен на ${Math.abs(diffDays)} дн.</span>`;
+            }
+        }
+    }
     document.getElementById('idraw-progress').innerHTML =
         tokenBannerHTML +
         `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">` +
             `<span style="font-size:0.72rem;font-weight:600;color:#374151;">Прогресс выполнения</span>` +
-            `<span style="font-size:0.875rem;font-weight:700;color:${isOverdue?'#dc2626':'#6d28d9'};">${pBar}%</span>` +
+            `<div style="display:flex;align-items:center;gap:0.5rem;">${daysChip}<span style="font-size:0.875rem;font-weight:700;color:${isOverdue?'#dc2626':'#6d28d9'};">${pBar}%</span></div>` +
         `</div>` +
         `<div style="width:100%;background:#e5e7eb;border-radius:9999px;height:10px;">` +
             `<div style="width:${pBar}%;background:${isOverdue?'#ef4444':'#6d28d9'};height:10px;border-radius:9999px;transition:width 0.4s;"></div>` +
@@ -3908,7 +3990,7 @@ function instBuildMetaPanel(templateId, instanceId) {
             '<div><label style="font-size:0.68rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Название</label>' +
             '<input id="idraw-inp-label" type="text" value="' + escHtml(label) + '" style="width:100%;box-sizing:border-box;font-size:0.8rem;border:1px solid #d1d5db;border-radius:0.35rem;padding:0.3rem 0.5rem;" /></div>' +
             '<div><label style="font-size:0.68rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Дедлайн</label>' +
-            '<input id="idraw-inp-dl" type="date" value="' + dlISO + '" min="' + today + '" style="width:100%;box-sizing:border-box;font-size:0.8rem;border:1px solid #d1d5db;border-radius:0.35rem;padding:0.3rem 0.5rem;" /></div>' +
+            '<input id="idraw-inp-dl" type="date" value="' + dlISO + '" readonly disabled style="width:100%;box-sizing:border-box;font-size:0.8rem;border:1px solid #e5e7eb;border-radius:0.35rem;padding:0.3rem 0.5rem;background:#f9fafb;color:#9ca3af;cursor:not-allowed;" /></div>' +
         '</div>' +
         '<div><label style="font-size:0.68rem;color:#6b7280;display:block;margin-bottom:0.2rem;">Описание</label>' +
         '<textarea id="idraw-inp-desc" style="width:100%;box-sizing:border-box;font-size:0.78rem;border:1px solid #d1d5db;border-radius:0.35rem;padding:0.3rem 0.5rem;resize:vertical;min-height:44px;font-family:inherit;">' + escHtml(desc) + '</textarea></div>' +
