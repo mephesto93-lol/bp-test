@@ -320,16 +320,12 @@
             <section class="bg-white rounded-lg shadow-sm border">
                 <div class="p-4 border-b bg-gray-50" style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
                     <h2 class="font-bold text-gray-700">Экземпляры: <span id="selected-process-name" class="text-purple-600 font-normal">Выберите шаблон</span></h2>
-                    <div id="inst-toolbar" style="display:flex;align-items:center;gap:0.4rem;opacity:0;pointer-events:none;transition:opacity 0.15s;">
-                        <button id="inst-btn-progress" onclick="instOpenProgress()" title="Прогресс экземпляра"
+                    <div id="inst-toolbar" style="display:flex;align-items:center;gap:0.4rem;">
+                        <button id="inst-btn-progress" onclick="instOpenProgress()" title="Прогресс экземпляра" disabled
                             style="display:flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;font-size:0.75rem;cursor:pointer;color:#374151;font-weight:500;">
                             &#9783; Прогресс
                         </button>
-                        <button id="inst-btn-schema" onclick="instOpenSchema()" title="Схема процесса"
-                            style="display:flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;font-size:0.75rem;cursor:pointer;color:#374151;font-weight:500;">
-                            &#128269; Схема
-                        </button>
-                        <button id="inst-btn-stop" onclick="instTerminate()" title="Прервать экземпляр"
+                        <button id="inst-btn-stop" onclick="instTerminate()" title="Прервать экземпляр" disabled
                             style="display:flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border:1px solid #fca5a5;border-radius:6px;background:#fff;font-size:0.75rem;cursor:pointer;color:#dc2626;font-weight:500;">
                             &#x2715; Прервать
                         </button>
@@ -346,10 +342,11 @@
                             <th class="p-3">Крайний срок</th>
                             <th class="p-3">Просрочено</th>
                             <th class="p-3">Дата заверш.</th>
+                            <th class="p-3"></th>
                         </tr>
                     </thead>
                     <tbody id="instance-body">
-                        <tr><td colspan="8" class="p-10 text-center text-gray-400">Выберите шаблон процесса в таблице выше для просмотра экземпляров</td></tr>
+                        <tr><td colspan="9" class="p-10 text-center text-gray-400">Выберите шаблон процесса в таблице выше для просмотра экземпляров</td></tr>
                     </tbody>
                 </table>
             </section>
@@ -564,8 +561,6 @@
             <div id="idraw-progress" style="margin-bottom:1.25rem;"></div>
             <div class="idraw-section">Журнал выполнения задач</div>
             <div id="idraw-stepper"></div>
-            <div class="idraw-section" style="margin-top:1.25rem;">Схема процесса (шаги)</div>
-            <div id="idraw-schema-steps"></div>
         </div>
     </div>
 </div>
@@ -809,8 +804,10 @@
         selectedId = id;
         selectedInstId = null;
         selectedInstTemplateId = null;
-        var tb = document.getElementById('inst-toolbar');
-        if (tb) { tb.style.opacity = '0'; tb.style.pointerEvents = 'none'; }
+        var pb = document.getElementById('inst-btn-progress');
+        var sb = document.getElementById('inst-btn-stop');
+        if (pb) pb.disabled = true;
+        if (sb) sb.disabled = true;
         const t = templates.find(item => item.id === id);
         document.getElementById('selected-process-name').innerText = t.name;
         renderTemplates();
@@ -842,6 +839,7 @@
                 + '<td class="p-3 text-xs text-red-600">' + i.deadline + '</td>'
                 + '<td class="p-3 text-center text-red-600 font-bold">' + (i.overdue > 0 ? i.overdue : '') + '</td>'
                 + '<td class="p-3 text-gray-400">' + i.end + '</td>'
+                + '<td class="p-3"><span style="cursor:pointer;color:#9ca3af;font-size:1rem;" onmouseover="this.style.color=\'#6d28d9\'" onmouseout="this.style.color=\'#9ca3af\'" onclick="event.stopPropagation();openInstanceView(' + templateId + ')" title="Просмотреть схему">🔍</span></td>'
                 + '</tr>';
         }).join('');
     }
@@ -856,22 +854,20 @@
         inst.status = 'Прерван';
         inst.end = today;
         renderInstances(templateId);
-        var stopBtn = document.getElementById('inst-btn-stop');
-        if (stopBtn) stopBtn.style.display = 'none';
+        var sb = document.getElementById('inst-btn-stop');
+        if (sb) sb.disabled = true;
     }
 
     function selectInstance(templateId, instanceId) {
         selectedInstId = instanceId;
         selectedInstTemplateId = templateId;
         renderInstances(templateId);
-        // Show toolbar
-        var tb = document.getElementById('inst-toolbar');
-        if (tb) { tb.style.opacity = '1'; tb.style.pointerEvents = 'auto'; }
-        // Show/hide Прервать based on status
         var insts = instancesData[templateId] || [];
         var inst = insts.find(function(i) { return i.id === instanceId; });
-        var stopBtn = document.getElementById('inst-btn-stop');
-        if (stopBtn) stopBtn.style.display = (inst && (inst.status === 'Активен' || inst.status === 'Просрочен')) ? 'flex' : 'none';
+        var pb = document.getElementById('inst-btn-progress');
+        var sb = document.getElementById('inst-btn-stop');
+        if (pb) pb.disabled = false;
+        if (sb) sb.disabled = !(inst && (inst.status === 'Активен' || inst.status === 'Просрочен'));
     }
 
     function instOpenProgress() {
@@ -933,7 +929,7 @@
         closeModal();
         document.getElementById('selected-process-name').innerText = 'Выберите шаблон';
         document.getElementById('instance-body').innerHTML =
-            '<tr><td colspan="8" class="p-10 text-center text-gray-400">Выберите шаблон процесса в таблице выше для просмотра экземпляров</td></tr>';
+            '<tr><td colspan="9" class="p-10 text-center text-gray-400">Выберите шаблон процесса в таблице выше для просмотра экземпляров</td></tr>';
         renderTemplates();
         updateButtons();
     }
@@ -3836,25 +3832,6 @@ function openInstanceDrawer(templateId, instanceId) {
         tokenBannerHTML = '<div style="padding:0.5rem 0.75rem;border-radius:8px;background:#dcfce7;border:1px solid #86efac;margin-bottom:0.9rem;font-size:0.72rem;font-weight:700;color:#15803d;">&#9989; \u042d\u043a\u0437\u0435\u043c\u043f\u043b\u044f\u0440 \u0437\u0430\u0432\u0435\u0440\u0448\u0451\u043d</div>';
     }
 
-    // --- Schema stepper ---
-    var schemaStepsHTML = '';
-    if (schema) {
-        var ordered = topoOrderSchema(schema);
-        var total = ordered.length;
-        var doneCount = inst.progress >= 100 ? total : Math.max(0, Math.floor(inst.progress / 100 * (total - 1)));
-        var chips = '';
-        for (var ni = 0; ni < ordered.length; ni++) {
-            var node = ordered[ni];
-            var state = inst.progress >= 100 ? 'done' : ni < doneCount ? 'done' : ni === doneCount ? 'current' : 'pending';
-            var bg = state === 'done' ? '#22c55e' : state === 'current' ? '#6d28d9' : '#e5e7eb';
-            var clr = state === 'pending' ? '#9ca3af' : '#fff';
-            var ico = state === 'done' ? '&#10003; ' : state === 'current' ? '&#9679; ' : '';
-            chips += '<div style="display:inline-flex;align-items:center;gap:0.2rem;padding:0.2rem 0.55rem;border-radius:9999px;background:' + bg + ';color:' + clr + ';font-size:0.65rem;font-weight:' + (state === 'current' ? 700 : 500) + ';">' + ico + escHtml(node.label) + '</div>';
-        }
-        schemaStepsHTML = '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.25rem;">' + chips + '</div>';
-    } else {
-        schemaStepsHTML = '<div style="font-size:0.78rem;color:#9ca3af;">\u0421\u0445\u0435\u043c\u0430 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u0430.</div>';
-    }
 
     instDrawerCtx = { templateId: templateId, instanceId: instanceId };
     var editBtn = document.getElementById('idraw-edit-btn');
@@ -3879,7 +3856,6 @@ function openInstanceDrawer(templateId, instanceId) {
             `<div style="width:${pBar}%;background:${isOverdue?'#ef4444':'#6d28d9'};height:10px;border-radius:9999px;transition:width 0.4s;"></div>` +
         `</div>`;
     document.getElementById('idraw-stepper').innerHTML = auditHTML;
-    document.getElementById('idraw-schema-steps').innerHTML = schemaStepsHTML;
     document.getElementById('instance-modal').classList.add('open');
 }
 
@@ -3944,7 +3920,6 @@ function instBuildAuditHTML(templateId, instanceId) {
     var schema  = TEMPLATE_SCHEMAS[templateId];
     var users   = ['Иванов И.','Петров А.','Сидоров К.','Козлов В.','Смирнов Д.','Фёдорова Т.','Алексеев М.','Новиков Р.','Кузнецова А.','Юрид. отдел'];
     var comments = (instanceTaskComments[instanceId] || {});
-    var pdates   = (instanceTaskPlannedDates[instanceId] || {});
     var em = instEditMode;
 
     if (!logs.length && !schema) return '<div style="font-size:0.8rem;color:#9ca3af;padding:0.5rem 0;">Журнал пуст.</div>';
@@ -3958,8 +3933,7 @@ function instBuildAuditHTML(templateId, instanceId) {
     html += '<th style="' + ths + '">Старт</th><th style="' + ths + '">SLA</th>';
     html += '<th style="' + ths + '">Завершено</th><th style="' + ths + '">В срок</th>';
     html += '<th style="' + ths + '">Итог</th>';
-    html += '<th style="' + ths + '">' + (em ? 'Комментарий' : '') + '</th>';
-    if (em) html += '<th style="' + ths + '">Пл.дата</th>';
+    html += '<th style="' + ths + '">Комментарий</th>';
     html += '</tr></thead><tbody>';
 
     logs.forEach(function(l) {
@@ -3990,11 +3964,6 @@ function instBuildAuditHTML(templateId, instanceId) {
             ? '<textarea id="idraw-cmt-' + key + '" style="font-size:0.7rem;border:1px solid #d1d5db;border-radius:0.3rem;padding:0.2rem 0.3rem;width:100%;min-width:80px;max-width:140px;height:36px;resize:vertical;font-family:inherit;">' + escHtml(cmt) + '</textarea>'
             : (cmt ? '<span style="color:#6b7280;font-style:italic;">' + escHtml(cmt) + '</span>' : '');
 
-        var pdtCell = '';
-        if (em && !isDone) {
-            pdtCell = '<input type="date" id="idraw-pdt-' + key + '" value="' + (pdates[key] || '') + '" style="font-size:0.7rem;border:1px solid #d1d5db;border-radius:0.3rem;padding:0.2rem 0.3rem;" />';
-        }
-
         html += '<tr style="border-bottom:1px solid #f3f4f6;' + (isCurrent ? 'background:#fafafa;' : '') + '">';
         html += '<td style="' + cs + '">' + badge + ' <span style="font-size:0.75rem;">' + escHtml(l.step) + '</span></td>';
         html += '<td style="' + cs + '">' + asgnCell + '</td>';
@@ -4004,12 +3973,11 @@ function instBuildAuditHTML(templateId, instanceId) {
         html += '<td style="' + cs + 'text-align:center;">' + onTime + '</td>';
         html += '<td style="' + cs + 'color:#6b7280;">' + escHtml(l.outcome || '—') + '</td>';
         html += '<td style="' + cs + '">' + cmtCell + '</td>';
-        if (em) html += '<td style="' + cs + '">' + pdtCell + '</td>';
         html += '</tr>';
     });
 
-    // Future schema nodes (edit mode only)
-    if (em && schema) {
+    // Future schema nodes — always visible
+    if (schema) {
         var knownSteps = {};
         logs.forEach(function(l) { knownSteps[l.step] = true; });
         schema.nodes.forEach(function(node) {
@@ -4018,16 +3986,20 @@ function instBuildAuditHTML(templateId, instanceId) {
             var key = 'node-' + node.id;
             var curAsgn = (instancePlannedAssignees[instanceId] || {})[node.id] || node.props.assignee || '';
             var cmt = comments[key] || '';
-            var opts = ['— не назначен —'].concat(users).map(function(u) {
-                return '<option' + (curAsgn === u ? ' selected' : '') + '>' + escHtml(u) + '</option>';
-            }).join('');
+            var asgnFuture = em
+                ? '<select id="idraw-asgn-' + key + '" style="font-size:0.7rem;border:1px solid #c4b5fd;border-radius:0.3rem;padding:0.2rem 0.3rem;max-width:110px;">' +
+                  ['— не назначен —'].concat(users).map(function(u) { return '<option' + (curAsgn === u ? ' selected' : '') + '>' + escHtml(u) + '</option>'; }).join('') +
+                  '</select>'
+                : '<span style="color:#9ca3af;">' + escHtml(curAsgn || '—') + '</span>';
+            var cmtFuture = em
+                ? '<textarea id="idraw-cmt-' + key + '" style="font-size:0.7rem;border:1px solid #d1d5db;border-radius:0.3rem;padding:0.2rem 0.3rem;width:100%;min-width:80px;max-width:140px;height:36px;resize:vertical;font-family:inherit;">' + escHtml(cmt) + '</textarea>'
+                : (cmt ? '<span style="color:#6b7280;font-style:italic;">' + escHtml(cmt) + '</span>' : '');
             html += '<tr style="border-bottom:1px solid #f3f4f6;opacity:0.75;">';
             html += '<td style="' + cs + '"><span style="font-size:0.6rem;background:#f3f4f6;color:#6b7280;padding:1px 5px;border-radius:9999px;white-space:nowrap;">◌ Будущий</span> <span style="font-size:0.75rem;">' + escHtml(node.label) + '</span></td>';
-            html += '<td style="' + cs + '"><select id="idraw-asgn-' + key + '" style="font-size:0.7rem;border:1px solid #c4b5fd;border-radius:0.3rem;padding:0.2rem 0.3rem;max-width:110px;">' + opts + '</select></td>';
-            html += '<td style="' + cs + 'color:#9ca3af;">—</td><td style="' + cs + 'color:#9ca3af;">' + (node.props.sla || '—') + '</td>';
+            html += '<td style="' + cs + '">' + asgnFuture + '</td>';
+            html += '<td style="' + cs + 'color:#9ca3af;">—</td><td style="' + cs + 'color:#9ca3af;">' + escHtml(node.props.sla || '—') + '</td>';
             html += '<td style="' + cs + 'color:#9ca3af;">—</td><td style="' + cs + 'color:#9ca3af;">—</td><td style="' + cs + 'color:#9ca3af;">—</td>';
-            html += '<td style="' + cs + '"><textarea id="idraw-cmt-' + key + '" style="font-size:0.7rem;border:1px solid #d1d5db;border-radius:0.3rem;padding:0.2rem 0.3rem;width:100%;min-width:80px;max-width:140px;height:36px;resize:vertical;font-family:inherit;">' + escHtml(cmt) + '</textarea></td>';
-            html += '<td style="' + cs + '"><input type="date" id="idraw-pdt-' + key + '" value="' + (pdates[key] || '') + '" style="font-size:0.7rem;border:1px solid #d1d5db;border-radius:0.3rem;padding:0.2rem 0.3rem;" /></td>';
+            html += '<td style="' + cs + '">' + cmtFuture + '</td>';
             html += '</tr>';
         });
     }
@@ -4069,7 +4041,6 @@ function instSaveEdit(templateId, instanceId) {
     var logs   = instanceTaskLogs[instanceId] || [];
     var schema = TEMPLATE_SCHEMAS[templateId];
     if (!instanceTaskComments[instanceId])    instanceTaskComments[instanceId] = {};
-    if (!instanceTaskPlannedDates[instanceId]) instanceTaskPlannedDates[instanceId] = {};
     if (!instancePlannedAssignees[instanceId]) instancePlannedAssignees[instanceId] = {};
 
     logs.forEach(function(l) {
@@ -4081,10 +4052,6 @@ function instSaveEdit(templateId, instanceId) {
         }
         var c = document.getElementById('idraw-cmt-' + key);
         if (c) instanceTaskComments[instanceId][key] = c.value.trim();
-        if (!isDone) {
-            var p = document.getElementById('idraw-pdt-' + key);
-            if (p && p.value) instanceTaskPlannedDates[instanceId][key] = p.value;
-        }
     });
 
     if (schema) {
@@ -4100,8 +4067,6 @@ function instSaveEdit(templateId, instanceId) {
             }
             var c = document.getElementById('idraw-cmt-' + key);
             if (c) instanceTaskComments[instanceId][key] = c.value.trim();
-            var p = document.getElementById('idraw-pdt-' + key);
-            if (p && p.value) instanceTaskPlannedDates[instanceId][key] = p.value;
         });
     }
 
@@ -4122,8 +4087,6 @@ const instanceNodeOutcomes = {};
 var instancePlannedAssignees = {};
 // Комментарии к задачам в журнале: { instanceId: { key: comment } }
 var instanceTaskComments = {};
-// Плановые даты для задач: { instanceId: { key: ISO date } }
-var instanceTaskPlannedDates = {};
 // Флаг режима редактирования в drawer экземпляра
 var instEditMode = false;
 
