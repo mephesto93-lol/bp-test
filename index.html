@@ -1579,7 +1579,7 @@ function ctorInitProcSettings() {
         calendars: ['Производственный календарь РФ'],
         holidays: true,
         overlap: 'Блокировать новый старт',
-        triggerType: 'Ручной запуск',
+        triggerType: 'Разовый запуск',
         startTime: '09:00',
         isRepeating: false,
         repeatMode: 'weekly',
@@ -1648,7 +1648,7 @@ function ctorAddNode(type, x, y) {
     let props;
     switch(type) {
         case 'start':
-            props = { description:'', triggerType:'Ручной запуск', schedule:'' };
+            props = { description:'', triggerType:'Разовый запуск', schedule:'' };
             break;
         case 'end':
             props = { description:'' };
@@ -1697,19 +1697,56 @@ function ctorTopoOrder() {
 
 function ctorGetIssues() {
     const issues = [];
+    // A: more than one Start
+    if (ctorNodes.filter(n => n.type === 'start').length > 1) issues.push('Схема должна иметь только один узел «Старт»');
     if (!ctorNodes.some(n => n.type === 'start')) issues.push('Добавьте узел «Старт»');
     if (!ctorNodes.some(n => n.type === 'end'))   issues.push('Процесс должен иметь узел «Конец»');
     for (const n of ctorNodes) {
         if (n.type !== 'end'   && !ctorConns.some(c => c.from === n.id)) { issues.push(`«${n.label}»: нет исходящей связи`); break; }
         if (n.type !== 'start' && !ctorConns.some(c => c.to   === n.id)) { issues.push(`«${n.label}»: нет входящей связи`); break; }
     }
+    // B: incoming connection into Start
+    const startNode = ctorNodes.find(n => n.type === 'start');
+    if (startNode && ctorConns.some(c => c.to === startNode.id)) issues.push('Узел «Старт» не может иметь входящих связей');
+    // C: outgoing connection from End
+    const endNode = ctorNodes.find(n => n.type === 'end');
+    if (endNode && ctorConns.some(c => c.from === endNode.id)) issues.push('Узел «Конец» не может иметь исходящих связей');
+    // D: XOR with no default branch
+    for (const n of ctorNodes.filter(n => n.type === 'gw-xor')) {
+        const outConns = ctorConns.filter(c => c.from === n.id);
+        if (outConns.length < 2) { issues.push(`Шлюз XOR «${n.label}»: добавьте минимум две исходящие ветки`); break; }
+        if (!outConns.some(c => c.flowType === 'default')) { issues.push(`Шлюз XOR «${n.label}»: добавьте ветку «По умолчанию»`); break; }
+    }
+    // E: Timer with more than one input or output
+    for (const n of ctorNodes.filter(n => n.type === 'timer')) {
+        if (ctorConns.filter(c => c.to === n.id).length > 1)   { issues.push(`Таймер «${n.label}»: допускается только один входящий поток`); break; }
+        if (ctorConns.filter(c => c.from === n.id).length > 1) { issues.push(`Таймер «${n.label}»: допускается только один исходящий поток`); break; }
+    }
     const andSplits = ctorNodes.filter(n => n.type === 'gw-and' && ctorConns.filter(c => c.from === n.id).length >= 2).length;
     const andJoins  = ctorNodes.filter(n => n.type === 'gw-and' && ctorConns.filter(c => c.to   === n.id).length >= 2).length;
-    if (andSplits > andJoins) issues.push(`Параллельные ветви AND нужно свести — добавьте AND-шлюз слияния`);
+    if (andSplits > andJoins) issues.push('Параллельные ветви AND нужно свести — добавьте AND-шлюз слияния');
+    if (andJoins > andSplits) issues.push('AND-шлюз слияния без AND-шлюза разделения — добавьте AND-Fork или удалите лишний Join');
     const taskTypes = ['task-approval', 'task-script'];
-    const hasTasks = ctorNodes.some(n => taskTypes.includes(n.type));
+    // For each XOR — check if there is a task on any path leading to it (BFS backwards)
     for (const n of ctorNodes.filter(n => n.type === 'gw-xor')) {
-        if (!hasTasks) { issues.push(`Шлюз XOR «${n.label}»: нет задач для маршрутизации — добавьте задачу-согласование или алгоритм`); break; }
+        const visited = new Set();
+        const queue = [n.id];
+        let hasTaskBefore = false;
+        while (queue.length && !hasTaskBefore) {
+            const cur = queue.shift();
+            if (visited.has(cur)) continue;
+            visited.add(cur);
+            for (const c of ctorConns.filter(c => c.to === cur)) {
+                const pred = ctorNodes.find(nd => nd.id === c.from);
+                if (!pred) continue;
+                if (taskTypes.includes(pred.type)) { hasTaskBefore = true; break; }
+                queue.push(pred.id);
+            }
+        }
+        if (!hasTaskBefore) {
+            issues.push(`Шлюз XOR «${n.label}»: нет задачи на пути от Старта — добавьте задачу-согласование или алгоритм перед шлюзом`);
+            break;
+        }
     }
     // Date validations
     const s = ctorProcSettings;
@@ -1752,12 +1789,30 @@ function ctorUpdateSlaLabel() {
 function ctorRenderNodes() {
     const inner = document.getElementById('canvas-inner');
     inner.querySelectorAll('.canvas-node').forEach(el => el.remove());
+    const taskTypes_ = ['task-approval', 'task-script'];
+    function xorHasTaskBefore(xorId) {
+        const visited = new Set();
+        const queue = [xorId];
+        while (queue.length) {
+            const cur = queue.shift();
+            if (visited.has(cur)) continue;
+            visited.add(cur);
+            for (const c of ctorConns.filter(c => c.to === cur)) {
+                const pred = ctorNodes.find(nd => nd.id === c.from);
+                if (!pred) continue;
+                if (taskTypes_.includes(pred.type)) return true;
+                queue.push(pred.id);
+            }
+        }
+        return false;
+    }
     ctorNodes.forEach(node => {
         const cfg = NODE_CFG[node.type];
         const el = document.createElement('div');
         el.className = 'canvas-node' + (ctorSelId === node.id ? ' selected' : '') + (ctorSelIds.has(node.id) ? ' multi-selected' : '');
         el.dataset.nid = node.id;
         el.style.cssText = `left:${node.x}px;top:${node.y}px;width:${cfg.w}px;height:${cfg.h}px;`;
+        const xorError = node.type === 'gw-xor' && !xorHasTaskBefore(node.id);
 
         let inner_html = '';
         if (cfg.shape === 'circle') {
@@ -1772,8 +1827,12 @@ function ctorRenderNodes() {
                 <span class="node-label" style="color:${cfg.color};font-size:0.68rem;padding:0 8px;word-break:break-word;">${node.label}</span>
             </div>`;
         } else {
-            inner_html = `<div class="node-diamond-wrap" style="width:${cfg.w}px;height:${cfg.h}px;">
-                <div class="node-shape-diamond" style="width:${cfg.w-10}px;height:${cfg.h-10}px;background:${cfg.bg};border:1.5px solid ${cfg.border};border-radius:3px;"></div>
+            const diamondBorder = xorError ? '2px solid #dc2626' : `1.5px solid ${cfg.border}`;
+            const diamondBg = xorError ? '#fef2f2' : cfg.bg;
+            const errorIcon = xorError ? `<span style="position:absolute;top:-6px;right:-6px;font-size:11px;line-height:1;" title="Нет задач для маршрутизации">⚠️</span>` : '';
+            inner_html = `<div class="node-diamond-wrap" style="width:${cfg.w}px;height:${cfg.h}px;position:relative;">
+                ${errorIcon}
+                <div class="node-shape-diamond" style="width:${cfg.w-10}px;height:${cfg.h-10}px;background:${diamondBg};border:${diamondBorder};border-radius:3px;"></div>
                 <div class="node-diamond-label">
                     <span style="font-size:13px;color:${cfg.color};font-weight:800;">${cfg.icon}</span>
                     <span style="font-size:0.55rem;color:${cfg.color};font-weight:600;">${node.label}</span>
@@ -1910,7 +1969,7 @@ function buildNodePropsHTML(node) {
 
 function buildStartProps(node) {
     const p = node.props;
-    const trig = ctorProcSettings.triggerType || 'Ручной запуск';
+    const trig = ctorProcSettings.triggerType || 'Разовый запуск';
     return `
 <div class="prop-group"><label class="prop-label">Описание</label>
     <textarea class="prop-textarea" placeholder="Зачем нужен этот шаг..." oninput="ctorUpdProp(${node.id},'description',this.value)">${escHtml(p.description)}</textarea></div>
@@ -2079,11 +2138,28 @@ ${onErrorHTML}`;
 
 function buildXorProps(node) {
     const outConns = ctorConns.filter(c => c.from === node.id);
-    const prevTasks = ctorNodes.filter(n => (n.type==='task-approval'||n.type==='task-script') && n.id !== node.id);
+    // Collect only tasks reachable on incoming paths to this XOR (BFS backwards)
+    const prevTasks = (function(xorId) {
+        const visited = new Set();
+        const queue = [xorId];
+        const found = [];
+        while (queue.length) {
+            const cur = queue.shift();
+            if (visited.has(cur)) continue;
+            visited.add(cur);
+            for (const c of ctorConns.filter(c => c.to === cur)) {
+                const pred = ctorNodes.find(nd => nd.id === c.from);
+                if (!pred) continue;
+                if (pred.type === 'task-approval' || pred.type === 'task-script') found.push(pred);
+                queue.push(pred.id);
+            }
+        }
+        return found;
+    })(node.id);
     const systemStatuses = ['Просрочена','Завершена','Запланирована','В работе','Отменена'];
     const hasDefault = outConns.some(c => c.flowType === 'default');
     const noSourceWarning = prevTasks.length === 0
-        ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:0.375rem;padding:0.5rem 0.6rem;margin-bottom:0.5rem;font-size:0.75rem;color:#92400e;">⚠ Нет задач для маршрутизации. Добавьте задачу-согласование или алгоритм перед шлюзом XOR.</div>`
+        ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:0.375rem;padding:0.5rem 0.6rem;margin-bottom:0.5rem;font-size:0.75rem;color:#92400e;">⚠ Нет задачи на пути от Старта. Добавьте задачу-согласование или алгоритм перед шлюзом XOR.</div>`
         : '';
 
     const connsHTML = outConns.length === 0
@@ -2707,7 +2783,7 @@ ${(()=>{
 <div class="sep"></div>
 <div class="prop-section-title">🚀 Запуск процесса</div>
 <div class="prop-group">
-    <label class="radio-row"><input type="radio" name="trig" ${(s.triggerType||'Ручной запуск')==='Ручной запуск'?'checked':''} onchange="ctorUpdTriggerType('Ручной запуск')" /> Ручной запуск</label>
+    <label class="radio-row"><input type="radio" name="trig" ${(s.triggerType||'Разовый запуск')==='Разовый запуск'?'checked':''} onchange="ctorUpdTriggerType('Разовый запуск')" /> Разовый запуск</label>
     <label class="radio-row"><input type="radio" name="trig" ${s.triggerType==='Каждые N дней'?'checked':''} onchange="ctorUpdTriggerType('Каждые N дней')" /> Повтор каждые N дней</label>
     <label class="radio-row"><input type="radio" name="trig" ${s.triggerType==='По расписанию'?'checked':''} onchange="ctorUpdTriggerType('По расписанию')" /> По расписанию (расширенный)</label>
     <div class="prop-note">${s.triggerType==='По расписанию' ? 'Гибкое расписание: еженедельно, ежемесячно, по дням недели.' : s.triggerType==='Каждые N дней' ? 'Процесс создаётся повторно через фиксированное число дней.' : 'Сотрудник запускает каждый экземпляр вручную.'}</div>
@@ -2773,22 +2849,7 @@ function ctorBuildLaunchHint(s) {
 }
 
 function buildManualLaunchDates(s) {
-    const today = new Date().toISOString().split('T')[0];
-    let html = `<div class="prop-group">
-    <label class="prop-label">Дата начала</label>
-    <div style="display:flex;gap:0.5rem;align-items:center;">
-        <input type="date" class="prop-input" min="${today}" value="${s.startDate}" onchange="ctorProcSettings.startDate=this.value;ctorRenderProcessProps()" style="flex:1;" />
-        <input type="time" class="prop-input" value="${s.startTime||'09:00'}" onchange="ctorProcSettings.startTime=this.value;ctorRenderProcessProps()" style="max-width:90px;" />
-    </div>
-    <div class="prop-note">Процесс станет доступен для запуска с указанной даты и времени</div>
-</div>
-<div class="prop-group"><label class="prop-label">Дата окончания</label>
-    <label class="radio-row"><input type="radio" name="et" value="date" ${s.endType==='date'?'checked':''} onchange="ctorUpdEndType('date')" /> По дате</label>`;
-    if (s.endType==='date') html += `<input type="date" class="prop-input" style="margin-left:1.1rem;margin-top:0.25rem;" min="${today}" value="${s.endDate}" onchange="ctorProcSettings.endDate=this.value;ctorRenderProcessProps()" />`;
-    html += `<label class="radio-row"><input type="radio" name="et" value="none" ${s.endType==='none'?'checked':''} onchange="ctorUpdEndType('none')" /> Нет конечной даты</label>
-</div>`;
-    html += ctorBuildLaunchHint(s);
-    return html;
+    return '<div class="prop-note" style="margin-top:0.3rem;">Экземпляр запускается вручную в любой момент — даты не настраиваются.</div>';
 }
 
 function buildSimpleCycleSection(s) {
@@ -3116,7 +3177,7 @@ document.getElementById('canvas-container').addEventListener('mousedown', e => {
 const TEMPLATE_SCHEMAS = {
     1: {
         nodes: [
-            { id:1, type:'start',         label:'Старт',                      x:100,  y:250, props:{ description:'Запускает процесс согласования договора. Инициируется вручную ответственным сотрудником.', triggerType:'Ручной запуск', schedule:'' }},
+            { id:1, type:'start',         label:'Старт',                      x:100,  y:250, props:{ description:'Запускает процесс согласования договора. Инициируется вручную ответственным сотрудником.', triggerType:'Разовый запуск', schedule:'' }},
             { id:2, type:'task-approval', label:'Проверка условий',            x:280,  y:228, props:{ instruction:'Проверьте условия договора с контрагентом. Обратите особое внимание на финансовые условия, штрафные санкции и сроки исполнения.', assigneeType:'Конкретный пользователь', assignee:'Иванов И.', slaValue:2, slaUnit:'дней', outcomes:['Согласовать','Отклонить'], taskTracker:true }},
             { id:3, type:'task-approval', label:'Юридическое согласование',    x:490,  y:228, props:{ instruction:'Проверьте договор на соответствие действующему законодательству и корпоративным политикам компании.', assigneeType:'Роль', assignee:'Юридический отдел', slaValue:3, slaUnit:'дней', outcomes:['Согласовано','Отклонено'], taskTracker:true }},
             { id:4, type:'gw-xor',        label:'Решение',                     x:710,  y:246, props:{}},
@@ -3136,7 +3197,7 @@ const TEMPLATE_SCHEMAS = {
     },
     2: {
         nodes: [
-            { id:1, type:'start',         label:'Старт',                    x:100,  y:250, props:{ description:'Инициирует процесс закупки оборудования.', triggerType:'Ручной запуск', schedule:'' }},
+            { id:1, type:'start',         label:'Старт',                    x:100,  y:250, props:{ description:'Инициирует процесс закупки оборудования.', triggerType:'Разовый запуск', schedule:'' }},
             { id:2, type:'task-approval', label:'Формирование заявки',      x:280,  y:228, props:{ instruction:'Подготовьте список оборудования для закупки согласно поданной заявке. Укажите количество, характеристики и приоритет.', assigneeType:'Конкретный пользователь', assignee:'Петров А.', slaValue:2, slaUnit:'дней', outcomes:['Заявка готова'], taskTracker:true }},
             { id:3, type:'task-script',   label:'Проверка бюджета',         x:490,  y:228, props:{ algorithm:'Проверка данных', timeout:10, params:{ checkScope:'Склад', ruleSet:'Финансовый контроль', failAction:'Уведомить владельца', strictMode:true }}},
             { id:4, type:'task-approval', label:'Утверждение закупки',      x:700,  y:228, props:{ instruction:'Утвердите или отклоните заявку на закупку. Проверьте соответствие бюджету и обоснованность потребности.', assigneeType:'Конкретный пользователь', assignee:'Иванов И.', slaValue:3, slaUnit:'дней', outcomes:['Утвердить','Отклонить'], taskTracker:true }},
@@ -3158,7 +3219,7 @@ const TEMPLATE_SCHEMAS = {
     },
     3: {
         nodes: [
-            { id:1, type:'start',         label:'Старт',                      x:100,  y:270, props:{ description:'Запускает процесс онбординга для нового сотрудника.', triggerType:'Ручной запуск', schedule:'' }},
+            { id:1, type:'start',         label:'Старт',                      x:100,  y:270, props:{ description:'Запускает процесс онбординга для нового сотрудника.', triggerType:'Разовый запуск', schedule:'' }},
             { id:2, type:'task-script',   label:'Создание аккаунтов',         x:280,  y:248, props:{ algorithm:'Интеграция 1С', timeout:20, params:{ endpoint:'Основная база', operation:'Записать данные', docType:'Договор' }}},
             { id:3, type:'gw-and',        label:'Параллельный старт',         x:490,  y:264, props:{}},
             { id:4, type:'task-approval', label:'Выдача оборудования',        x:660,  y:150, props:{ instruction:'Подготовьте и выдайте ноутбук, телефон и необходимые аксессуары согласно должностным нормам.', assigneeType:'Роль', assignee:'ИТ-отдел', slaValue:1, slaUnit:'дней', outcomes:['Выдано'], taskTracker:true }},
@@ -3180,7 +3241,7 @@ const TEMPLATE_SCHEMAS = {
     },
     4: {
         nodes: [
-            { id:1, type:'start',         label:'Старт',        x:100, y:250, props:{ description:'Запускает архивный тестовый процесс.', triggerType:'Ручной запуск', schedule:'' }},
+            { id:1, type:'start',         label:'Старт',        x:100, y:250, props:{ description:'Запускает архивный тестовый процесс.', triggerType:'Разовый запуск', schedule:'' }},
             { id:2, type:'task-approval', label:'Согласование', x:280, y:228, props:{ instruction:'Согласуйте документ согласно установленному регламенту.', assigneeType:'Конкретный пользователь', assignee:'Сидоров К.', slaValue:5, slaUnit:'дней', outcomes:['Согласовано','Отклонено'], taskTracker:true }},
             { id:3, type:'end',           label:'Конец',        x:480, y:250, props:{ description:'Процесс завершён.' }},
         ],
@@ -3256,7 +3317,7 @@ const TEMPLATE_SCHEMAS = {
     // ---- Вывод продукта на рынок (полный GTM-цикл) ----
     7: {
         nodes: [
-            { id:1,  type:'start',         label:'Старт',                        x:80,   y:280, props:{ description:'Запуск GTM-процесса. Инициируется продуктовым менеджером после одобрения роадмапа.', triggerType:'Ручной запуск', schedule:'' }},
+            { id:1,  type:'start',         label:'Старт',                        x:80,   y:280, props:{ description:'Запуск GTM-процесса. Инициируется продуктовым менеджером после одобрения роадмапа.', triggerType:'Разовый запуск', schedule:'' }},
             { id:2,  type:'task-script',   label:'Анализ рынка и планирование',  x:270,  y:258, props:{ algorithm:'Расчет базового прогноза', timeout:60, params:{ forecastPeriod:'90 дней', forecastModel:'ARIMA', dataSource:'Хранилище аналитики', historyMonths:12, excludeOutliers:true }}},
             { id:3,  type:'gw-and',        label:'Параллельная разработка',       x:490,  y:274, props:{}},
             { id:4,  type:'task-approval', label:'Разработка функционала',        x:680,  y:100, props:{ instruction:'Реализуйте запланированный функционал согласно ТЗ. Закройте связанные задачи в трекере и задокументируйте отклонения от требований.', assigneeType:'Роль', assignee:'Команда разработки', slaValue:14, slaUnit:'дней', outcomes:['Готово к QA'], taskTracker:true }},
