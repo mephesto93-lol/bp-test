@@ -286,6 +286,9 @@
                 <div class="p-4 border-b flex justify-between items-center bg-gray-50">
                     <h2 class="font-bold text-gray-700">Шаблоны бизнес процессов</h2>
                     <div class="flex gap-2">
+                        <button id="btn-launch" onclick="launchInstance()" disabled class="px-3 py-1 border rounded hover:bg-white text-green-700 flex items-center gap-2 text-sm">
+                            ▶ Запустить
+                        </button>
                         <button id="btn-copy" onclick="copyTemplate()" disabled class="px-3 py-1 border rounded hover:bg-white flex items-center gap-2 text-sm">
                             📋 Копировать
                         </button>
@@ -774,6 +777,9 @@
         document.getElementById('btn-copy').disabled = !t;
         document.getElementById('btn-archive').disabled = !(t && t.status === 'Активен');
         document.getElementById('btn-delete').disabled = !(t && t.status === 'Черновик');
+        const canLaunch = t && (t.status === 'Активен' || t.status === 'Черновик')
+            && !(instancesData[t.id] || []).some(i => i.status === 'Активен' || i.status === 'Просрочен');
+        document.getElementById('btn-launch').disabled = !canLaunch;
     }
 
     function renderTemplates() {
@@ -925,6 +931,37 @@
 
     function closeModal() {
         document.getElementById('delete-modal').classList.remove('open');
+    }
+
+    function launchInstance() {
+        if (!selectedId) return;
+        const t = templates.find(item => item.id === selectedId);
+        if (!t || (t.status !== 'Активен' && t.status !== 'Черновик')) return;
+        const hasActive = (instancesData[t.id] || []).some(i => i.status === 'Активен' || i.status === 'Просрочен');
+        if (hasActive) return;
+        const today = new Date();
+        const fmt = d => d.toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit', year:'2-digit'}).replace(/\./g, '.');
+        const slaMin = (typeof schemaCriticalPathMinutes === 'function' && typeof TEMPLATE_SCHEMAS !== 'undefined')
+            ? schemaCriticalPathMinutes(TEMPLATE_SCHEMAS[t.id]) : 0;
+        const deadlineDate = new Date(today.getTime() + (slaMin > 0 ? slaMin * 60000 : 7 * 86400000));
+        const insts = instancesData[t.id] || [];
+        const prefix = t.name.substring(0, 1).toUpperCase();
+        const newInstId = prefix + '-' + String(insts.length + 1).padStart(3, '0');
+        insts.push({
+            id: newInstId,
+            start: fmt(today),
+            user: 'Текущий пользователь',
+            status: 'Активен',
+            progress: 0,
+            deadline: fmt(deadlineDate),
+            overdue: 0,
+            end: '-'
+        });
+        instancesData[t.id] = insts;
+        t.count = insts.filter(i => i.status === 'Активен' || i.status === 'Просрочен').length;
+        renderInstances(t.id);
+        renderTemplates();
+        updateButtons();
     }
 
     function confirmDelete() {
