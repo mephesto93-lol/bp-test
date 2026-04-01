@@ -766,6 +766,7 @@
             { ver:'v2.1', date:'20.05.25', note:'Оптимизированы фильтры данных, исправлен тайм-аут', status:'Активна' },
           ]},
         { id: 7, name: 'Вывод продукта на рынок', owner: 'Волков Д.', count: 3, date: '01.05.2025', status: 'Активен',  auto: 'Выключен', type: 'БП' },
+        { id: 8, name: 'S&OP квартальный обзор (XOR демо)', owner: 'Громов А.', count: 0, date: '01.04.2026', status: 'Черновик', auto: 'Выключен', type: 'БП' },
     ];
 
     let selectedId = null;
@@ -1711,12 +1712,7 @@ function ctorGetIssues() {
     // C: outgoing connection from End
     const endNode = ctorNodes.find(n => n.type === 'end');
     if (endNode && ctorConns.some(c => c.from === endNode.id)) issues.push('Узел «Конец» не может иметь исходящих связей');
-    // D: XOR with no default branch
-    for (const n of ctorNodes.filter(n => n.type === 'gw-xor')) {
-        const outConns = ctorConns.filter(c => c.from === n.id);
-        if (outConns.length < 2) { issues.push(`Шлюз XOR «${n.label}»: добавьте минимум две исходящие ветки`); break; }
-        if (!outConns.some(c => c.flowType === 'default')) { issues.push(`Шлюз XOR «${n.label}»: добавьте ветку «По умолчанию»`); break; }
-    }
+    // D: XOR — no restrictions on number of incoming/outgoing
     // E: Timer with more than one input or output
     for (const n of ctorNodes.filter(n => n.type === 'timer')) {
         if (ctorConns.filter(c => c.to === n.id).length > 1)   { issues.push(`Таймер «${n.label}»: допускается только один входящий поток`); break; }
@@ -1725,7 +1721,6 @@ function ctorGetIssues() {
     const andSplits = ctorNodes.filter(n => n.type === 'gw-and' && ctorConns.filter(c => c.from === n.id).length >= 2).length;
     const andJoins  = ctorNodes.filter(n => n.type === 'gw-and' && ctorConns.filter(c => c.to   === n.id).length >= 2).length;
     if (andSplits > andJoins) issues.push('Параллельные ветви AND нужно свести — добавьте AND-шлюз слияния');
-    if (andJoins > andSplits) issues.push('AND-шлюз слияния без AND-шлюза разделения — добавьте AND-Fork или удалите лишний Join');
     const taskTypes = ['task-approval', 'task-script'];
     // For each XOR — check if there is a task on any path leading to it (BFS backwards)
     for (const n of ctorNodes.filter(n => n.type === 'gw-xor')) {
@@ -2138,8 +2133,13 @@ ${onErrorHTML}`;
 
 function buildXorProps(node) {
     const outConns = ctorConns.filter(c => c.from === node.id);
-    // Collect only tasks reachable on incoming paths to this XOR (BFS backwards)
-    const prevTasks = (function(xorId) {
+    const inConns  = ctorConns.filter(c => c.to   === node.id);
+    const systemStatuses = ['Просрочена','Завершена','Запланирована','В работе','Отменена'];
+
+    // BFS backwards: collect incoming tasks.
+    // Traverse THROUGH gw-xor that act as Join (single outgoing = merge point).
+    // STOP at gw-xor that act as Split (multiple outgoing = we don't know which branch fired).
+    const inTasks = (function(xorId) {
         const visited = new Set();
         const queue = [xorId];
         const found = [];
@@ -2150,62 +2150,87 @@ function buildXorProps(node) {
             for (const c of ctorConns.filter(c => c.to === cur)) {
                 const pred = ctorNodes.find(nd => nd.id === c.from);
                 if (!pred) continue;
-                if (pred.type === 'task-approval' || pred.type === 'task-script') found.push(pred);
-                queue.push(pred.id);
+                if (pred.type === 'task-approval' || pred.type === 'task-script') {
+                    if (!found.find(n => n.id === pred.id)) found.push(pred);
+                    queue.push(pred.id);
+                } else if (pred.type === 'gw-xor') {
+                    const predOutCount = ctorConns.filter(c => c.from === pred.id).length;
+                    if (predOutCount <= 1) queue.push(pred.id); // Join — traverse through
+                    // Split — stop, we don't know which branch was taken
+                } else {
+                    queue.push(pred.id); // start, timer, gw-and — traverse through
+                }
             }
         }
         return found;
     })(node.id);
-    const systemStatuses = ['Просрочена','Завершена','Запланирована','В работе','Отменена'];
-    const hasDefault = outConns.some(c => c.flowType === 'default');
-    const noSourceWarning = prevTasks.length === 0
-        ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:0.375rem;padding:0.5rem 0.6rem;margin-bottom:0.5rem;font-size:0.75rem;color:#92400e;">⚠ Нет задачи на пути от Старта. Добавьте задачу-согласование или алгоритм перед шлюзом XOR.</div>`
+
+    // xorRouting stored on node: [{taskId, outcome, connId}]
+    const routing = node.xorRouting || [];
+    const getRoute = (taskId, outcome) => {
+        const r = routing.find(r => String(r.taskId) === String(taskId) && r.outcome === outcome);
+        return r ? String(r.connId) : '';
+    };
+
+    const noSourceWarning = inTasks.length === 0
+        ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:0.375rem;padding:0.5rem 0.6rem;margin-bottom:0.5rem;font-size:0.75rem;color:#92400e;">⚠ Нет входящих задач. Подключите задачу-согласование или алгоритм к шлюзу XOR.</div>`
         : '';
 
-    const connsHTML = outConns.length === 0
-        ? `<div class="prop-note">Нет исходящих связей. Подключите узлы.</div>`
-        : outConns.map(conn => {
-            const toNode = ctorNodes.find(n => n.id === conn.to);
-            const stepOpts = prevTasks.map(n => `<option value="${n.id}" ${String(conn.conditionStep)===String(n.id)?'selected':''}>${escHtml(n.label)}</option>`).join('');
-            const opOpts = [['eq','= равно'],['neq','≠ не равно']].map(([v,l]) => `<option value="${v}" ${conn.conditionOp===v?'selected':''}>${l}</option>`).join('');
-            const stepNode = conn.conditionStep ? ctorNodes.find(n => String(n.id) === String(conn.conditionStep)) : null;
-            const availableStatuses = (stepNode && stepNode.type === 'task-approval' && stepNode.props.outcomes && stepNode.props.outcomes.length > 0)
-                ? stepNode.props.outcomes
+    // Incoming tasks block
+    const inTasksHTML = inTasks.length === 0
+        ? `<div class="prop-note">Нет входящих задач.</div>`
+        : inTasks.map(task => {
+            const outcomes = (task.type === 'task-approval' && task.props && task.props.outcomes && task.props.outcomes.length > 0)
+                ? task.props.outcomes
                 : systemStatuses;
-            const attrOpts = availableStatuses.map(v => `<option ${conn.conditionAttr===v?'selected':''}>${escHtml(v)}</option>`).join('');
-            const statusHint = stepNode && stepNode.type === 'task-approval'
-                ? `<div class="prop-note" style="margin-top:0.2rem;">Исходы задачи «${escHtml(stepNode.label)}»</div>`
-                : (stepNode ? `<div class="prop-note" style="margin-top:0.2rem;">Системные статусы алгоритма</div>` : '');
-            const canSetDefault = !hasDefault || conn.flowType === 'default';
+            const rowsHTML = outcomes.map(o => {
+                const sel = getRoute(task.id, o);
+                const opts = outConns.map(c => {
+                    const toNode = ctorNodes.find(n => n.id === c.to);
+                    return `<option value="${c.id}" ${sel === String(c.id) ? 'selected' : ''}>${escHtml(toNode ? toNode.label : 'Узел ' + c.to)}</option>`;
+                }).join('');
+                const safeO = o.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+                return `<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.3rem;">
+    <div style="flex:0 0 auto;min-width:100px;font-size:0.72rem;color:#374151;">${escHtml(o)}</div>
+    <div style="flex:1;"><select class="prop-select" style="margin:0;" onchange="ctorUpdXorRoute(${node.id},${task.id},'${safeO}',this.value)">
+        <option value="">— ветка —</option>${opts}
+    </select></div>
+</div>`;
+            }).join('');
             return `<div style="border:1px solid #e5e7eb;border-radius:0.375rem;padding:0.5rem;margin-bottom:0.5rem;">
-    <div style="font-size:0.72rem;font-weight:600;color:#374151;margin-bottom:0.4rem;">→ ${escHtml(toNode?toNode.label:'Узел '+conn.to)}</div>
-    <div class="prop-group" style="margin-bottom:0.4rem;">
-        <label class="prop-label">Тип потока</label>
-        <label class="radio-row"><input type="radio" name="ft-${conn.id}" value="conditional" ${conn.flowType==='conditional'?'checked':''} onchange="ctorUpdConnProp(${conn.id},'flowType','conditional')" /> Условный</label>
-        <label class="radio-row"><input type="radio" name="ft-${conn.id}" value="default" ${conn.flowType==='default'?'checked':''} ${!canSetDefault?'disabled':''} onchange="ctorUpdConnProp(${conn.id},'flowType','default')" /> По умолчанию</label>
-    </div>
-    ${conn.flowType==='conditional' ? `
-    <div class="prop-sub">
-        <div class="prop-group" style="margin-bottom:0.3rem;"><label class="prop-label">Шаг (задача)</label>
-            <select class="prop-select" onchange="ctorUpdConnProp(${conn.id},'conditionStep',this.value)"><option value="">— выбрать —</option>${stepOpts}</select></div>
-        <div style="display:flex;gap:0.3rem;">
-            <div style="flex:1;"><label class="prop-label">Оператор</label>
-                <select class="prop-select" onchange="ctorUpdConnProp(${conn.id},'conditionOp',this.value)">${opOpts}</select></div>
-            <div style="flex:1;"><label class="prop-label">Статус</label>
-                <select class="prop-select" onchange="ctorUpdConnProp(${conn.id},'conditionAttr',this.value)"><option value="">—</option>${attrOpts}</select>
-                ${statusHint}</div>
-        </div>
-    </div>` : `<div class="prop-note" style="padding-left:0.5rem;">Путь если ни одно условие не выполнено</div>`}
+    <div style="font-size:0.72rem;font-weight:600;color:#374151;margin-bottom:0.5rem;">${escHtml(task.label)}</div>
+    ${rowsHTML}
+</div>`;
+        }).join('');
+
+
+    // Outgoing branches (default toggle only)
+    const hasDefault = outConns.some(c => c.flowType === 'default');
+    const outBranchesHTML = outConns.length === 0
+        ? `<div class="prop-note">Нет исходящих веток. Подключите узлы.</div>`
+        : outConns.map(c => {
+            const toNode = ctorNodes.find(n => n.id === c.to);
+            const isDefault = c.flowType === 'default';
+            const canSetDefault = !hasDefault || isDefault;
+            return `<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.3rem;">
+    <div style="flex:1;font-size:0.72rem;color:#374151;">→ ${escHtml(toNode ? toNode.label : 'Узел ' + c.to)}</div>
+    <label style="display:flex;align-items:center;gap:0.25rem;font-size:0.7rem;color:#6b7280;cursor:${canSetDefault?'pointer':'default'};">
+        <input type="checkbox" ${isDefault ? 'checked' : ''} ${!canSetDefault ? 'disabled' : ''} onchange="ctorUpdConnProp(${c.id},'flowType',this.checked?'default':'conditional')">
+        По умолчанию
+    </label>
 </div>`;
         }).join('');
 
     return `
-<div class="change-warning" style="background:#fffbeb;border-color:#fde68a;color:#92400e;">
-    Логика маршрутизации настраивается на исходящих связях. Обязательно укажите один путь «По умолчанию».
+<div class="change-warning" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af;">
+    XOR направляет поток по результату первой завершившейся входящей задачи. Укажите для каждого исхода — в какую ветку идти.
 </div>
 ${noSourceWarning}
-<div class="prop-section-title">Исходящие связи</div>
-${connsHTML}`;
+<div class="prop-section-title">Входящие шаги</div>
+${inTasksHTML}
+<div class="prop-section-title" style="margin-top:0.75rem;">Исходящие ветки</div>
+${outBranchesHTML}
+<div class="prop-note" style="margin-top:0.4rem;">Ветка «По умолчанию» срабатывает если ни один исход не совпал с настроенными условиями.</div>`;
 }
 
 function buildAndProps(node, inCnt, outCnt) {
@@ -2282,6 +2307,19 @@ function ctorAddOutcome(nodeId) { const n = ctorNodes.find(n=>n.id===nodeId); if
 function ctorRemoveOutcome(nodeId, idx) { const n = ctorNodes.find(n=>n.id===nodeId); if(n&&n.props.outcomes){n.props.outcomes.splice(idx,1);ctorRenderProps();} }
 function ctorUpdOutcome(nodeId, idx, val) { const n = ctorNodes.find(n=>n.id===nodeId); if(n&&n.props.outcomes) n.props.outcomes[idx]=val; }
 function ctorUpdConnProp(connId, key, val) { const c = ctorConns.find(c=>c.id===connId); if(c){c[key]=val;if(key==='conditionStep')c.conditionAttr='';ctorRenderProps();ctorRenderConns();} }
+function ctorUpdXorRoute(nodeId, taskId, outcome, connId) {
+    const node = ctorNodes.find(n => n.id === nodeId);
+    if (!node) return;
+    if (!node.xorRouting) node.xorRouting = [];
+    const idx = node.xorRouting.findIndex(r => String(r.taskId) === String(taskId) && r.outcome === outcome);
+    if (connId) {
+        if (idx >= 0) node.xorRouting[idx].connId = String(connId);
+        else node.xorRouting.push({ taskId: String(taskId), outcome, connId: String(connId) });
+    } else {
+        if (idx >= 0) node.xorRouting.splice(idx, 1);
+    }
+    ctorRenderProps();
+}
 function ctorUpdScriptParam(nodeId, key, val)  { const n = ctorNodes.find(n=>n.id===nodeId); if(n){if(!n.props.params)n.props.params={};n.props.params[key]=val;} }
 function ctorUpdScriptFilter(nodeId, key, val) { const n = ctorNodes.find(n=>n.id===nodeId); if(n){if(!n.props.filters)n.props.filters={};n.props.filters[key]=val;} }
 
@@ -3358,6 +3396,62 @@ const TEMPLATE_SCHEMAS = {
             { id:20, from:16, to:17, label:'',          flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
         ]
     },
+    // ---- S&OP квартальный обзор — демо всех вариантов XOR ----
+    // XOR1 = Join (3 входящих → 1 исходящий)
+    // XOR2 = Split (1 входящий → 2 исходящих)
+    // XOR3 = Join+Split (2 входящих → 2 исходящих)
+    8: {
+        nodes: [
+            { id:1,  type:'start',         label:'Старт',                      x:80,  y:268, props:{ description:'Квартальный S&OP обзор. Три аналитика независимо анализируют план — первый завершивший направляет процесс дальше.', triggerType:'Разовый запуск', schedule:'' }},
+            { id:2,  type:'task-approval', label:'Анализ продаж',              x:200, y:135, props:{ instruction:'Проанализируйте фактические продажи за квартал. Сравните с планом, выявите отклонения.', assigneeType:'Роль', assignee:'Коммерческий директор', slaValue:2, slaUnit:'дней', outcomes:['Одобрено','Есть замечания'], taskTracker:true }},
+            { id:3,  type:'task-approval', label:'Анализ производства',        x:200, y:248, props:{ instruction:'Оцените выполнение производственного плана. Проверьте загрузку мощностей и отклонения по выпуску.', assigneeType:'Роль', assignee:'Директор по производству', slaValue:2, slaUnit:'дней', outcomes:['Одобрено','Есть замечания'], taskTracker:true }},
+            { id:4,  type:'task-approval', label:'Анализ запасов',             x:200, y:361, props:{ instruction:'Проверьте уровни запасов сырья и готовой продукции. Оцените соответствие нормативам.', assigneeType:'Роль', assignee:'Директор по логистике', slaValue:2, slaUnit:'дней', outcomes:['Одобрено','Есть замечания'], taskTracker:true }},
+            { id:5,  type:'gw-xor',        label:'XOR 1\nJoin',               x:415, y:252, props:{}, xorRouting:[
+                { taskId:'2', outcome:'Одобрено',        connId:'7' },
+                { taskId:'2', outcome:'Есть замечания',  connId:'7' },
+                { taskId:'3', outcome:'Одобрено',        connId:'7' },
+                { taskId:'3', outcome:'Есть замечания',  connId:'7' },
+                { taskId:'4', outcome:'Одобрено',        connId:'7' },
+                { taskId:'4', outcome:'Есть замечания',  connId:'7' },
+            ]},
+            { id:6,  type:'gw-xor',        label:'XOR 2\nSplit',              x:550, y:252, props:{}, xorRouting:[
+                { taskId:'2', outcome:'Одобрено',        connId:'8' },
+                { taskId:'2', outcome:'Есть замечания',  connId:'9' },
+                { taskId:'3', outcome:'Одобрено',        connId:'8' },
+                { taskId:'3', outcome:'Есть замечания',  connId:'9' },
+                { taskId:'4', outcome:'Одобрено',        connId:'8' },
+                { taskId:'4', outcome:'Есть замечания',  connId:'9' },
+            ]},
+            { id:7,  type:'task-approval', label:'Согласование бюджета',      x:640, y:135, props:{ instruction:'Утвердите бюджет на следующий квартал на основании одобренного плана S&OP.', assigneeType:'Роль', assignee:'CFO', slaValue:3, slaUnit:'дней', outcomes:['Утверждено','Отклонено'], taskTracker:true }},
+            { id:8,  type:'task-approval', label:'Эскалация замечаний',       x:640, y:361, props:{ instruction:'Зафиксируйте замечания и передайте на доработку ответственным подразделениям.', assigneeType:'Роль', assignee:'Операционный директор', slaValue:1, slaUnit:'дней', outcomes:['Эскалировано'], taskTracker:true }},
+            { id:9,  type:'gw-xor',        label:'XOR 3\nJoin+Split',         x:850, y:252, props:{}, xorRouting:[
+                { taskId:'7', outcome:'Утверждено',   connId:'12' },
+                { taskId:'7', outcome:'Отклонено',    connId:'13' },
+                { taskId:'8', outcome:'Эскалировано', connId:'13' },
+            ]},
+            { id:10, type:'task-approval', label:'Публикация плана S&OP',     x:940, y:135, props:{ instruction:'Опубликуйте утверждённый квартальный план S&OP. Разошлите всем заинтересованным сторонам.', assigneeType:'Роль', assignee:'S&OP координатор', slaValue:1, slaUnit:'дней', outcomes:['Опубликовано'], taskTracker:true }},
+            { id:11, type:'task-approval', label:'Уведомление об отклонении', x:940, y:361, props:{ instruction:'Уведомьте руководство о том, что квартальный план не прошёл согласование. Укажите причины.', assigneeType:'Роль', assignee:'S&OP координатор', slaValue:1, slaUnit:'дней', outcomes:['Отправлено'], taskTracker:true }},
+            { id:12, type:'end',           label:'Конец',                     x:1120, y:150, props:{ description:'План S&OP принят и опубликован.' }},
+            { id:13, type:'end',           label:'Конец',                     x:1120, y:370, props:{ description:'План S&OP отклонён. Требуется доработка.' }},
+        ],
+        conns: [
+            { id:1,  from:1,  to:2,  label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:2,  from:1,  to:3,  label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:3,  from:1,  to:4,  label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:4,  from:2,  to:5,  label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:5,  from:3,  to:5,  label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:6,  from:4,  to:5,  label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:7,  from:5,  to:6,  label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:8,  from:6,  to:7,  label:'Одобрено',      flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:9,  from:6,  to:8,  label:'Есть замечания', flowType:'default',     conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:10, from:7,  to:9,  label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:11, from:8,  to:9,  label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:12, from:9,  to:10, label:'Утверждено',  flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:13, from:9,  to:11, label:'Отклонено',   flowType:'default',     conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:14, from:10, to:12, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+            { id:15, from:11, to:13, label:'', flowType:'conditional', conditionStep:'', conditionOp:'eq', conditionAttr:'' },
+        ]
+    },
 };
 
 // ---- Critical path for a pre-built schema ----
@@ -3482,7 +3576,7 @@ function openConstructorView(templateId, mode) {
 function openTemplateView(templateId) {
     const t = templates.find(t => t.id === templateId);
     if (!t) return;
-    openConstructorView(templateId, t.status === 'Архив' ? 'view' : 'edit-meta');
+    openConstructorView(templateId, t.status === 'Архив' ? 'view' : t.status === 'Черновик' ? 'create' : 'edit-meta');
 }
 
 function openInstanceView(templateId) {
