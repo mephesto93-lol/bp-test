@@ -1426,7 +1426,6 @@
             <div class="props-footer">
                 <button class="btn-save-draft" id="btn-save-draft" onclick="ctorSaveDraft()">💾 Сохранить черновик</button>
                 <button class="btn-publish-ctor" id="btn-publish-ctor" onclick="ctorPublish()" disabled>🚀 Опубликовать</button>
-                <div class="publish-hint" id="publish-hint">Добавьте узел «Конец» и свяжите все элементы</div>
             </div>
         </aside>
     </div>
@@ -1721,8 +1720,8 @@ function ctorGetIssues() {
     const andSplits = ctorNodes.filter(n => n.type === 'gw-and' && ctorConns.filter(c => c.from === n.id).length >= 2).length;
     const andJoins  = ctorNodes.filter(n => n.type === 'gw-and' && ctorConns.filter(c => c.to   === n.id).length >= 2).length;
     if (andSplits > andJoins) issues.push('Параллельные ветви AND нужно свести — добавьте AND-шлюз слияния');
-    const taskTypes = ['task-approval', 'task-script'];
-    // For each XOR — check if there is a task on any path leading to it (BFS backwards)
+    const taskTypes = ['task-approval', 'task-script', 'timer'];
+    // For each XOR — check if there is a task/timer on any path leading to it (BFS backwards)
     for (const n of ctorNodes.filter(n => n.type === 'gw-xor')) {
         const visited = new Set();
         const queue = [n.id];
@@ -1739,7 +1738,7 @@ function ctorGetIssues() {
             }
         }
         if (!hasTaskBefore) {
-            issues.push(`Шлюз XOR «${n.label}»: нет задачи на пути от Старта — добавьте задачу-согласование или алгоритм перед шлюзом`);
+            issues.push(`Шлюз XOR «${n.label}»: нет задачи или таймера на пути от Старта — добавьте задачу-согласование, алгоритм или таймер перед шлюзом`);
             break;
         }
     }
@@ -1784,7 +1783,7 @@ function ctorUpdateSlaLabel() {
 function ctorRenderNodes() {
     const inner = document.getElementById('canvas-inner');
     inner.querySelectorAll('.canvas-node').forEach(el => el.remove());
-    const taskTypes_ = ['task-approval', 'task-script'];
+    const taskTypes_ = ['task-approval', 'task-script', 'timer'];
     function xorHasTaskBefore(xorId) {
         const visited = new Set();
         const queue = [xorId];
@@ -2150,7 +2149,7 @@ function buildXorProps(node) {
             for (const c of ctorConns.filter(c => c.to === cur)) {
                 const pred = ctorNodes.find(nd => nd.id === c.from);
                 if (!pred) continue;
-                if (pred.type === 'task-approval' || pred.type === 'task-script') {
+                if (pred.type === 'task-approval' || pred.type === 'task-script' || pred.type === 'timer') {
                     if (!found.find(n => n.id === pred.id)) found.push(pred);
                     queue.push(pred.id);
                 } else if (pred.type === 'gw-xor') {
@@ -2158,7 +2157,7 @@ function buildXorProps(node) {
                     if (predOutCount <= 1) queue.push(pred.id); // Join — traverse through
                     // Split — stop, we don't know which branch was taken
                 } else {
-                    queue.push(pred.id); // start, timer, gw-and — traverse through
+                    queue.push(pred.id); // start, gw-and — traverse through
                 }
             }
         }
@@ -2173,16 +2172,18 @@ function buildXorProps(node) {
     };
 
     const noSourceWarning = inTasks.length === 0
-        ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:0.375rem;padding:0.5rem 0.6rem;margin-bottom:0.5rem;font-size:0.75rem;color:#92400e;">⚠ Нет входящих задач. Подключите задачу-согласование или алгоритм к шлюзу XOR.</div>`
+        ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:0.375rem;padding:0.5rem 0.6rem;margin-bottom:0.5rem;font-size:0.75rem;color:#92400e;">⚠ Нет входящих шагов. Подключите задачу-согласование, алгоритм или таймер к шлюзу XOR.</div>`
         : '';
 
     // Incoming tasks block
     const inTasksHTML = inTasks.length === 0
         ? `<div class="prop-note">Нет входящих задач.</div>`
         : inTasks.map(task => {
-            const outcomes = (task.type === 'task-approval' && task.props && task.props.outcomes && task.props.outcomes.length > 0)
-                ? task.props.outcomes
-                : systemStatuses;
+            const outcomes = task.type === 'timer'
+                ? ['Истёк']
+                : (task.type === 'task-approval' && task.props && task.props.outcomes && task.props.outcomes.length > 0)
+                    ? task.props.outcomes
+                    : systemStatuses;
             const rowsHTML = outcomes.map(o => {
                 const sel = getRoute(task.id, o);
                 const opts = outConns.map(c => {
@@ -2250,25 +2251,29 @@ function buildAndProps(node, inCnt, outCnt) {
 function ctorUpdatePublish() {
     const saveBtn    = document.getElementById('btn-save-draft');
     const publishBtn = document.getElementById('btn-publish-ctor');
-    const hint       = document.getElementById('publish-hint');
-    if (ctorViewMode === 'view') {
+    const canvHint   = document.querySelector('.canvas-hint');
+
+    if (ctorViewMode === 'view' || ctorViewMode === 'edit-meta') {
+        // hint text is set by setCtorMode — nothing to do here for those modes
         saveBtn.style.display = 'none'; publishBtn.style.display = 'none';
-        hint.innerHTML = '<span style="font-size:0.78rem;color:#6b7280;font-style:italic;">&#128065; Режим просмотра — редактирование недоступно</span>';
         return;
     }
-    if (ctorViewMode === 'edit-meta') {
-        saveBtn.style.display = 'none'; publishBtn.style.display = 'none';
-        const isDraft = ctorProcSettings.status === 'Черновик';
-        hint.innerHTML = `<button style="width:100%;padding:0.45rem;background:#6d28d9;border:none;color:#fff;border-radius:0.375rem;cursor:pointer;font-size:0.8rem;font-weight:500;margin-bottom:${isDraft?'0.4rem':'0'};" onclick="ctorSaveMetaChanges()">&#128190; Сохранить изменения</button>`
-            + (isDraft ? `<button style="width:100%;padding:0.45rem;background:#15803d;border:none;color:#fff;border-radius:0.375rem;cursor:pointer;font-size:0.8rem;font-weight:500;" onclick="ctorPublishDraft()">🚀 Опубликовать черновик</button>` : '');
-        return;
-    }
+
     saveBtn.style.display = ''; publishBtn.style.display = '';
-    hint.style.fontStyle = '';
     const issues = ctorGetIssues();
     publishBtn.disabled = issues.length > 0;
-    if (issues.length === 0) { hint.textContent = '✅ Процесс готов к публикации'; hint.style.color = '#16a34a'; }
-    else { hint.textContent = '⚠ ' + issues[0]; hint.style.color = '#b45309'; }
+    if (canvHint) {
+        if (ctorNodes.length === 0) {
+            canvHint.style.background = '#fef9c3'; canvHint.style.borderColor = '#fde68a'; canvHint.style.color = '#92400e';
+            canvHint.textContent = '💡 Перетащите элемент из палитры на холст. Наведите на узел и потяните за фиолетовую точку, чтобы соединить.';
+        } else if (issues.length === 0) {
+            canvHint.style.background = '#f0fdf4'; canvHint.style.borderColor = '#86efac'; canvHint.style.color = '#15803d';
+            canvHint.textContent = '✅ Процесс готов к публикации';
+        } else {
+            canvHint.style.background = '#fffbeb'; canvHint.style.borderColor = '#fde68a'; canvHint.style.color = '#b45309';
+            canvHint.textContent = '⚠ ' + issues[0];
+        }
+    }
 }
 
 function ctorSelectNode(id) {
